@@ -163,7 +163,7 @@ export default function Home() {
       </div>
 
       {/* HERO */}
-      <div className="relative text-white px-4 py-10 sm:py-16 overflow-hidden">
+      <div className="relative text-white px-4 py-8 sm:py-14 overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -182,13 +182,13 @@ export default function Home() {
           </p>
 
           {/* SEARCH */}
-          <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg p-2.5 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-4xl mx-auto">
             <input
               type="text"
               placeholder="Search birds..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 p-3 text-black outline-none rounded-xl bg-gray-50"
+              className="flex-1 p-2.5 text-black outline-none rounded-xl bg-gray-50"
             />
 
             <input
@@ -196,7 +196,7 @@ export default function Home() {
               placeholder="Location (e.g. Sydney)"
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
-              className="flex-1 p-3 text-black outline-none rounded-xl bg-gray-50"
+              className="flex-1 p-2.5 text-black outline-none rounded-xl bg-gray-50"
             />
           </div>
 
