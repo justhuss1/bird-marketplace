@@ -33,7 +33,7 @@ export default function MyListingsPage() {
     } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      setLoading(false);
+      router.push("/login");
       return;
     }
 
@@ -53,95 +53,134 @@ export default function MyListingsPage() {
   };
 
   const handleDelete = async (id: string) => {
-  const confirmed = window.confirm("Are you sure you want to delete this listing?");
-  if (!confirmed) return;
+    const confirmed = window.confirm("Are you sure you want to delete this listing?");
+    if (!confirmed) return;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    alert("You must be logged in.");
-    router.push("/login");
-    return;
-  }
+    if (!user) {
+      alert("You must be logged in.");
+      router.push("/login");
+      return;
+    }
 
-  const { error } = await supabase
-    .from("listings")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+    const { error } = await supabase
+      .from("listings")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
 
-  if (error) {
-    console.error(error);
-    alert("Failed to delete listing");
-    return;
-  }
+    if (error) {
+      console.error(error);
+      alert("Failed to delete listing");
+      return;
+    }
 
-  setListings((prev) => prev.filter((listing) => listing.id !== id));
-};
+    setListings((prev) => prev.filter((listing) => listing.id !== id));
+  };
 
   if (loading) {
     return <main className="p-4">Loading your listings...</main>;
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">My Listings</h1>
+    <main className="bg-gray-50 min-h-screen py-8 px-4">
+      <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => router.back()}
+          className="mb-4 text-sm text-gray-600 hover:text-black transition"
+        >
+          ← Back
+        </button>
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
+            <p className="text-gray-500 mt-1">
+              Manage the bird listings you’ve posted.
+            </p>
+          </div>
 
           <Link href="/create">
-            <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold">
+            <button className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition">
               + New Listing
             </button>
           </Link>
         </div>
 
         {listings.length === 0 ? (
-          <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-gray-600">
-              You have not posted any listings yet.
+          <div className="bg-white rounded-2xl shadow p-10 text-center">
+            <div className="text-4xl mb-3">🪺</div>
+            <h2 className="text-xl font-semibold text-gray-800">
+              No listings yet
+            </h2>
+            <p className="text-gray-500 mt-2 mb-5">
+              Start by creating your first bird listing.
             </p>
+
+            <Link href="/create">
+              <button className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold transition">
+                Create Listing
+              </button>
+            </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {listings.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl shadow overflow-hidden"
+                className="bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden"
               >
                 <Link href={`/listing/${item.id}`}>
-                  <img
-                    src={
-                      item.image ||
-                      "https://via.placeholder.com/600x400?text=No+Image"
-                    }
-                    alt={item.title}
-                    className="h-56 w-full object-cover cursor-pointer"
-                  />
+                  <div className="relative cursor-pointer">
+                    <img
+                      src={
+                        item.image && item.image !== ""
+                          ? item.image
+                          : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1200"
+                      }
+                      alt={item.title}
+                      className="h-56 w-full object-cover"
+                    />
+
+                    <div className="absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full">
+                      Your Listing
+                    </div>
+                  </div>
                 </Link>
 
-                <div className="p-3">
+                <div className="p-4">
                   <Link href={`/listing/${item.id}`}>
-                    <h2 className="font-semibold text-base cursor-pointer">
+                    <h2 className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-green-600 transition">
                       {item.title}
                     </h2>
                   </Link>
 
-                  <p className="text-green-600 font-bold">{item.price}</p>
-                  <p className="text-sm text-gray-500">{item.location}</p>
+                  <p className="text-green-600 font-bold text-2xl mt-2">
+                    ${item.price}
+                  </p>
 
-                  <div className="mt-3">
-                    <Link href={`/edit/${item.id}`}>
-                        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm mr-2">
-                            Edit
-                        </button>
+                  <p className="text-sm text-gray-500 mt-1">
+                    📍 {item.location}
+                  </p>
+
+                  <p className="text-sm text-gray-600 mt-3 line-clamp-2">
+                    {item.description || "No description provided."}
+                  </p>
+
+                  <div className="mt-4 flex gap-2">
+                    <Link href={`/edit/${item.id}`} className="flex-1">
+                      <button className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition">
+                        Edit
+                      </button>
                     </Link>
+
                     <button
                       type="button"
                       onClick={() => handleDelete(item.id)}
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
                     >
                       Delete
                     </button>
