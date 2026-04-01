@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -22,15 +22,11 @@ export default function MessagesPage() {
   const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     checkUser();
   }, []);
-
-  useEffect(() => {
-    if (conversationId && userId) {
-      fetchMessages();
-    }
-  }, [conversationId, userId]);
 
   const checkUser = async () => {
     const {
@@ -60,6 +56,41 @@ export default function MessagesPage() {
     }
   };
 
+  useEffect(() => {
+    if (!conversationId || !userId) return;
+
+    fetchMessages();
+
+    const channel = supabase
+      .channel(`messages-${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as Message;
+          setMessages((prev) => {
+            const alreadyExists = prev.some((msg) => msg.id === newMsg.id);
+            if (alreadyExists) return prev;
+            return [...prev, newMsg];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, userId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -80,7 +111,13 @@ export default function MessagesPage() {
     }
 
     setNewMessage("");
-    fetchMessages();
+  };
+
+  const formatTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
   };
 
   if (loading) {
@@ -88,44 +125,81 @@ export default function MessagesPage() {
   }
 
   return (
-    <main className="p-4 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Messages</h1>
-
-      <div className="bg-white border rounded-lg p-4 h-[400px] overflow-y-auto space-y-3">
-        {messages.length === 0 ? (
-          <p className="text-gray-500">No messages yet. Start the conversation.</p>
-        ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`p-3 rounded-lg max-w-[80%] ${
-                message.sender_id === userId
-                  ? "bg-green-600 text-white ml-auto"
-                  : "bg-gray-200 text-black"
-              }`}
-            >
-              {message.text}
-            </div>
-          ))
-        )}
-      </div>
-
-      <form onSubmit={handleSend} className="mt-4 flex gap-2">
-        <input
-            type="text"
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            className="flex-1 p-3 border border-gray-300 rounded-lg bg-white text-black outline-none"
-            autoFocus
-        />
+    <main className="bg-gray-50 min-h-screen py-8 px-4">
+      <div className="max-w-3xl mx-auto">
         <button
-            type="submit"
-            className="bg-green-600 text-white px-4 rounded-lg"
+          onClick={() => router.back()}
+          className="mb-4 text-sm text-gray-600 hover:text-black transition"
         >
-            Send
+          ← Back
         </button>
-        </form>
+
+        <div className="bg-white rounded-2xl shadow overflow-hidden">
+          {/* HEADER */}
+          <div className="border-b px-6 py-4">
+            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Real-time conversation
+            </p>
+          </div>
+
+          {/* CHAT BODY */}
+          <div className="p-4 h-[500px] overflow-y-auto bg-gray-50 space-y-4">
+            {messages.length === 0 ? (
+              <p className="text-gray-500 text-sm">
+                No messages yet. Start the conversation.
+              </p>
+            ) : (
+              messages.map((message) => {
+                const isMine = message.sender_id === userId;
+
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[80%] px-4 py-3 rounded-2xl shadow-sm ${
+                        isMine
+                          ? "bg-green-600 text-white"
+                          : "bg-white border text-gray-800"
+                      }`}
+                    >
+                      <p className="text-sm">{message.text}</p>
+                      <p
+                        className={`text-[11px] mt-2 ${
+                          isMine ? "text-green-100" : "text-gray-400"
+                        }`}
+                      >
+                        {formatTime(message.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            <div ref={bottomRef} />
+          </div>
+
+          {/* INPUT */}
+          <form onSubmit={handleSend} className="border-t p-4 flex gap-2 bg-white">
+            <input
+              type="text"
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-black outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-medium transition"
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      </div>
     </main>
   );
 }

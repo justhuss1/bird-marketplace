@@ -17,11 +17,13 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchListings();
-    getCurrentUser();
-  }, []);
+  fetchListings();
+  getCurrentUser();
+  fetchSavedListings();
+}, []);
 
   const fetchListings = async () => {
     const { data, error } = await supabase
@@ -40,10 +42,82 @@ export default function Home() {
     setUserEmail(user?.email || "");
   };
 
+  const fetchSavedListings = async () => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    setSavedListingIds([]);
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("saved_listings")
+    .select("listing_id")
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  setSavedListingIds((data || []).map((item) => item.listing_id));
+};
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUserEmail("");
   };
+
+  const handleToggleSave = async (
+  e: React.MouseEvent,
+  listingId: string
+) => {
+  e.preventDefault();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    alert("Please log in to save listings.");
+    return;
+  }
+
+  const isSaved = savedListingIds.includes(listingId);
+
+  if (isSaved) {
+    const { error } = await supabase
+      .from("saved_listings")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("listing_id", listingId);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to remove saved listing");
+      return;
+    }
+
+    setSavedListingIds((prev) => prev.filter((id) => id !== listingId));
+  } else {
+    const { error } = await supabase.from("saved_listings").insert([
+      {
+        user_id: user.id,
+        listing_id: listingId,
+      },
+    ]);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to save listing");
+      return;
+    }
+
+    setSavedListingIds((prev) => [...prev, listingId]);
+  }
+};
 
   const filteredListings = listings.filter((item) => {
     const matchesSearch = item.title
@@ -135,6 +209,12 @@ export default function Home() {
               </button>
             </Link>
 
+            <Link href="/saved-listings">
+              <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
+                Saved
+              </button>
+            </Link>
+
             <Link href="/my-listings">
               <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
                 My Listings
@@ -206,6 +286,17 @@ export default function Home() {
                     <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                       New
                     </div>
+
+                    <button
+                      onClick={(e) => handleToggleSave(e, item.id)}
+                      className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full font-semibold ${
+                        savedListingIds.includes(item.id)
+                          ? "bg-red-500 text-white"
+                          : "bg-white/90 text-gray-800"
+                      }`}
+                    >
+                      {savedListingIds.includes(item.id) ? "♥ Saved" : "♡ Save"}
+                    </button>
                   </div>
 
                   <div className="p-3">
