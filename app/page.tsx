@@ -89,7 +89,16 @@ export default function Home() {
       </div>
 
       {/* HERO */}
-      <div className="bg-green-600 text-white px-4 py-16">
+      <div className="relative text-white px-4 py-16 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1600&q=80')",
+          }}
+        />
+        <div className="absolute inset-0 bg-green-900/60" />
+        <div className="relative max-w-4xl mx-auto text-center">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-2">
             Buy, Sell & Rehome Birds
@@ -97,6 +106,7 @@ export default function Home() {
           <p className="mb-6 opacity-90">
             Australia’s marketplace for bird lovers
           </p>
+          </div>
 
           {/* SEARCH */}
           <div className="bg-white rounded-xl shadow p-3 flex flex-col sm:flex-row gap-2">
@@ -151,10 +161,10 @@ export default function Home() {
       ].map((cat) => (
         <div
           key={cat.name}
-          className="bg-gray-50 hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition"
+          className="bg-white hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition shadow-sm"
         >
           <div className="text-3xl">{cat.emoji}</div>
-          <p className="text-sm mt-2 font-medium">{cat.name}</p>
+          <p className="text-sm mt-2 font-medium text-gray-700">{cat.name}</p>
         </div>
       ))}
     </div>
@@ -163,7 +173,12 @@ export default function Home() {
 
       {/* LISTINGS */}
       <div className="max-w-5xl mx-auto px-4 mt-6">
-        <h3 className="text-lg font-semibold mb-3">Latest Listings</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-lg font-semibold">Latest Listings</h3>
+          <button className="text-sm text-green-600 hover:underline">
+            View all
+          </button>
+        </div>
 
         {filteredListings.length === 0 ? (
           <p className="text-gray-500">No listings found.</p>
@@ -171,28 +186,41 @@ export default function Home() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {filteredListings.map((item) => (
               <Link key={item.id} href={`/listing/${item.id}`}>
-                <div className="bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden cursor-pointer">
-                  <img
-                    src={
-                      item.image ||
-                      "https://via.placeholder.com/600x400?text=No+Image"
-                    }
-                    alt={item.title}
-                    className="h-48 w-full object-cover"
-                  />
+                <div className="bg-white rounded-2xl shadow hover:shadow-xl hover:-translate-y-1 transition overflow-hidden cursor-pointer">
+                  <div className="relative">
+                    <img
+                      src={
+                        item.image && item.image !== ""
+                          ? item.image
+                          : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
+                      }
+                      alt={item.title}
+                      className="h-48 w-full object-cover"
+                    />
+
+                    <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                      New
+                    </div>
+                  </div>
 
                   <div className="p-3">
-                    <h2 className="font-semibold text-sm truncate">
+                    <h2 className="font-semibold text-base truncate text-gray-800">
                       {item.title}
                     </h2>
 
-                    <p className="text-green-600 font-bold text-base mt-1">
+                    <p className="text-green-600 font-bold text-lg mt-1">
                       ${item.price}
                     </p>
 
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm text-gray-500 mt-1">
                       📍 {item.location}
                     </p>
+
+                    <div className="mt-2 flex gap-2 flex-wrap">
+                      <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                        Bird Listing
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Link>
