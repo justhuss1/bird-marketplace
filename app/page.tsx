@@ -4,8 +4,16 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+type Listing = {
+  id: string;
+  title: string;
+  price: string;
+  location: string;
+  image: string | null;
+};
+
 export default function Home() {
-  const [listings, setListings] = useState<any[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -21,11 +29,7 @@ export default function Home() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error(error);
-    } else {
-      setListings(data || []);
-    }
+    if (!error) setListings(data || []);
   };
 
   const getCurrentUser = async () => {
@@ -33,23 +37,12 @@ export default function Home() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (user?.email) {
-      setUserEmail(user.email);
-    } else {
-      setUserEmail("");
-    }
+    setUserEmail(user?.email || "");
   };
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      alert("Failed to log out");
-      return;
-    }
-
+    await supabase.auth.signOut();
     setUserEmail("");
-    alert("Logged out successfully");
   };
 
   const filteredListings = listings.filter((item) => {
@@ -66,92 +59,147 @@ export default function Home() {
 
   return (
     <main className="bg-gray-50 min-h-screen pb-20">
-      <div className="bg-green-600 text-white p-4 rounded-b-2xl">
-        <h1 className="text-2xl font-bold">Bird Marketplace 🐦</h1>
-        <p className="text-sm opacity-90">
-          Buy, sell and rehome birds across Australia
-        </p>
+      {/* NAVBAR */}
+      <div className="bg-white shadow-sm px-4 py-3 flex justify-between items-center">
+        <h1 className="text-lg font-bold text-green-600">
+          🐦 Bird Marketplace
+        </h1>
 
-        <div className="mt-4 flex gap-3 flex-wrap items-center">
-          <Link href="/create">
-            <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
-              + Post Listing
-            </button>
-          </Link>
-
-          <Link href="/my-listings">
-            <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
-              My Listings
-            </button>
-          </Link>
-
+        <div className="flex gap-2 items-center">
           {userEmail ? (
             <>
-              <span className="text-white text-sm">
+              <span className="text-sm text-gray-600 hidden sm:block">
                 {userEmail}
               </span>
               <button
                 onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold"
+                className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
               >
                 Logout
               </button>
             </>
           ) : (
             <Link href="/login">
-              <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
+              <button className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm">
                 Login
               </button>
             </Link>
           )}
         </div>
+      </div>
 
-        <div className="mt-6">
-          <input
-            type="text"
-            placeholder="Search birds..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-3 rounded-lg text-black"
-          />
-        </div>
+      {/* HERO */}
+      <div className="bg-green-600 text-white px-4 py-16">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-2">
+            Buy, Sell & Rehome Birds
+          </h2>
+          <p className="mb-6 opacity-90">
+            Australia’s marketplace for bird lovers
+          </p>
 
-        <div className="mt-2">
-          <input
-            type="text"
-            placeholder="Filter by location (e.g. Sydney)"
-            value={locationFilter}
-            onChange={(e) => setLocationFilter(e.target.value)}
-            className="w-full p-3 rounded-lg text-black"
-          />
+          {/* SEARCH */}
+          <div className="bg-white rounded-xl shadow p-3 flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              placeholder="Search birds..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 p-2 text-black outline-none"
+            />
+
+            <input
+              type="text"
+              placeholder="Location (e.g. Sydney)"
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              className="flex-1 p-2 text-black outline-none"
+            />
+          </div>
+
+          {/* ACTION BUTTONS */}
+          <div className="mt-4 flex gap-2 justify-center flex-wrap">
+            <Link href="/create">
+              <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
+                + Post Listing
+              </button>
+            </Link>
+
+            <Link href="/my-listings">
+              <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
+                My Listings
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
 
-      {filteredListings.length === 0 ? (
-        <p className="px-4 mt-4 text-gray-500">No listings found.</p>
-      ) : (
-        <div className="mt-4 px-4 grid grid-cols-2 gap-4">
-          {filteredListings.map((item) => (
-            <Link key={item.id} href={`/listing/${item.id}`}>
-              <div className="bg-white rounded-xl shadow overflow-hidden cursor-pointer">
-                <img
-                  src={
-                    item.image ||
-                    "https://via.placeholder.com/600x400?text=No+Image"
-                  }
-                  alt={item.title}
-                  className="h-56 w-full object-cover"
-                />
-                <div className="p-2">
-                  <h2 className="font-semibold text-sm">{item.title}</h2>
-                  <p className="text-green-600 font-bold">{item.price}</p>
-                  <p className="text-xs text-gray-500">{item.location}</p>
-                </div>
-              </div>
-            </Link>
-          ))}
+      {/* CATEGORIES */}
+<div className="max-w-5xl mx-auto px-4 -mt-12 mb-6">
+  <div className="bg-white rounded-2xl shadow-lg p-5">
+    <h3 className="font-semibold mb-4 text-gray-800">
+      Popular Categories
+    </h3>
+
+    <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 text-center">
+      {[
+        { name: "Parrots", emoji: "🦜" },
+        { name: "Cockatiels", emoji: "🐦" },
+        { name: "Finches", emoji: "🐤" },
+        { name: "Canaries", emoji: "🐥" },
+        { name: "Supplies", emoji: "🪺" },
+      ].map((cat) => (
+        <div
+          key={cat.name}
+          className="bg-gray-50 hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition"
+        >
+          <div className="text-3xl">{cat.emoji}</div>
+          <p className="text-sm mt-2 font-medium">{cat.name}</p>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+</div>
+
+      {/* LISTINGS */}
+      <div className="max-w-5xl mx-auto px-4 mt-6">
+        <h3 className="text-lg font-semibold mb-3">Latest Listings</h3>
+
+        {filteredListings.length === 0 ? (
+          <p className="text-gray-500">No listings found.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {filteredListings.map((item) => (
+              <Link key={item.id} href={`/listing/${item.id}`}>
+                <div className="bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden cursor-pointer">
+                  <img
+                    src={
+                      item.image ||
+                      "https://via.placeholder.com/600x400?text=No+Image"
+                    }
+                    alt={item.title}
+                    className="h-48 w-full object-cover"
+                  />
+
+                  <div className="p-3">
+                    <h2 className="font-semibold text-sm truncate">
+                      {item.title}
+                    </h2>
+
+                    <p className="text-green-600 font-bold text-base mt-1">
+                      ${item.price}
+                    </p>
+
+                    <p className="text-xs text-gray-500">
+                      📍 {item.location}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 }
