@@ -140,6 +140,11 @@ export default function Home() {
                 My Listings
               </button>
             </Link>
+            <Link href="/messages">
+              <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
+                Messages
+              </button>
+            </Link>
           </div>
         </div>
       </div>
