@@ -20,10 +20,10 @@ export default function Home() {
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
 
   useEffect(() => {
-  fetchListings();
-  getCurrentUser();
-  fetchSavedListings();
-}, []);
+    fetchListings();
+    getCurrentUser();
+    fetchSavedListings();
+  }, []);
 
   const fetchListings = async () => {
     const { data, error } = await supabase
@@ -43,27 +43,27 @@ export default function Home() {
   };
 
   const fetchSavedListings = async () => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    setSavedListingIds([]);
-    return;
-  }
+    if (!user) {
+      setSavedListingIds([]);
+      return;
+    }
 
-  const { data, error } = await supabase
-    .from("saved_listings")
-    .select("listing_id")
-    .eq("user_id", user.id);
+    const { data, error } = await supabase
+      .from("saved_listings")
+      .select("listing_id")
+      .eq("user_id", user.id);
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+    if (error) {
+      console.error(error);
+      return;
+    }
 
-  setSavedListingIds((data || []).map((item) => item.listing_id));
-};
+    setSavedListingIds((data || []).map((item) => item.listing_id));
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -71,53 +71,53 @@ export default function Home() {
   };
 
   const handleToggleSave = async (
-  e: React.MouseEvent,
-  listingId: string
-) => {
-  e.preventDefault();
+    e: React.MouseEvent,
+    listingId: string
+  ) => {
+    e.preventDefault();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    alert("Please log in to save listings.");
-    return;
-  }
-
-  const isSaved = savedListingIds.includes(listingId);
-
-  if (isSaved) {
-    const { error } = await supabase
-      .from("saved_listings")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("listing_id", listingId);
-
-    if (error) {
-      console.error(error);
-      alert("Failed to remove saved listing");
+    if (!user) {
+      alert("Please log in to save listings.");
       return;
     }
 
-    setSavedListingIds((prev) => prev.filter((id) => id !== listingId));
-  } else {
-    const { error } = await supabase.from("saved_listings").insert([
-      {
-        user_id: user.id,
-        listing_id: listingId,
-      },
-    ]);
+    const isSaved = savedListingIds.includes(listingId);
 
-    if (error) {
-      console.error(error);
-      alert("Failed to save listing");
-      return;
+    if (isSaved) {
+      const { error } = await supabase
+        .from("saved_listings")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("listing_id", listingId);
+
+      if (error) {
+        console.error(error);
+        alert("Failed to remove saved listing");
+        return;
+      }
+
+      setSavedListingIds((prev) => prev.filter((id) => id !== listingId));
+    } else {
+      const { error } = await supabase.from("saved_listings").insert([
+        {
+          user_id: user.id,
+          listing_id: listingId,
+        },
+      ]);
+
+      if (error) {
+        console.error(error);
+        alert("Failed to save listing");
+        return;
+      }
+
+      setSavedListingIds((prev) => [...prev, listingId]);
     }
-
-    setSavedListingIds((prev) => [...prev, listingId]);
-  }
-};
+  };
 
   const filteredListings = listings.filter((item) => {
     const matchesSearch = item.title
@@ -132,29 +132,29 @@ export default function Home() {
   });
 
   return (
-    <main className="bg-gray-50 min-h-screen pb-20">
-      {/* NAVBAR */}
+    <main className="bg-gray-50 min-h-screen pb-24 md:pb-20">
+      {/* TOP NAV */}
       <div className="bg-white shadow-sm px-4 py-3 flex justify-between items-center">
-        <h1 className="text-lg font-bold text-green-600">
+        <h1 className="text-base sm:text-lg font-bold text-green-600">
           🐦 Bird Marketplace
         </h1>
 
         <div className="flex gap-2 items-center">
           {userEmail ? (
             <>
-              <span className="text-sm text-gray-600 hidden sm:block">
+              <span className="text-sm text-gray-600 hidden md:block">
                 {userEmail}
               </span>
               <button
                 onClick={handleLogout}
-                className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+                className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm"
               >
                 Logout
               </button>
             </>
           ) : (
             <Link href="/login">
-              <button className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm">
+              <button className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm">
                 Login
               </button>
             </Link>
@@ -163,7 +163,7 @@ export default function Home() {
       </div>
 
       {/* HERO */}
-      <div className="relative text-white px-4 py-16 overflow-hidden">
+      <div className="relative text-white px-4 py-10 sm:py-16 overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -172,24 +172,23 @@ export default function Home() {
           }}
         />
         <div className="absolute inset-0 bg-green-900/60" />
+
         <div className="relative max-w-4xl mx-auto text-center">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-2">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-2 leading-tight">
             Buy, Sell & Rehome Birds
           </h2>
-          <p className="mb-6 opacity-90">
+          <p className="text-base sm:text-xl opacity-90 mb-6">
             Australia’s marketplace for bird lovers
           </p>
-          </div>
 
           {/* SEARCH */}
-          <div className="bg-white rounded-xl shadow p-3 flex flex-col sm:flex-row gap-2">
+          <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-4xl mx-auto">
             <input
               type="text"
               placeholder="Search birds..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 p-2 text-black outline-none"
+              className="flex-1 p-3 text-black outline-none rounded-xl bg-gray-50"
             />
 
             <input
@@ -197,18 +196,21 @@ export default function Home() {
               placeholder="Location (e.g. Sydney)"
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
-              className="flex-1 p-2 text-black outline-none"
+              className="flex-1 p-3 text-black outline-none rounded-xl bg-gray-50"
             />
           </div>
 
-          {/* ACTION BUTTONS */}
-          <div className="mt-4 flex gap-2 justify-center flex-wrap">
+          {/* HERO ACTIONS */}
+          <div className="mt-4 flex justify-center">
             <Link href="/create">
-              <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
+              <button className="bg-white text-green-600 px-5 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition">
                 + Post Listing
               </button>
             </Link>
+          </div>
 
+          {/* DESKTOP EXTRA ACTIONS */}
+          <div className="hidden md:flex mt-3 gap-2 justify-center flex-wrap">
             <Link href="/saved-listings">
               <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
                 Saved
@@ -220,6 +222,7 @@ export default function Home() {
                 My Listings
               </button>
             </Link>
+
             <Link href="/messages">
               <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
                 Messages
@@ -230,31 +233,33 @@ export default function Home() {
       </div>
 
       {/* CATEGORIES */}
-<div className="max-w-5xl mx-auto px-4 -mt-12 mb-6">
-  <div className="bg-white rounded-2xl shadow-lg p-5">
-    <h3 className="font-semibold mb-4 text-gray-800">
-      Popular Categories
-    </h3>
+      <div className="max-w-5xl mx-auto px-4 -mt-8 sm:-mt-12 mb-6">
+        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-5">
+          <h3 className="font-semibold mb-4 text-gray-800 text-base sm:text-lg">
+            Popular Categories
+          </h3>
 
-    <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 text-center">
-      {[
-        { name: "Parrots", emoji: "🦜" },
-        { name: "Cockatiels", emoji: "🐦" },
-        { name: "Finches", emoji: "🐤" },
-        { name: "Canaries", emoji: "🐥" },
-        { name: "Supplies", emoji: "🪺" },
-      ].map((cat) => (
-        <div
-          key={cat.name}
-          className="bg-white hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition shadow-sm"
-        >
-          <div className="text-3xl">{cat.emoji}</div>
-          <p className="text-sm mt-2 font-medium text-gray-700">{cat.name}</p>
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-4 text-center">
+            {[
+              { name: "Parrots", emoji: "🦜" },
+              { name: "Cockatiels", emoji: "🐦" },
+              { name: "Finches", emoji: "🐤" },
+              { name: "Canaries", emoji: "🐥" },
+              { name: "Supplies", emoji: "🪺" },
+            ].map((cat) => (
+              <div
+                key={cat.name}
+                className="bg-white hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition shadow-sm"
+              >
+                <div className="text-3xl">{cat.emoji}</div>
+                <p className="text-sm mt-2 font-medium text-gray-700">
+                  {cat.name}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
-      ))}
-    </div>
-  </div>
-</div>
+      </div>
 
       {/* LISTINGS */}
       <div className="max-w-5xl mx-auto px-4 mt-6">
@@ -268,7 +273,7 @@ export default function Home() {
         {filteredListings.length === 0 ? (
           <p className="text-gray-500">No listings found.</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredListings.map((item) => (
               <Link key={item.id} href={`/listing/${item.id}`}>
                 <div className="bg-white rounded-2xl shadow hover:shadow-xl hover:-translate-y-1 transition overflow-hidden cursor-pointer">
@@ -280,7 +285,7 @@ export default function Home() {
                           : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
                       }
                       alt={item.title}
-                      className="h-48 w-full object-cover"
+                      className="h-52 sm:h-48 w-full object-cover"
                     />
 
                     <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
