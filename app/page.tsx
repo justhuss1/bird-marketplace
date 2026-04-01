@@ -201,7 +201,7 @@ export default function Home() {
           </div>
 
           {/* HERO ACTIONS */}
-          <div className="mt-4 flex justify-center">
+          <div className="mt-3 flex justify-center">
             <Link href="/create">
               <button className="bg-white text-green-600 px-5 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition">
                 + Post Listing
@@ -233,7 +233,7 @@ export default function Home() {
       </div>
 
       {/* CATEGORIES */}
-      <div className="max-w-5xl mx-auto px-4 -mt-8 sm:-mt-12 mb-6">
+      <div className="max-w-5xl mx-auto px-4 mt-4 mb-6">
         <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-5">
           <h3 className="font-semibold mb-4 text-gray-800 text-base sm:text-lg">
             Popular Categories
