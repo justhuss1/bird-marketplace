@@ -10,6 +10,7 @@ type Listing = {
   price: string;
   location: string;
   image: string | null;
+  category?: string | null;
 };
 
 export default function Home() {
@@ -18,6 +19,10 @@ export default function Home() {
   const [locationFilter, setLocationFilter] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
     fetchListings();
@@ -119,7 +124,8 @@ export default function Home() {
     }
   };
 
-  const filteredListings = listings.filter((item) => {
+ const filteredListings = listings
+  .filter((item) => {
     const matchesSearch = item.title
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -128,7 +134,38 @@ export default function Home() {
       ?.toLowerCase()
       .includes(locationFilter.toLowerCase());
 
-    return matchesSearch && matchesLocation;
+    const matchesCategory = categoryFilter
+      ? item.category === categoryFilter
+      : true;
+
+    const numericPrice = Number(item.price);
+
+    const matchesMinPrice = minPrice
+      ? numericPrice >= Number(minPrice)
+      : true;
+
+    const matchesMaxPrice = maxPrice
+      ? numericPrice <= Number(maxPrice)
+      : true;
+
+    return (
+      matchesSearch &&
+      matchesLocation &&
+      matchesCategory &&
+      matchesMinPrice &&
+      matchesMaxPrice
+    );
+  })
+  .sort((a, b) => {
+    if (sortBy === "lowest") {
+      return Number(a.price) - Number(b.price);
+    }
+
+    if (sortBy === "highest") {
+      return Number(b.price) - Number(a.price);
+    }
+
+    return 0; // newest already handled by DB order
   });
 
   return (
@@ -200,6 +237,61 @@ export default function Home() {
             />
           </div>
 
+          {/* ADVANCED FILTERS */}
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 max-w-4xl mx-auto">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="p-3 text-black rounded-xl bg-white"
+              >
+                <option value="">All Categories</option>
+                <option value="Parrots">Parrots</option>
+                <option value="Cockatiels">Cockatiels</option>
+                <option value="Finches">Finches</option>
+                <option value="Canaries">Canaries</option>
+                <option value="Supplies">Supplies</option>
+              </select>
+
+              <input
+                type="number"
+                placeholder="Min Price"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                className="p-3 text-black rounded-xl bg-white"
+              />
+
+              <input
+                type="number"
+                placeholder="Max Price"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                className="p-3 text-black rounded-xl bg-white"
+              />
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="p-3 text-black rounded-xl bg-white"
+              >
+                <option value="newest">Newest</option>
+                <option value="lowest">Price: Low to High</option>
+                <option value="highest">Price: High to Low</option>
+              </select>
+            </div>
+
+            <button
+              onClick={() => {
+                setCategoryFilter("");
+                setMinPrice("");
+                setMaxPrice("");
+                setSearchTerm("");
+                setLocationFilter("");
+              }}
+              className="mt-2 text-sm text-white bg-black px-3 py-1 rounded"
+            >
+              Clear Filters
+            </button>
+
           {/* HERO ACTIONS */}
           <div className="mt-3 flex justify-center">
             <Link href="/create">
@@ -248,9 +340,12 @@ export default function Home() {
               { name: "Supplies", emoji: "🪺" },
             ].map((cat) => (
               <div
-                key={cat.name}
-                className="bg-white hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition shadow-sm"
-              >
+                  key={cat.name}
+                  onClick={() => setCategoryFilter(cat.name)}
+                  className={`bg-white hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition shadow-sm ${
+                    categoryFilter === cat.name ? "ring-2 ring-green-500" : ""
+                  }`}
+                >
                 <div className="text-3xl">{cat.emoji}</div>
                 <p className="text-sm mt-2 font-medium text-gray-700">
                   {cat.name}
@@ -319,7 +414,7 @@ export default function Home() {
 
                     <div className="mt-2 flex gap-2 flex-wrap">
                       <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
-                        Bird Listing
+                        {item.category || "Bird Listing"}
                       </span>
                     </div>
                   </div>

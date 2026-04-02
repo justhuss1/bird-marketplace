@@ -16,6 +16,7 @@ export default function CreateListingPage() {
   const [description, setDescription] = useState("");
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [category, setCategory] = useState("");
 
   useEffect(() => {
     checkUser();
@@ -107,6 +108,7 @@ export default function CreateListingPage() {
         title,
         price,
         location,
+        category,
         image: images[0] || image,
         images,
         description,
@@ -125,6 +127,7 @@ export default function CreateListingPage() {
     setTitle("");
     setPrice("");
     setLocation("");
+    setCategory("");
     setImage("");
     setImages([]);
     setDescription("");
@@ -216,6 +219,26 @@ export default function CreateListingPage() {
                 className="w-full border border-gray-300 rounded-xl p-3 text-black outline-none focus:ring-2 focus:ring-green-500"
                 required
               />
+            </div>
+
+            {/* CATEGORY */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full border border-gray-300 rounded-xl p-3 text-black outline-none focus:ring-2 focus:ring-green-500"
+                required
+              >
+                <option value="">Select a category</option>
+                <option value="Parrots">Parrots</option>
+                <option value="Cockatiels">Cockatiels</option>
+                <option value="Finches">Finches</option>
+                <option value="Canaries">Canaries</option>
+                <option value="Supplies">Supplies</option>
+              </select>
             </div>
 
             {/* PRICE + LOCATION */}

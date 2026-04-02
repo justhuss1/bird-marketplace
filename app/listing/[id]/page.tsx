@@ -329,20 +329,20 @@ export default function ListingPage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow hover:shadow-md transition p-6">
+          <div
+            onClick={() => listing && router.push(`/seller/${listing.user_id}`)}
+            className="bg-white rounded-2xl shadow hover:shadow-md transition p-6 cursor-pointer"
+          >
             <h2 className="text-lg font-semibold mb-4">Seller Info</h2>
 
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-lg font-bold text-green-700">
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-lg font-bold text-green-700">
-                  {seller?.username?.charAt(0).toUpperCase() || "U"}
-                </div>
+                {seller?.username?.charAt(0).toUpperCase() || "U"}
               </div>
               <div>
                 <p className="font-medium text-gray-800">
                   {seller?.username || "User"}
                 </p>
-
                 <p className="text-sm text-gray-500">
                   Member since{" "}
                   {seller?.created_at
@@ -355,7 +355,7 @@ export default function ListingPage() {
             <div className="mt-4 text-sm text-gray-600 space-y-2">
               <p>✅ Safe in-app messaging</p>
               <p>✅ Listing protected by account login</p>
-              <p>✅ Secure marketplace experience</p>
+              <p>✅ View seller profile</p>
             </div>
           </div>
         </div>
