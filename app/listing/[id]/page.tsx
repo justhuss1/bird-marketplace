@@ -10,8 +10,35 @@ type Listing = {
   price: string;
   location: string;
   image: string | null;
+  images?: string[] | null;
   description: string;
   user_id: string;
+};
+
+const normalizeImages = (
+  images: unknown,
+  fallbackImage?: string | null
+): string[] => {
+  if (Array.isArray(images)) {
+    return images.filter(
+      (img): img is string => typeof img === "string" && img.trim() !== ""
+    );
+  }
+
+  if (typeof images === "string" && images.trim() !== "") {
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (img): img is string => typeof img === "string" && img.trim() !== ""
+        );
+      }
+    } catch {
+      return [images];
+    }
+  }
+
+  return fallbackImage ? [fallbackImage] : [];
 };
 
 export default function ListingPage() {
@@ -21,6 +48,8 @@ export default function ListingPage() {
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [seller, setSeller] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -42,6 +71,18 @@ export default function ListingPage() {
     }
 
     setListing(data);
+
+      // 🔥 Fetch seller profile
+      const { data: sellerData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", data.user_id)
+        .single();
+
+      setSeller(sellerData);
+
+    const galleryImages = normalizeImages(data.images, data.image);
+    setSelectedImage(galleryImages[0] || "");
   };
 
   const checkIfSaved = async () => {
@@ -172,8 +213,11 @@ export default function ListingPage() {
     return <main className="p-4">Loading...</main>;
   }
 
+  const galleryImages = normalizeImages(listing.images, listing.image);
+  console.log("galleryImages", galleryImages);
+
   return (
-    <main className="bg-gray-50 min-h-screen py-8">
+    <main className="bg-gray-50 min-h-screen py-8 pb-24">
       <div className="max-w-5xl mx-auto px-4">
         <button
           onClick={() => router.back()}
@@ -188,9 +232,8 @@ export default function ListingPage() {
           <div className="bg-white rounded-2xl shadow overflow-hidden relative">
             <img
               src={
-                listing.image && listing.image !== ""
-                  ? listing.image
-                  : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1200"
+                selectedImage ||
+                "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1200"
               }
               alt={listing.title}
               className="w-full h-[420px] object-cover"
@@ -211,6 +254,31 @@ export default function ListingPage() {
               {isSaved ? "♥ Saved" : "♡ Save"}
             </button>
           </div>
+
+          {galleryImages.length > 1 && (
+            <div className="bg-white rounded-2xl shadow p-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {galleryImages.map((img, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => setSelectedImage(img)}
+                    className={`rounded-xl overflow-hidden border-2 transition ${
+                      selectedImage === img
+                        ? "border-green-600"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-24 object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl shadow p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -266,11 +334,21 @@ export default function ListingPage() {
 
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-lg font-bold text-green-700">
-                S
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-lg font-bold text-green-700">
+                  {seller?.username?.charAt(0).toUpperCase() || "U"}
+                </div>
               </div>
               <div>
-                <p className="font-medium text-gray-800">Seller</p>
-                <p className="text-sm text-gray-500">Verified account</p>
+                <p className="font-medium text-gray-800">
+                  {seller?.username || "User"}
+                </p>
+
+                <p className="text-sm text-gray-500">
+                  Member since{" "}
+                  {seller?.created_at
+                    ? new Date(seller.created_at).toLocaleDateString()
+                    : "recently"}
+                </p>
               </div>
             </div>
 

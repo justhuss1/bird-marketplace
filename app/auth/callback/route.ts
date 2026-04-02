@@ -11,7 +11,29 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    await supabase.auth.exchangeCodeForSession(code);
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error && session?.user) {
+      const user = session.user;
+
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        await supabase.from("profiles").insert([
+          {
+            id: user.id,
+            username: user.email?.split("@")[0] || "User",
+          },
+        ]);
+      }
+    }
   }
 
   return NextResponse.redirect(`${origin}/`);
