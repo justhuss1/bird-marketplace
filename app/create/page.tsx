@@ -12,6 +12,7 @@ export default function CreateListingPage() {
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
   const [image, setImage] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -36,34 +37,42 @@ export default function CreateListingPage() {
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "bird_marketplace_upload");
-
     try {
       const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const uploadedUrls: string[] = [];
 
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "bird_marketplace_upload");
+
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const data = await res.json();
+
+        if (data.secure_url) {
+          uploadedUrls.push(data.secure_url);
         }
-      );
+      }
 
-      const data = await res.json();
-
-      if (!data.secure_url) {
+      if (uploadedUrls.length === 0) {
         alert("Image upload failed.");
         return;
       }
 
-      setImage(data.secure_url);
+      setImages(uploadedUrls);
+      setImage(uploadedUrls[0]);
     } catch (error) {
       console.error(error);
       alert("Image upload failed.");
@@ -75,8 +84,8 @@ export default function CreateListingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!image) {
-      alert("Please upload an image first.");
+    if (images.length === 0 && !image) {
+      alert("Please upload at least one image first.");
       return;
     }
 
@@ -98,7 +107,8 @@ export default function CreateListingPage() {
         title,
         price,
         location,
-        image,
+        image: images[0] || image,
+        images,
         description,
         user_id: user.id,
       },
@@ -112,6 +122,12 @@ export default function CreateListingPage() {
     }
 
     alert("Listing created!");
+    setTitle("");
+    setPrice("");
+    setLocation("");
+    setImage("");
+    setImages([]);
+    setDescription("");
     router.push("/my-listings");
   };
 
@@ -120,7 +136,7 @@ export default function CreateListingPage() {
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen py-8 px-4">
+    <main className="bg-gray-50 min-h-screen py-8 px-4 pb-24">
       <div className="max-w-3xl mx-auto">
         <button
           onClick={() => router.back()}
@@ -143,18 +159,17 @@ export default function CreateListingPage() {
             {/* IMAGE UPLOAD */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Listing Photo
+                Listing Photos
               </label>
 
               <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 bg-gray-50 text-center hover:border-green-500 transition">
-                
-                {!image && (
+                {images.length === 0 && (
                   <>
                     <p className="text-gray-500 text-sm mb-2">
                       Click to upload or drag & drop
                     </p>
                     <p className="text-xs text-gray-400">
-                      PNG, JPG up to 5MB
+                      PNG, JPG up to 5MB. You can select multiple images.
                     </p>
                   </>
                 )}
@@ -162,23 +177,27 @@ export default function CreateListingPage() {
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleImageUpload}
                   className="w-full mt-3 text-sm text-gray-600"
                 />
 
                 {uploading && (
                   <p className="text-sm text-gray-500 mt-3">
-                    Uploading image...
+                    Uploading images...
                   </p>
                 )}
 
-                {image && (
-                  <div className="mt-4">
-                    <img
-                      src={image}
-                      alt="Preview"
-                      className="w-full h-64 object-cover rounded-xl"
-                    />
+                {images.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {images.map((img, index) => (
+                      <img
+                        key={index}
+                        src={img}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-xl"
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -238,11 +257,9 @@ export default function CreateListingPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description
               </label>
-
               <p className="text-xs text-gray-400 mb-2">
                 Include age, temperament, and pickup details.
               </p>
-
               <textarea
                 placeholder="Describe the bird, age, temperament, condition, pickup details, etc."
                 value={description}
@@ -256,7 +273,7 @@ export default function CreateListingPage() {
             {/* SUBMIT */}
             <button
               type="submit"
-              disabled={uploading || submitting || !image}
+              disabled={uploading || submitting || images.length === 0}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-50"
             >
               {uploading
