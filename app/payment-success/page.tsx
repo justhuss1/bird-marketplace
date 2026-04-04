@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function PaymentSuccess() {
+function PaymentSuccessContent() {
   const params = useSearchParams();
   const router = useRouter();
 
@@ -36,11 +36,25 @@ export default function PaymentSuccess() {
     };
 
     updateListing();
-  }, [type, listingId]);
+  }, [type, listingId, router]);
 
   return (
     <main className="p-6 text-center">
       <h1 className="text-xl font-bold">Processing payment...</h1>
     </main>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="p-6 text-center">
+          <h1 className="text-xl font-bold">Loading payment details...</h1>
+        </main>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
