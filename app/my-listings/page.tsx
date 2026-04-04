@@ -52,6 +52,19 @@ export default function MyListingsPage() {
     setLoading(false);
   };
 
+  const handleCheckout = async (type: "feature" | "boost", id: string) => {
+  const res = await fetch("/api/checkout", {
+    method: "POST",
+    body: JSON.stringify({ type, listingId: id }),
+  });
+
+  const data = await res.json();
+
+  if (data.url) {
+    window.location.href = data.url;
+  }
+};
+
   const handleDelete = async (id: string) => {
     const confirmed = window.confirm("Are you sure you want to delete this listing?");
     if (!confirmed) return;
@@ -84,6 +97,39 @@ export default function MyListingsPage() {
   if (loading) {
     return <main className="p-4">Loading your listings...</main>;
   }
+
+  const handleFeature = async (id: string) => {
+  const { error } = await supabase
+    .from("listings")
+    .update({ is_featured: true })
+    .eq("id", id);
+
+  if (error) {
+    alert("Failed to feature listing");
+    return;
+  }
+
+  alert("Listing is now featured ⭐");
+  fetchMyListings();
+};
+
+const handleBoost = async (id: string) => {
+  const boostExpiry = new Date();
+  boostExpiry.setDate(boostExpiry.getDate() + 7); // 7-day boost
+
+  const { error } = await supabase
+    .from("listings")
+    .update({ boost_until: boostExpiry.toISOString() })
+    .eq("id", id);
+
+  if (error) {
+    alert("Failed to boost listing");
+    return;
+  }
+
+  alert("Listing boosted for 7 days 🚀");
+  fetchMyListings();
+};
 
   return (
     <main className="bg-gray-50 min-h-screen py-8 px-4">
@@ -176,6 +222,20 @@ export default function MyListingsPage() {
                         Edit
                       </button>
                     </Link>
+
+                    <button
+                      onClick={() => handleCheckout("feature", item.id)}
+                      className="bg-yellow-400 text-black px-3 py-1 rounded-lg text-sm mr-2"
+                    >
+                      ⭐ Feature
+                    </button>
+
+                    <button
+                      onClick={() => handleCheckout("boost", item.id)}
+                      className="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm mr-2"
+                    >
+                      🚀 Boost
+                    </button>
 
                     <button
                       type="button"

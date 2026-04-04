@@ -40,48 +40,75 @@ export default function EditListingPage() {
   };
 
   const fetchListing = async () => {
-    const { data, error } = await supabase
-      .from("listings")
-      .select("*")
-      .eq("id", id)
-      .single();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error(error);
-      alert("Failed to load listing");
-      return;
-    }
+  if (!user) {
+    router.push("/login");
+    return;
+  }
 
-    setTitle(data.title || "");
-    setPrice(data.price || "");
-    setLocation(data.location || "");
-    setImage(data.image || "");
-    setDescription(data.description || "");
-  };
+  const { data, error } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) {
+    console.error(error);
+    alert("Listing not found");
+    router.push("/my-listings");
+    return;
+  }
+
+  if (data.user_id !== user.id) {
+    alert("You are not allowed to edit this listing.");
+    router.push("/my-listings");
+    return;
+  }
+
+  setTitle(data.title || "");
+  setPrice(data.price || "");
+  setLocation(data.location || "");
+  setImage(data.image || "");
+  setDescription(data.description || "");
+};
 
   const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const { error } = await supabase
-      .from("listings")
-      .update({
-        title,
-        price,
-        location,
-        image,
-        description,
-      })
-      .eq("id", id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error(error);
-      alert("Failed to update listing");
-      return;
-    }
+  if (!user) {
+    alert("You must be logged in.");
+    router.push("/login");
+    return;
+  }
 
-    alert("Listing updated!");
-    router.push("/my-listings");
-  };
+  const { error } = await supabase
+    .from("listings")
+    .update({
+      title,
+      price,
+      location,
+      image,
+      description,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error(error);
+    alert("Failed to update listing");
+    return;
+  }
+
+  alert("Listing updated!");
+  router.push("/my-listings");
+};
 
   if (checkingAuth) {
     return <main className="p-4">Checking login...</main>;

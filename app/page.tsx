@@ -11,6 +11,8 @@ type Listing = {
   location: string;
   image: string | null;
   category?: string | null;
+  is_featured?: boolean | null;
+  boost_until?: string | null;
 };
 
 export default function Home() {
@@ -36,7 +38,11 @@ export default function Home() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!error) setListings(data || []);
+    if (!error) {
+      setListings(data || []);
+    } else {
+      console.error(error);
+    }
   };
 
   const getCurrentUser = async () => {
@@ -73,6 +79,7 @@ export default function Home() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUserEmail("");
+    setSavedListingIds([]);
   };
 
   const handleToggleSave = async (
@@ -124,49 +131,82 @@ export default function Home() {
     }
   };
 
- const filteredListings = listings
-  .filter((item) => {
-    const matchesSearch = item.title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+  const clearFilters = () => {
+    setCategoryFilter("");
+    setMinPrice("");
+    setMaxPrice("");
+    setSearchTerm("");
+    setLocationFilter("");
+    setSortBy("newest");
+  };
 
-    const matchesLocation = item.location
-      ?.toLowerCase()
-      .includes(locationFilter.toLowerCase());
+  const hasActiveFilters =
+    !!categoryFilter ||
+    !!minPrice ||
+    !!maxPrice ||
+    !!searchTerm ||
+    !!locationFilter ||
+    sortBy !== "newest";
 
-    const matchesCategory = categoryFilter
-      ? item.category === categoryFilter
-      : true;
+  const filteredListings = listings
+    .filter((item) => {
+      const matchesSearch = item.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
-    const numericPrice = Number(item.price);
+      const matchesLocation = item.location
+        ?.toLowerCase()
+        .includes(locationFilter.toLowerCase());
 
-    const matchesMinPrice = minPrice
-      ? numericPrice >= Number(minPrice)
-      : true;
+      const matchesCategory = categoryFilter
+        ? item.category === categoryFilter
+        : true;
 
-    const matchesMaxPrice = maxPrice
-      ? numericPrice <= Number(maxPrice)
-      : true;
+      const numericPrice = Number(item.price || 0);
 
-    return (
-      matchesSearch &&
-      matchesLocation &&
-      matchesCategory &&
-      matchesMinPrice &&
-      matchesMaxPrice
-    );
-  })
-  .sort((a, b) => {
-    if (sortBy === "lowest") {
-      return Number(a.price) - Number(b.price);
-    }
+      const matchesMinPrice = minPrice
+        ? numericPrice >= Number(minPrice)
+        : true;
 
-    if (sortBy === "highest") {
-      return Number(b.price) - Number(a.price);
-    }
+      const matchesMaxPrice = maxPrice
+        ? numericPrice <= Number(maxPrice)
+        : true;
 
-    return 0; // newest already handled by DB order
-  });
+      return (
+        matchesSearch &&
+        matchesLocation &&
+        matchesCategory &&
+        matchesMinPrice &&
+        matchesMaxPrice
+      );
+    })
+    .sort((a, b) => {
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+
+      const now = new Date();
+
+      const aBoost = a.boost_until
+        ? new Date(a.boost_until).getTime() > now.getTime()
+        : false;
+
+      const bBoost = b.boost_until
+        ? new Date(b.boost_until).getTime() > now.getTime()
+        : false;
+
+      if (aBoost && !bBoost) return -1;
+      if (!aBoost && bBoost) return 1;
+
+      if (sortBy === "lowest") {
+        return Number(a.price || 0) - Number(b.price || 0);
+      }
+
+      if (sortBy === "highest") {
+        return Number(b.price || 0) - Number(a.price || 0);
+      }
+
+      return 0;
+    });
 
   return (
     <main className="bg-gray-50 min-h-screen pb-24 md:pb-20">
@@ -238,59 +278,57 @@ export default function Home() {
           </div>
 
           {/* ADVANCED FILTERS */}
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 max-w-4xl mx-auto">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="p-3 text-black rounded-xl bg-white"
-              >
-                <option value="">All Categories</option>
-                <option value="Parrots">Parrots</option>
-                <option value="Cockatiels">Cockatiels</option>
-                <option value="Finches">Finches</option>
-                <option value="Canaries">Canaries</option>
-                <option value="Supplies">Supplies</option>
-              </select>
-
-              <input
-                type="number"
-                placeholder="Min Price"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                className="p-3 text-black rounded-xl bg-white"
-              />
-
-              <input
-                type="number"
-                placeholder="Max Price"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                className="p-3 text-black rounded-xl bg-white"
-              />
-
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="p-3 text-black rounded-xl bg-white"
-              >
-                <option value="newest">Newest</option>
-                <option value="lowest">Price: Low to High</option>
-                <option value="highest">Price: High to Low</option>
-              </select>
-            </div>
-
-            <button
-              onClick={() => {
-                setCategoryFilter("");
-                setMinPrice("");
-                setMaxPrice("");
-                setSearchTerm("");
-                setLocationFilter("");
-              }}
-              className="mt-2 text-sm text-white bg-black px-3 py-1 rounded"
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 max-w-4xl mx-auto">
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="p-3 text-black rounded-xl bg-white"
             >
-              Clear Filters
-            </button>
+              <option value="">All Categories</option>
+              <option value="Parrots">Parrots</option>
+              <option value="Cockatiels">Cockatiels</option>
+              <option value="Finches">Finches</option>
+              <option value="Canaries">Canaries</option>
+              <option value="Supplies">Supplies</option>
+            </select>
+
+            <input
+              type="number"
+              placeholder="Min Price"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="p-3 text-black rounded-xl bg-white"
+            />
+
+            <input
+              type="number"
+              placeholder="Max Price"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="p-3 text-black rounded-xl bg-white"
+            />
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="p-3 text-black rounded-xl bg-white"
+            >
+              <option value="newest">Newest</option>
+              <option value="lowest">Price: Low to High</option>
+              <option value="highest">Price: High to Low</option>
+            </select>
+          </div>
+
+          {hasActiveFilters && (
+            <div className="max-w-4xl mx-auto mt-2 flex justify-end">
+              <button
+                onClick={clearFilters}
+                className="text-sm text-white bg-black px-3 py-1 rounded"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
 
           {/* HERO ACTIONS */}
           <div className="mt-3 flex justify-center">
@@ -340,12 +378,12 @@ export default function Home() {
               { name: "Supplies", emoji: "🪺" },
             ].map((cat) => (
               <div
-                  key={cat.name}
-                  onClick={() => setCategoryFilter(cat.name)}
-                  className={`bg-white hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition shadow-sm ${
-                    categoryFilter === cat.name ? "ring-2 ring-green-500" : ""
-                  }`}
-                >
+                key={cat.name}
+                onClick={() => setCategoryFilter(cat.name)}
+                className={`bg-white hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition shadow-sm ${
+                  categoryFilter === cat.name ? "ring-2 ring-green-500" : ""
+                }`}
+              >
                 <div className="text-3xl">{cat.emoji}</div>
                 <p className="text-sm mt-2 font-medium text-gray-700">
                   {cat.name}
@@ -383,9 +421,22 @@ export default function Home() {
                       className="h-52 sm:h-48 w-full object-cover"
                     />
 
-                    <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                      New
-                    </div>
+                    {item.is_featured ? (
+                      <div className="absolute top-2 left-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded">
+                        ⭐ Featured
+                      </div>
+                    ) : (
+                      <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                        New
+                      </div>
+                    )}
+
+                    {item.boost_until &&
+                      new Date(item.boost_until) > new Date() && (
+                        <div className="absolute top-2 left-24 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                          🚀 Boosted
+                        </div>
+                      )}
 
                     <button
                       onClick={(e) => handleToggleSave(e, item.id)}

@@ -5,21 +5,23 @@ import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: "http://localhost:3000",
-    },
-  });
+    setLoading(true);
 
-  if (error) {
-    alert(error.message);
-  } else {
-    alert("Check your email for login link!");
-  }
-};
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+    });
+
+    if (error) {
+      alert(error.message);
+    } else {
+      alert("Check your email for login link!");
+    }
+
+    setLoading(false);
+  };
 
   return (
     <main className="p-4 max-w-md mx-auto">
@@ -35,9 +37,10 @@ export default function LoginPage() {
 
       <button
         onClick={handleLogin}
-        className="w-full bg-green-600 text-white p-3 rounded"
+        disabled={loading}
+        className="w-full bg-green-600 text-white p-3 rounded disabled:opacity-50"
       >
-        Send Login Link
+        {loading ? "Sending..." : "Send Login Link"}
       </button>
     </main>
   );
