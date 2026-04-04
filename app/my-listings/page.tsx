@@ -13,6 +13,8 @@ type Listing = {
   image: string | null;
   description: string;
   user_id: string;
+  is_featured?: boolean | null;
+  boost_until?: string | null;
 };
 
 export default function MyListingsPage() {
@@ -62,6 +64,8 @@ export default function MyListingsPage() {
 
   if (data.url) {
     window.location.href = data.url;
+  } else {
+    alert("Failed to start checkout");
   }
 };
 
@@ -216,33 +220,49 @@ const handleBoost = async (id: string) => {
                     {item.description || "No description provided."}
                   </p>
 
-                  <div className="mt-4 flex gap-2">
-                    <Link href={`/edit/${item.id}`} className="flex-1">
+                  <div className="mt-3 flex gap-2 flex-wrap">
+                    {item.is_featured && (
+                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                        ⭐ Featured
+                      </span>
+                    )}
+
+                    {item.boost_until && new Date(item.boost_until) > new Date() && (
+                      <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                        🚀 Boosted
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <Link href={`/edit/${item.id}`}>
                       <button className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition">
                         Edit
                       </button>
                     </Link>
 
                     <button
+                      type="button"
+                      onClick={() => handleDelete(item.id)}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
+                    >
+                      Delete
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => handleCheckout("feature", item.id)}
-                      className="bg-yellow-400 text-black px-3 py-1 rounded-lg text-sm mr-2"
+                      className="w-full bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2.5 rounded-xl text-sm font-medium transition"
                     >
                       ⭐ Feature
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => handleCheckout("boost", item.id)}
-                      className="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm mr-2"
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
                     >
                       🚀 Boost
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(item.id)}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
-                    >
-                      Delete
                     </button>
                   </div>
                 </div>
