@@ -89,8 +89,8 @@ export default function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-md md:hidden">
-      <div className="grid grid-cols-5">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur border-t md:hidden">
+      <div className="flex justify-around items-center py-2">
         {navItems.map((item) => {
           const isActive =
             item.href === "/"
@@ -103,21 +103,29 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center py-2 text-xs transition relative ${
-                isActive ? "text-green-600 font-semibold" : "text-gray-500"
-              }`}
+              className="flex flex-col items-center text-[10px] gap-1 relative"
             >
-              <div className="relative">
-                <span className="text-lg">{item.icon}</span>
+              <div
+                className={`relative transition ${
+                  isActive ? "text-green-600" : "text-gray-400"
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
 
                 {isNotifications && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
+                  <span className="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
               </div>
 
-              <span className="mt-1">{item.label}</span>
+              <span
+                className={`${
+                  isActive ? "text-green-600 font-medium" : "text-gray-400"
+                }`}
+              >
+                {item.label}
+              </span>
             </Link>
           );
         })}
