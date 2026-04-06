@@ -429,7 +429,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="p-3">
+                  <div className="p-4">
                     <h2 className="font-semibold text-sm text-gray-800 truncate">
                       {item.title}
                     </h2>
@@ -464,7 +464,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredListings.map((item) => (
               <Link key={item.id} href={`/listing/${item.id}`}>
-                <div className="bg-white rounded-2xl shadow hover:shadow-xl hover:scale-[1.02] transition overflow-hidden cursor-pointer">
+                <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
                   <div className="relative">
                     <img
                       src={
@@ -473,7 +473,7 @@ export default function Home() {
                           : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
                       }
                       alt={item.title}
-                      className="h-52 sm:h-48 w-full object-cover"
+                      className="h-52 sm:h-48 w-full object-cover group-hover:scale-105 transition duration-500"
                     />
 
                     {item.is_featured ? (
@@ -481,7 +481,7 @@ export default function Home() {
                         ⭐ Featured
                       </div>
                     ) : (
-                      <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                      <div className="absolute top-2 left-2 bg-white/90 backdrop-blur text-gray-800 text-xs px-2 py-1 rounded-full shadow">
                         New
                       </div>
                     )}
@@ -495,26 +495,26 @@ export default function Home() {
 
                     <button
                       onClick={(e) => handleToggleSave(e, item.id)}
-                      className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full font-semibold ${
+                      className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full font-medium shadow ${
                         savedListingIds.includes(item.id)
                           ? "bg-red-500 text-white"
-                          : "bg-white/90 text-gray-800"
+                          : "bg-white/90 backdrop-blur text-gray-800"
                       }`}
                     >
                       {savedListingIds.includes(item.id) ? "♥ Saved" : "♡ Save"}
                     </button>
                   </div>
 
-                  <div className="p-3">
-                    <h2 className="font-semibold text-base truncate text-gray-800">
+                  <div className="p-4">
+                    <h2 className="font-medium text-[15px] text-gray-900 line-clamp-1">
                       {item.title}
                     </h2>
 
-                    <p className="text-green-600 font-bold text-lg mt-1">
+                    <p className="text-green-600 font-semibold text-lg mt-1">
                       ${item.price}
                     </p>
 
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       📍 {item.location}
                     </p>
 
