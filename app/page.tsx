@@ -395,28 +395,33 @@ export default function Home() {
       {/* FEATURED LISTINGS */}
       {featuredListings.length > 0 && (
         <div className="max-w-6xl mx-auto px-4 mt-6 mb-10">
-          <div className="bg-gradient-to-r from-yellow-50 to-white border border-yellow-100 rounded-3xl p-4 sm:p-5 shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-yellow-500 text-xl">★</span>
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Featured Listings
-                </h3>
-              </div>
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-yellow-500 text-lg">★</span>
+              <h3 className="text-base font-semibold text-gray-800">
+                Featured Listings
+              </h3>
             </div>
+
+            <span className="text-xs text-gray-400 hidden sm:block">
+              Promoted listings
+            </span>
           </div>
 
+          <p className="text-xs text-gray-400 mb-2 text-right pr-1">
+            Swipe →
+          </p>
           <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
             {featuredListings.map((item) => (
               <Link key={item.id} href={`/listing/${item.id}`}>
-                <div className="min-w-[260px] bg-white rounded-2xl shadow-md hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
+                <div className="min-w-[300px] bg-white rounded-2xl shadow-md hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
                   <div className="relative">
                     <img
                       src={
                         item.image ||
                         "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
                       }
-                      className="h-44 w-full object-cover"
+                      className="h-52 w-full object-cover"
                     />
 
                     <div className="absolute top-2 left-2 bg-yellow-400 text-black text-xs px-3 py-1 rounded-full font-semibold shadow">
@@ -459,7 +464,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredListings.map((item) => (
               <Link key={item.id} href={`/listing/${item.id}`}>
-                <div className="bg-white rounded-2xl shadow hover:shadow-xl hover:-translate-y-1 transition overflow-hidden cursor-pointer">
+                <div className="bg-white rounded-2xl shadow hover:shadow-xl hover:scale-[1.02] transition overflow-hidden cursor-pointer">
                   <div className="relative">
                     <img
                       src={
