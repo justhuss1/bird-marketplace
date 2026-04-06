@@ -366,34 +366,28 @@ export default function Home() {
       </div>
 
       {/* CATEGORIES */}
-      <div className="max-w-5xl mx-auto px-4 mt-4 mb-6">
-        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-5">
-          <h3 className="font-semibold mb-4 text-gray-800 text-base sm:text-lg">
-            Popular Categories
-          </h3>
-
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-4 text-center">
-            {[
-              { name: "Parrots", emoji: "🦜" },
-              { name: "Cockatiels", emoji: "🐦" },
-              { name: "Finches", emoji: "🐤" },
-              { name: "Canaries", emoji: "🐥" },
-              { name: "Supplies", emoji: "🪺" },
-            ].map((cat) => (
-              <div
-                key={cat.name}
-                onClick={() => setCategoryFilter(cat.name)}
-                className={`bg-white hover:bg-green-50 border rounded-xl p-4 cursor-pointer transition shadow-sm ${
-                  categoryFilter === cat.name ? "ring-2 ring-green-500" : ""
-                }`}
-              >
-                <div className="text-3xl">{cat.emoji}</div>
-                <p className="text-sm mt-2 font-medium text-gray-700">
-                  {cat.name}
-                </p>
-              </div>
-            ))}
-          </div>
+      <div className="max-w-6xl mx-auto px-4 -mt-10 mb-8 relative z-10">
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          {[
+            { name: "Parrots", emoji: "🦜" },
+            { name: "Cockatiels", emoji: "🐦" },
+            { name: "Finches", emoji: "🐤" },
+            { name: "Canaries", emoji: "🐥" },
+            { name: "Supplies", emoji: "🪺" },
+          ].map((cat) => (
+            <button
+              key={cat.name}
+              onClick={() => setCategoryFilter(cat.name)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap border transition ${
+                categoryFilter === cat.name
+                  ? "bg-green-600 text-white border-green-600 shadow-md"
+                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              <span className="text-lg">{cat.emoji}</span>
+              <span className="text-sm font-medium">{cat.name}</span>
+            </button>
+          ))}
         </div>
       </div>
 
