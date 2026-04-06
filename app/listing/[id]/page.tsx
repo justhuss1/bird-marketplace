@@ -50,6 +50,7 @@ export default function ListingPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
   const [seller, setSeller] = useState<any>(null);
+  const [sellerListingCount, setSellerListingCount] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -71,6 +72,7 @@ export default function ListingPage() {
     }
 
     setListing(data);
+    fetchSellerStats(data.user_id);
 
       // 🔥 Fetch seller profile
       const { data: sellerData } = await supabase
@@ -104,6 +106,20 @@ export default function ListingPage() {
     } else {
       setIsSaved(false);
     }
+  };
+
+  const fetchSellerStats = async (sellerId: string) => {
+    const { count, error } = await supabase
+      .from("listings")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", sellerId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setSellerListingCount(count || 0);
   };
 
   const handleToggleSave = async () => {
@@ -329,7 +345,7 @@ export default function ListingPage() {
             </p>
           </div>
 
-          <div
+         <div
             onClick={() => listing && router.push(`/seller/${listing.user_id}`)}
             className="bg-white rounded-2xl shadow hover:shadow-md transition p-6 cursor-pointer"
           >
@@ -353,9 +369,9 @@ export default function ListingPage() {
             </div>
 
             <div className="mt-4 text-sm text-gray-600 space-y-2">
+              <p>📦 {sellerListingCount} active listing{sellerListingCount === 1 ? "" : "s"}</p>
               <p>✅ Safe in-app messaging</p>
-              <p>✅ Listing protected by account login</p>
-              <p>✅ View seller profile</p>
+              <p>👤 View seller profile</p>
             </div>
           </div>
         </div>

@@ -2,31 +2,37 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // 🔥 important
-);
-
 export async function POST(req: Request) {
-  const body = await req.text();
-  const signature = req.headers.get("stripe-signature")!;
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  let event;
+  if (!stripeKey || !webhookSecret || !supabaseUrl || !serviceRoleKey) {
+    return new Response("Missing required environment variables", {
+      status: 500,
+    });
+  }
+
+  const stripe = new Stripe(stripeKey);
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  const body = await req.text();
+  const signature = req.headers.get("stripe-signature");
+
+  if (!signature) {
+    return new Response("Missing stripe-signature header", { status: 400 });
+  }
+
+  let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
-    console.error("Webhook signature failed");
+    console.error("Webhook signature verification failed:", err);
     return new Response("Webhook Error", { status: 400 });
   }
 
-  // 🎯 Handle successful payment
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 

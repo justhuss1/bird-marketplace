@@ -1,60 +1,34 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-
-function PaymentSuccessContent() {
-  const params = useSearchParams();
-  const router = useRouter();
-
-  const type = params.get("type");
-  const listingId = params.get("listingId");
-
-  useEffect(() => {
-    if (!type || !listingId) return;
-
-    const updateListing = async () => {
-      if (type === "feature") {
-        await supabase
-          .from("listings")
-          .update({ is_featured: true })
-          .eq("id", listingId);
-      }
-
-      if (type === "boost") {
-        const boostExpiry = new Date();
-        boostExpiry.setDate(boostExpiry.getDate() + 7);
-
-        await supabase
-          .from("listings")
-          .update({ boost_until: boostExpiry.toISOString() })
-          .eq("id", listingId);
-      }
-
-      router.push("/my-listings");
-    };
-
-    updateListing();
-  }, [type, listingId, router]);
-
-  return (
-    <main className="p-6 text-center">
-      <h1 className="text-xl font-bold">Processing payment...</h1>
-    </main>
-  );
-}
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function PaymentSuccessPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push("/my-listings");
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [router]);
+
   return (
-    <Suspense
-      fallback={
-        <main className="p-6 text-center">
-          <h1 className="text-xl font-bold">Loading payment details...</h1>
-        </main>
-      }
-    >
-      <PaymentSuccessContent />
-    </Suspense>
+    <main className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white rounded-2xl shadow p-8 text-center max-w-md">
+        <h1 className="text-2xl font-bold text-green-600 mb-3">
+          ✅ Payment Successful
+        </h1>
+
+        <p className="text-gray-600 mb-4">
+          Your listing is being updated. This will take a few seconds.
+        </p>
+
+        <div className="animate-pulse text-sm text-gray-400">
+          Redirecting...
+        </div>
+      </div>
+    </main>
   );
 }

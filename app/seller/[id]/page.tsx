@@ -17,9 +17,10 @@ type Listing = {
   price: string;
   location: string;
   image: string | null;
-  images?: string[] | null;
   description: string;
   user_id: string;
+  is_featured?: boolean | null;
+  boost_until?: string | null;
 };
 
 export default function SellerPage() {
@@ -76,14 +77,16 @@ export default function SellerPage() {
 
   if (!profile) {
     return (
-      <main className="p-4">
-        <button
-          onClick={() => router.back()}
-          className="mb-4 text-sm text-gray-600 hover:text-black transition"
-        >
-          ← Back
-        </button>
-        <p>Seller not found.</p>
+      <main className="bg-gray-50 min-h-screen py-8 px-4 pb-24">
+        <div className="max-w-6xl mx-auto">
+          <button
+            onClick={() => router.back()}
+            className="mb-4 text-sm text-gray-600 hover:text-black transition"
+          >
+            ← Back
+          </button>
+          <p>Seller not found.</p>
+        </div>
       </main>
     );
   }
@@ -136,15 +139,23 @@ export default function SellerPage() {
             {listings.map((listing) => (
               <Link key={listing.id} href={`/listing/${listing.id}`}>
                 <div className="bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden cursor-pointer">
-                  <img
-                    src={
-                      listing.image && listing.image !== ""
-                        ? listing.image
-                        : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
-                    }
-                    alt={listing.title}
-                    className="w-full h-52 object-cover"
-                  />
+                  <div className="relative">
+                    <img
+                      src={
+                        listing.image && listing.image !== ""
+                          ? listing.image
+                          : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
+                      }
+                      alt={listing.title}
+                      className="w-full h-52 object-cover"
+                    />
+
+                    {listing.is_featured && (
+                      <div className="absolute top-2 left-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded">
+                        ⭐ Featured
+                      </div>
+                    )}
+                  </div>
 
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-900 truncate">

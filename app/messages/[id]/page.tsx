@@ -12,12 +12,20 @@ type Message = {
   created_at: string;
 };
 
+type Conversation = {
+  id: string;
+  buyer_id: string;
+  seller_id: string;
+  listing_id: string;
+};
+
 export default function MessagesPage() {
   const params = useParams();
   const router = useRouter();
   const conversationId = params?.id as string;
 
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -52,7 +60,21 @@ export default function MessagesPage() {
     if (error) {
       console.error(error);
     } else {
-      setMessages(data || []);
+      setMessages((data || []) as Message[]);
+    }
+  };
+
+  const fetchConversation = async () => {
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("id", conversationId)
+      .single();
+
+    if (error) {
+      console.error(error);
+    } else {
+      setConversation(data as Conversation);
     }
   };
 
@@ -60,6 +82,7 @@ export default function MessagesPage() {
     if (!conversationId || !userId) return;
 
     fetchMessages();
+    fetchConversation();
 
     const channel = supabase
       .channel(`messages-${conversationId}`)
@@ -96,11 +119,19 @@ export default function MessagesPage() {
 
     if (!newMessage.trim()) return;
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const messageText = newMessage;
+
     const { error } = await supabase.from("messages").insert([
       {
         conversation_id: conversationId,
-        sender_id: userId,
-        text: newMessage,
+        sender_id: user.id,
+        text: messageText,
       },
     ]);
 
@@ -111,6 +142,24 @@ export default function MessagesPage() {
     }
 
     setNewMessage("");
+
+    if (conversation) {
+      const recipientId =
+        conversation.buyer_id === user.id
+          ? conversation.seller_id
+          : conversation.buyer_id;
+
+      await supabase.from("notifications").insert([
+        {
+          user_id: recipientId,
+          type: "message",
+          title: "New message",
+          message: messageText,
+          link: `/messages/${conversationId}`,
+          is_read: false,
+        },
+      ]);
+    }
   };
 
   const formatTime = (timestamp: string) => {
@@ -125,7 +174,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen py-8 px-4">
+    <main className="bg-gray-50 min-h-screen py-8 px-4 pb-24">
       <div className="max-w-3xl mx-auto">
         <button
           onClick={() => router.back()}
@@ -135,7 +184,6 @@ export default function MessagesPage() {
         </button>
 
         <div className="bg-white rounded-2xl shadow overflow-hidden">
-          {/* HEADER */}
           <div className="border-b px-6 py-4">
             <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
             <p className="text-sm text-gray-500 mt-1">
@@ -143,7 +191,6 @@ export default function MessagesPage() {
             </p>
           </div>
 
-          {/* CHAT BODY */}
           <div className="p-4 h-[500px] overflow-y-auto bg-gray-50 space-y-4">
             {messages.length === 0 ? (
               <p className="text-gray-500 text-sm">
@@ -182,7 +229,6 @@ export default function MessagesPage() {
             <div ref={bottomRef} />
           </div>
 
-          {/* INPUT */}
           <form onSubmit={handleSend} className="border-t p-4 flex gap-2 bg-white">
             <input
               type="text"
