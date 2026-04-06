@@ -248,7 +248,7 @@ export default function Home() {
               "url('https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1600&q=80')",
           }}
         />
-        <div className="absolute inset-0 bg-green-900/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/20" />
 
         <div className="relative max-w-4xl mx-auto text-center">
           <h2 className="text-4xl sm:text-5xl font-bold mb-2 leading-tight">
@@ -259,7 +259,7 @@ export default function Home() {
           </p>
 
           {/* SEARCH */}
-          <div className="bg-white rounded-2xl shadow-lg p-2.5 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-4xl mx-auto">
+          <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-2.5 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-4xl mx-auto">
             <input
               type="text"
               placeholder="Search birds..."
