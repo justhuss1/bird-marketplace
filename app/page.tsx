@@ -25,6 +25,7 @@ export default function Home() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [sortBy, setSortBy] = useState("newest");
+  const featuredListings = listings.filter((item) => item.is_featured);
 
   useEffect(() => {
     fetchListings();
@@ -390,6 +391,58 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      {/* FEATURED LISTINGS */}
+      {featuredListings.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 mt-6 mb-10">
+          <div className="bg-gradient-to-r from-yellow-50 to-white border border-yellow-100 rounded-3xl p-4 sm:p-5 shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-500 text-xl">★</span>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Featured Listings
+                </h3>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            {featuredListings.map((item) => (
+              <Link key={item.id} href={`/listing/${item.id}`}>
+                <div className="min-w-[260px] bg-white rounded-2xl shadow-md hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
+                  <div className="relative">
+                    <img
+                      src={
+                        item.image ||
+                        "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
+                      }
+                      className="h-44 w-full object-cover"
+                    />
+
+                    <div className="absolute top-2 left-2 bg-yellow-400 text-black text-xs px-3 py-1 rounded-full font-semibold shadow">
+                      Featured
+                    </div>
+                  </div>
+
+                  <div className="p-3">
+                    <h2 className="font-semibold text-sm text-gray-800 truncate">
+                      {item.title}
+                    </h2>
+
+                    <p className="text-green-600 font-semibold mt-1">
+                      ${item.price}
+                    </p>
+
+                    <p className="text-xs text-gray-500 mt-1">
+                      📍 {item.location}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* LISTINGS */}
       <div className="max-w-5xl mx-auto px-4 mt-6">
