@@ -240,7 +240,7 @@ export default function Home() {
       </div>
 
       {/* HERO */}
-      <div className="relative text-white px-4 py-8 sm:py-14 overflow-hidden">
+      <div className="relative overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -248,116 +248,119 @@ export default function Home() {
               "url('https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1600&q=80')",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-transparent" />
 
-        <div className="relative max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-2 leading-tight">
-            Buy, Sell & Rehome Birds
-          </h2>
-          <p className="text-base sm:text-xl opacity-90 mb-6">
-            Australia’s marketplace for bird lovers
-          </p>
-
-          {/* SEARCH */}
-          <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-2.5 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-4xl mx-auto">
-            <input
-              type="text"
-              placeholder="Search birds..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 p-2.5 text-black outline-none rounded-xl bg-gray-50"
-            />
-
-            <input
-              type="text"
-              placeholder="Location (e.g. Sydney)"
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-              className="flex-1 p-2.5 text-black outline-none rounded-xl bg-gray-50"
-            />
-          </div>
-
-          {/* ADVANCED FILTERS */}
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 max-w-4xl mx-auto">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="p-3 text-black rounded-xl bg-white"
-            >
-              <option value="">All Categories</option>
-              <option value="Parrots">Parrots</option>
-              <option value="Cockatiels">Cockatiels</option>
-              <option value="Finches">Finches</option>
-              <option value="Canaries">Canaries</option>
-              <option value="Supplies">Supplies</option>
-            </select>
-
-            <input
-              type="number"
-              placeholder="Min Price"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              className="p-3 text-black rounded-xl bg-white"
-            />
-
-            <input
-              type="number"
-              placeholder="Max Price"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              className="p-3 text-black rounded-xl bg-white"
-            />
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="p-3 text-black rounded-xl bg-white"
-            >
-              <option value="newest">Newest</option>
-              <option value="lowest">Price: Low to High</option>
-              <option value="highest">Price: High to Low</option>
-            </select>
-          </div>
-
-          {hasActiveFilters && (
-            <div className="max-w-4xl mx-auto mt-2 flex justify-end">
-              <button
-                onClick={clearFilters}
-                className="text-sm text-white bg-black px-3 py-1 rounded"
-              >
-                Clear Filters
-              </button>
+        <div className="relative max-w-6xl mx-auto px-4 pt-10 pb-14 sm:pt-16 sm:pb-20">
+          <div className="max-w-3xl mx-auto text-center text-white">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3 py-1 text-xs sm:text-sm border border-white/20 mb-4">
+              <span>Trusted bird marketplace</span>
             </div>
-          )}
 
-          {/* HERO ACTIONS */}
-          <div className="mt-3 flex justify-center">
-            <Link href="/create">
-              <button className="bg-white text-green-600 px-5 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition">
-                + Post Listing
-              </button>
-            </Link>
-          </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight">
+              Buy, Sell & Rehome Birds
+            </h1>
 
-          {/* DESKTOP EXTRA ACTIONS */}
-          <div className="hidden md:flex mt-3 gap-2 justify-center flex-wrap">
-            <Link href="/saved-listings">
-              <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
-                Saved
-              </button>
-            </Link>
+            <p className="mt-3 text-sm sm:text-lg text-white/90 max-w-2xl mx-auto">
+              A premium marketplace for bird lovers across Australia.
+            </p>
 
-            <Link href="/my-listings">
-              <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
-                My Listings
-              </button>
-            </Link>
+            <div className="mt-6 bg-white/85 backdrop-blur-xl rounded-2xl shadow-2xl p-3 sm:p-4 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_auto] gap-2 sm:gap-3">
+                <input
+                  type="text"
+                  placeholder="Search birds..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full p-3 text-black outline-none rounded-xl bg-white border border-gray-100"
+                />
 
-            <Link href="/messages">
-              <button className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold">
-                Messages
-              </button>
-            </Link>
+                <input
+                  type="text"
+                  placeholder="Location (e.g. Sydney)"
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                  className="w-full p-3 text-black outline-none rounded-xl bg-white border border-gray-100"
+                />
+
+                <Link href="/create" className="block">
+                  <button className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold transition shadow-md">
+                    + Post Listing
+                  </button>
+                </Link>
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="p-3 text-black rounded-xl bg-white border border-gray-100"
+                >
+                  <option value="">All Categories</option>
+                  <option value="Parrots">Parrots</option>
+                  <option value="Cockatiels">Cockatiels</option>
+                  <option value="Finches">Finches</option>
+                  <option value="Canaries">Canaries</option>
+                  <option value="Supplies">Supplies</option>
+                </select>
+
+                <input
+                  type="number"
+                  placeholder="Min Price"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="p-3 text-black rounded-xl bg-white border border-gray-100"
+                />
+
+                <input
+                  type="number"
+                  placeholder="Max Price"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="p-3 text-black rounded-xl bg-white border border-gray-100"
+                />
+
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="p-3 text-black rounded-xl bg-white border border-gray-100"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="lowest">Price: Low to High</option>
+                  <option value="highest">Price: High to Low</option>
+                </select>
+              </div>
+
+              {hasActiveFilters && (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    onClick={clearFilters}
+                    className="text-sm text-gray-600 hover:text-black underline"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="hidden md:flex mt-5 gap-2 justify-center flex-wrap">
+              <Link href="/saved-listings">
+                <button className="bg-white/15 backdrop-blur border border-white/20 text-white px-4 py-2 rounded-xl font-medium">
+                  Saved
+                </button>
+              </Link>
+
+              <Link href="/my-listings">
+                <button className="bg-white/15 backdrop-blur border border-white/20 text-white px-4 py-2 rounded-xl font-medium">
+                  My Listings
+                </button>
+              </Link>
+
+              <Link href="/messages">
+                <button className="bg-white/15 backdrop-blur border border-white/20 text-white px-4 py-2 rounded-xl font-medium">
+                  Messages
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
