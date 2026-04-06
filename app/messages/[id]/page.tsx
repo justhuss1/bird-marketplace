@@ -149,18 +149,24 @@ export default function MessagesPage() {
           ? conversation.seller_id
           : conversation.buyer_id;
 
-      await supabase.from("notifications").insert([
-        {
-          user_id: recipientId,
-          type: "message",
-          title: "New message",
-          message: messageText,
-          link: `/messages/${conversationId}`,
-          is_read: false,
-        },
-      ]);
-    }
-  };
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert([
+          {
+            user_id: recipientId,
+            type: "message",
+            title: "New message",
+            message: messageText,
+            link: `/messages/${conversationId}`,
+            is_read: false,
+          },
+        ]);
+
+      if (notificationError) {
+        console.error("Notification insert error:", notificationError);
+      }
+          }
+        };
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString([], {
