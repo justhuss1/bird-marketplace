@@ -4,17 +4,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import {
+  House,
+  Heart,
+  Plus,
+  MessageCircle,
+  Bell,
+} from "lucide-react";
 
 export default function BottomNav() {
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
 
   const navItems = [
-    { href: "/", label: "Home", icon: "🏠" },
-    { href: "/saved-listings", label: "Saved", icon: "❤️" },
-    { href: "/create", label: "Post", icon: "➕" },
-    { href: "/messages", label: "Messages", icon: "💬" },
-    { href: "/notifications", label: "Alerts", icon: "🔔" },
+    { href: "/", label: "Home", icon: House },
+    { href: "/saved-listings", label: "Saved", icon: Heart },
+    { href: "/create", label: "Post", icon: Plus },
+    { href: "/messages", label: "Messages", icon: MessageCircle },
+    { href: "/notifications", label: "Alerts", icon: Bell },
   ];
 
   useEffect(() => {
@@ -110,7 +117,7 @@ export default function BottomNav() {
                   isActive ? "text-green-600" : "text-gray-400"
                 }`}
               >
-                <span className="text-xl">{item.icon}</span>
+                <item.icon size={20} strokeWidth={isActive ? 2.2 : 1.9} />
 
                 {isNotifications && unreadCount > 0 && (
                   <span className="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold">
