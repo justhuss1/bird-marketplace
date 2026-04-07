@@ -103,7 +103,7 @@ export default function SellerPage() {
 
         <div className="bg-white rounded-2xl shadow p-6 mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-2xl font-bold text-green-700">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-2xl font-bold text-green-700 shadow-sm">
               {profile.username?.charAt(0).toUpperCase() || "U"}
             </div>
 

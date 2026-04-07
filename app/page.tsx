@@ -3,6 +3,17 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import {
+  Bird,
+  Heart,
+  Plus,
+  MessageCircle,
+  Bell,
+  Shield,
+  Search,
+  MapPin,
+  Star,
+} from "lucide-react";
 
 type Listing = {
   id: string;
@@ -213,8 +224,9 @@ export default function Home() {
     <main className="bg-gray-50 min-h-screen pb-24 md:pb-20">
       {/* TOP NAV */}
       <div className="bg-white shadow-sm px-4 py-3 flex justify-between items-center">
-        <h1 className="text-base sm:text-lg font-bold text-green-600">
-          🐦 Bird Marketplace
+        <h1 className="text-base sm:text-lg font-bold text-green-600 flex items-center gap-2">
+          <Bird size={18} />
+          Bird Marketplace
         </h1>
 
         <div className="flex gap-2 items-center">
@@ -370,12 +382,12 @@ export default function Home() {
       <div className="max-w-6xl mx-auto px-4 -mt-10 mb-8 relative z-10">
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {[
-            { name: "Parrots", emoji: "🦜" },
-            { name: "Cockatiels", emoji: "🐦" },
-            { name: "Finches", emoji: "🐤" },
-            { name: "Canaries", emoji: "🐥" },
-            { name: "Supplies", emoji: "🪺" },
-          ].map((cat) => (
+              { name: "Parrots", icon: Bird },
+              { name: "Cockatiels", icon: Bird },
+              { name: "Finches", icon: Bird },
+              { name: "Canaries", icon: Bird },
+              { name: "Supplies", icon: Star },
+            ].map((cat) => (
             <button
               key={cat.name}
               onClick={() => setCategoryFilter(cat.name)}
@@ -385,7 +397,7 @@ export default function Home() {
                   : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
               }`}
             >
-              <span className="text-lg">{cat.emoji}</span>
+              <cat.icon size={16} />
               <span className="text-sm font-medium">{cat.name}</span>
             </button>
           ))}
@@ -394,7 +406,7 @@ export default function Home() {
 
       {/* FEATURED LISTINGS */}
       {featuredListings.length > 0 && (
-        <div className="max-w-6xl mx-auto px-4 mt-6 mb-10">
+        <div className="max-w-6xl mx-auto px-4 mt-6 mb-10 animate-fade-in-up">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-yellow-500 text-lg">★</span>
@@ -449,8 +461,41 @@ export default function Home() {
         </div>
       )}
 
+      {/* TRUST SECTION */}
+      <div className="max-w-6xl mx-auto px-4 mt-10 mb-6 animate-fade-in-up">
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+            
+            <div>
+              <div className="text-2xl mb-2">🛡️</div>
+              <h4 className="font-semibold text-gray-800">Verified Sellers</h4>
+              <p className="text-sm text-gray-500 mt-1">
+                All users are authenticated for a safer experience
+              </p>
+            </div>
+
+            <div>
+              <div className="text-2xl mb-2">💬</div>
+              <h4 className="font-semibold text-gray-800">Secure Messaging</h4>
+              <p className="text-sm text-gray-500 mt-1">
+                Chat safely inside the platform
+              </p>
+            </div>
+
+            <div>
+              <div className="text-2xl mb-2">🐦</div>
+              <h4 className="font-semibold text-gray-800">Built for Bird Lovers</h4>
+              <p className="text-sm text-gray-500 mt-1">
+                A marketplace designed specifically for birds
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
       {/* LISTINGS */}
-      <div className="max-w-5xl mx-auto px-4 mt-6">
+      <div className="max-w-5xl mx-auto px-4 mt-6 animate-fade-in-up">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-lg font-semibold">Latest Listings</h3>
           <button className="text-sm text-green-600 hover:underline">
@@ -465,7 +510,7 @@ export default function Home() {
             {filteredListings.map((item) => (
               <Link key={item.id} href={`/listing/${item.id}`}>
                 <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
-                  <div className="relative">
+                  <div className="relative overflow-hidden">
                     <img
                       src={
                         item.image && item.image !== ""
@@ -475,6 +520,7 @@ export default function Home() {
                       alt={item.title}
                       className="h-52 sm:h-48 w-full object-cover group-hover:scale-105 transition duration-500"
                     />
+                  
 
                     {item.is_featured ? (
                       <div className="absolute top-2 left-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded">

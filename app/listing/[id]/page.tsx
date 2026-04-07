@@ -352,7 +352,7 @@ export default function ListingPage() {
             <h2 className="text-lg font-semibold mb-4">Seller Info</h2>
 
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-lg font-bold text-green-700">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-lg font-bold text-green-700 shadow-sm">
                 {seller?.username?.charAt(0).toUpperCase() || "U"}
               </div>
               <div>
