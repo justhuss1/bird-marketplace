@@ -90,6 +90,29 @@ export default function MyListingsPage() {
     setListings((prev) => prev.filter((listing) => listing.id !== listingId));
   };
 
+  const handleCheckout = async (type: "feature" | "boost", listingId: string) => {
+  try {
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ type, listingId }),
+    });
+
+    const data = await res.json();
+
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert("Failed to start checkout");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong");
+  }
+};
+
   const formatPostedDate = (date?: string) => {
     if (!date) return "Recently listed";
 
@@ -323,12 +346,30 @@ export default function MyListingsPage() {
                         </button>
                       </Link>
 
+                      
+
                       <button
                         onClick={() => handleDelete(listing.id)}
                         className="w-full rounded-2xl bg-red-500 hover:bg-red-600 text-white px-4 py-3 text-sm font-semibold transition shadow-sm inline-flex items-center justify-center gap-2"
                       >
                         <Trash2 size={16} />
                         Delete
+                      </button>
+
+                      <button
+                        onClick={() => handleCheckout("feature", listing.id)}
+                        className="w-full rounded-2xl bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-3 text-sm font-semibold transition shadow-sm inline-flex items-center justify-center gap-2"
+                      >
+                        <Star size={16} />
+                        Feature
+                      </button>
+
+                      <button
+                        onClick={() => handleCheckout("boost", listing.id)}
+                        className="w-full rounded-2xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold transition shadow-sm inline-flex items-center justify-center gap-2"
+                      >
+                        <Star size={16} />
+                        Boost
                       </button>
                     </div>
                   </div>
