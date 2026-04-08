@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -10,9 +9,8 @@ import {
   MapPin,
   ShieldCheck,
   MessageCircle,
-  Zap,
   Star,
-  Search
+  Search,
 } from "lucide-react";
 
 type Listing = {
@@ -221,10 +219,7 @@ export default function Home() {
     });
 
   const featuredListings = filteredListings.filter((item) => item.is_featured);
-
-  const mainListings = filteredListings.filter(
-  (item) => !item.is_featured
-);
+  const mainListings = filteredListings.filter((item) => !item.is_featured);
 
   const categoryItems = [
     { name: "Parrots", icon: Bird },
@@ -292,14 +287,16 @@ export default function Home() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg">
-              Australia’s dedicated marketplace for bird lovers — discover healthy
-              birds, connect with verified sellers, and rehome with confidence.
+              Australia’s dedicated marketplace for bird lovers — discover
+              healthy birds, connect with verified sellers, and rehome with
+              confidence.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={() => {
-                  const listingsSection = document.getElementById("latest-listings");
+                  const listingsSection =
+                    document.getElementById("latest-listings");
                   listingsSection?.scrollIntoView({ behavior: "smooth" });
                 }}
                 className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md"
@@ -308,7 +305,7 @@ export default function Home() {
               </button>
 
               <Link href="/create">
-                <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md">
+                <button className="rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white px-5 py-3 text-sm font-semibold transition">
                   Post a Listing
                 </button>
               </Link>
@@ -340,7 +337,8 @@ export default function Home() {
 
                 <button
                   onClick={() => {
-                    const listingsSection = document.getElementById("latest-listings");
+                    const listingsSection =
+                      document.getElementById("latest-listings");
                     listingsSection?.scrollIntoView({ behavior: "smooth" });
                   }}
                   className="rounded-2xl bg-[#07111f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0c1a2d]"
@@ -398,7 +396,6 @@ export default function Home() {
       <div className="bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 -mt-6 relative z-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
             <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
               <div className="flex items-center gap-3">
                 <div className="bg-green-50 text-green-600 p-2.5 rounded-xl">
@@ -433,7 +430,7 @@ export default function Home() {
 
             <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
               <div className="flex items-center gap-3">
-                <div className="bg-green-50 text-green-600 p-2 rounded-xl">
+                <div className="bg-green-50 text-green-600 p-2.5 rounded-xl">
                   <Bird size={20} />
                 </div>
                 <div>
@@ -449,7 +446,7 @@ export default function Home() {
 
             <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
               <div className="flex items-center gap-3">
-                <div className="bg-green-50 text-green-600 p-2 rounded-xl">
+                <div className="bg-green-50 text-green-600 p-2.5 rounded-xl">
                   <Star size={20} />
                 </div>
                 <div>
@@ -462,14 +459,16 @@ export default function Home() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
 
       {/* FEATURED LISTINGS */}
       {featuredListings.length > 0 && (
-        <section className="max-w-6xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up">
+        <section
+          id="featured-listings"
+          className="max-w-6xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up"
+        >
           <div className="flex items-end justify-between gap-4 mb-5">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
@@ -479,17 +478,19 @@ export default function Home() {
                 Featured Birds
               </h2>
               <p className="mt-2 text-sm text-gray-500 max-w-2xl">
-                Promoted listings from trusted sellers and standout breeders across
-                Australia.
+                Promoted listings from trusted sellers and standout breeders
+                across Australia.
               </p>
             </div>
 
-            <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
+            <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">
               View all featured →
             </button>
           </div>
 
-          <p className="text-xs text-gray-400 mb-3 sm:hidden">Swipe to explore →</p>
+          <p className="text-xs text-gray-400 mb-3 sm:hidden">
+            Swipe to explore →
+          </p>
 
           <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
             {featuredListings.map((item) => (
@@ -559,7 +560,9 @@ export default function Home() {
                         {item.category || "Bird Listing"}
                       </span>
 
-                      <span className="text-xs text-gray-400">Promoted listing</span>
+                      <span className="text-xs text-gray-400 uppercase tracking-wide">
+                        Promoted
+                      </span>
                     </div>
                   </div>
                 </article>
@@ -568,7 +571,6 @@ export default function Home() {
           </div>
         </section>
       )}
-
 
       {/* MAIN LISTINGS */}
       <section
@@ -584,11 +586,12 @@ export default function Home() {
               Fresh Birds Near You
             </h2>
             <p className="mt-2 text-sm text-gray-500 max-w-2xl">
-              Newly listed birds from sellers across Australia, updated in real time.
+              Newly listed birds from sellers across Australia, updated in real
+              time.
             </p>
           </div>
 
-          <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
+          <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">
             View all listings →
           </button>
         </div>
@@ -652,11 +655,11 @@ export default function Home() {
 
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-3">
-                      <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">
+                      <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug">
                         {item.title}
                       </h3>
 
-                      <span className="text-green-600 font-semibold text-lg whitespace-nowrap">
+                      <span className="text-green-600 font-semibold text-[18px] whitespace-nowrap">
                         ${item.price}
                       </span>
                     </div>
@@ -671,7 +674,9 @@ export default function Home() {
                         {item.category || "Bird Listing"}
                       </span>
 
-                      <span className="text-xs text-gray-400">View details</span>
+                      <span className="text-xs text-gray-400">
+                        View details
+                      </span>
                     </div>
                   </div>
                 </article>
@@ -696,8 +701,8 @@ export default function Home() {
               </h3>
 
               <p className="mt-4 text-sm sm:text-base text-white/75 max-w-md leading-7">
-                Create a listing, upload great photos, and connect with serious buyers
-                across Australia in just a few steps.
+                Create a listing, upload great photos, and connect with serious
+                buyers across Australia in just a few steps.
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
@@ -738,14 +743,15 @@ export default function Home() {
               </h3>
 
               <p className="mt-4 text-sm sm:text-base text-white/75 max-w-md leading-7">
-                Explore featured and newly listed birds from trusted sellers, compare
-                options, and message directly within the platform.
+                Explore featured and newly listed birds from trusted sellers,
+                compare options, and message directly within the platform.
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <button
                   onClick={() => {
-                    const listingsSection = document.getElementById("latest-listings");
+                    const listingsSection =
+                      document.getElementById("latest-listings");
                     listingsSection?.scrollIntoView({ behavior: "smooth" });
                   }}
                   className="rounded-2xl bg-white text-[#07111f] hover:bg-gray-100 px-5 py-3 text-sm font-semibold transition shadow-md"
@@ -788,8 +794,8 @@ export default function Home() {
               </div>
 
               <p className="mt-4 text-sm text-gray-500 leading-7 max-w-sm">
-                A safer, simpler way to buy, sell, and rehome birds across Australia.
-                Built for bird lovers, trusted by verified users.
+                A safer, simpler way to buy, sell, and rehome birds across
+                Australia. Built for bird lovers, trusted by verified users.
               </p>
             </div>
 
@@ -802,7 +808,8 @@ export default function Home() {
               <div className="mt-4 flex flex-col gap-3 text-sm text-gray-500">
                 <button
                   onClick={() => {
-                    const listingsSection = document.getElementById("latest-listings");
+                    const listingsSection =
+                      document.getElementById("latest-listings");
                     listingsSection?.scrollIntoView({ behavior: "smooth" });
                   }}
                   className="text-left hover:text-gray-900 transition"
@@ -812,8 +819,9 @@ export default function Home() {
 
                 <button
                   onClick={() => {
-                    const listingsSection = document.getElementById("latest-listings");
-                    listingsSection?.scrollIntoView({ behavior: "smooth" });
+                    const featuredSection =
+                      document.getElementById("featured-listings");
+                    featuredSection?.scrollIntoView({ behavior: "smooth" });
                   }}
                   className="text-left hover:text-gray-900 transition"
                 >
@@ -847,15 +855,24 @@ export default function Home() {
                   Post a Listing
                 </Link>
 
-                <Link href="/my-listings" className="hover:text-gray-900 transition">
+                <Link
+                  href="/my-listings"
+                  className="hover:text-gray-900 transition"
+                >
                   Manage Listings
                 </Link>
 
-                <Link href="/messages" className="hover:text-gray-900 transition">
+                <Link
+                  href="/messages"
+                  className="hover:text-gray-900 transition"
+                >
                   Messages
                 </Link>
 
-                <Link href="/notifications" className="hover:text-gray-900 transition">
+                <Link
+                  href="/notifications"
+                  className="hover:text-gray-900 transition"
+                >
                   Notifications
                 </Link>
               </div>
@@ -868,7 +885,10 @@ export default function Home() {
               </h4>
 
               <div className="mt-4 flex flex-col gap-3 text-sm text-gray-500">
-                <Link href="/saved-listings" className="hover:text-gray-900 transition">
+                <Link
+                  href="/saved-listings"
+                  className="hover:text-gray-900 transition"
+                >
                   Saved Listings
                 </Link>
 
@@ -877,7 +897,9 @@ export default function Home() {
                 </Link>
 
                 <button
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  onClick={() =>
+                    window.scrollTo({ top: 0, behavior: "smooth" })
+                  }
                   className="text-left hover:text-gray-900 transition"
                 >
                   Back to top
@@ -888,7 +910,8 @@ export default function Home() {
 
           <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <p className="text-xs text-gray-400">
-              © {new Date().getFullYear()} Bird Marketplace. All rights reserved.
+              © {new Date().getFullYear()} Bird Marketplace. All rights
+              reserved.
             </p>
 
             <div className="flex items-center gap-4 text-xs text-gray-400">
