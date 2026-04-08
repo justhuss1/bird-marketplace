@@ -233,7 +233,7 @@ export default function Home() {
     <main className="bg-gray-50 min-h-screen pb-24 md:pb-20">
       {/* TOP NAV */}
       <div className="bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
-        <h1 className="text-base sm:text-lg font-bold text-green-600 flex items-center gap-2">
+        <h1 className="text-[15px] sm:text-lg font-bold text-green-600 flex items-center gap-2">
           <Bird size={18} />
           Bird Marketplace
         </h1>
@@ -246,14 +246,14 @@ export default function Home() {
               </span>
               <button
                 onClick={handleLogout}
-                className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm"
+                className="bg-red-500 text-white px-3 py-2 rounded-xl text-sm font-medium"
               >
                 Logout
               </button>
             </>
           ) : (
             <Link href="/login">
-              <button className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm">
+              <button className="bg-green-600 text-white px-3 py-2 rounded-xl text-sm font-medium">
                 Login
               </button>
             </Link>
@@ -273,39 +273,39 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#07111f]/95 via-[#07111f]/75 to-[#07111f]/25" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/20" />
 
-        <div className="relative max-w-6xl mx-auto px-4 pt-10 pb-16 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
+        <div className="relative max-w-6xl mx-auto px-4 pt-8 pb-12 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
               <ShieldCheck size={14} />
               Trusted bird marketplace across Australia
             </div>
 
-            <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Buy, Sell & Rehome
-              <br className="hidden sm:block" />
-              Birds Safely
+            <h1 className="mt-5 text-[44px] leading-[0.95] font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              <span className="block sm:inline">Buy, Sell &</span>{" "}
+              <span className="block sm:inline">Rehome</span>{" "}
+              <span className="block sm:inline">Birds Safely</span>
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg">
+            <p className="mt-4 max-w-2xl text-[15px] leading-7 text-white/85 sm:text-lg">
               Australia’s dedicated marketplace for bird lovers — discover
               healthy birds, connect with verified sellers, and rehome with
               confidence.
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
                 onClick={() => {
                   const listingsSection =
                     document.getElementById("latest-listings");
                   listingsSection?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md"
+                className="w-full sm:w-auto rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3.5 text-sm font-semibold transition shadow-md"
               >
                 Browse Listings
               </button>
 
-              <Link href="/create">
-                <button className="rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white px-5 py-3 text-sm font-semibold transition">
+              <Link href="/create" className="w-full sm:w-auto">
+                <button className="w-full sm:w-auto rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white px-5 py-3.5 text-sm font-semibold transition">
                   Post a Listing
                 </button>
               </Link>
@@ -367,6 +367,17 @@ export default function Home() {
                   Bird-focused marketplace
                 </span>
               </div>
+
+              {hasActiveFilters && (
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={clearFilters}
+                    className="text-sm text-gray-600 hover:text-black underline"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -467,9 +478,9 @@ export default function Home() {
       {featuredListings.length > 0 && (
         <section
           id="featured-listings"
-          className="max-w-6xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up"
+          className="max-w-6xl mx-auto px-4 mt-10 sm:mt-12 mb-10 sm:mb-12 animate-fade-in-up"
         >
-          <div className="flex items-end justify-between gap-4 mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
                 Featured
@@ -483,21 +494,19 @@ export default function Home() {
               </p>
             </div>
 
-            <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">
+            <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition self-start sm:self-auto">
               View all featured →
             </button>
           </div>
 
-          <p className="text-xs text-gray-400 mb-3 sm:hidden">
-            Swipe to explore →
-          </p>
+          <p className="text-xs text-gray-400 mb-3">Swipe to explore →</p>
 
           <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
             {featuredListings.map((item) => (
               <Link
                 key={item.id}
                 href={`/listing/${item.id}`}
-                className="snap-start min-w-[300px] sm:min-w-[340px] max-w-[340px]"
+                className="snap-start min-w-[280px] sm:min-w-[340px] max-w-[340px]"
               >
                 <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
                   <div className="relative overflow-hidden">
@@ -508,7 +517,7 @@ export default function Home() {
                           : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
                       }
                       alt={item.title}
-                      className="h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                      className="h-52 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
                     />
 
                     <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
@@ -560,7 +569,7 @@ export default function Home() {
                         {item.category || "Bird Listing"}
                       </span>
 
-                      <span className="text-xs text-gray-400 uppercase tracking-wide">
+                      <span className="hidden sm:inline text-xs text-gray-400 uppercase tracking-wide">
                         Promoted
                       </span>
                     </div>
@@ -575,9 +584,9 @@ export default function Home() {
       {/* MAIN LISTINGS */}
       <section
         id="latest-listings"
-        className="max-w-6xl mx-auto px-4 mt-12 mb-16 animate-fade-in-up"
+        className="max-w-6xl mx-auto px-4 mt-10 sm:mt-12 mb-14 sm:mb-16 animate-fade-in-up"
       >
-        <div className="flex items-end justify-between gap-4 mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
               Latest Listings
@@ -591,7 +600,7 @@ export default function Home() {
             </p>
           </div>
 
-          <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">
+          <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition self-start sm:self-auto">
             View all listings →
           </button>
         </div>
@@ -618,7 +627,7 @@ export default function Home() {
                           : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
                       }
                       alt={item.title}
-                      className="h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                      className="h-52 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
                     />
 
                     {item.is_featured ? (
@@ -687,7 +696,7 @@ export default function Home() {
       </section>
 
       {/* SELLER / BUYER CTA SECTION */}
-      <section className="max-w-6xl mx-auto px-4 mb-16 animate-fade-in-up">
+      <section className="max-w-6xl mx-auto px-4 mb-14 sm:mb-16 animate-fade-in-up">
         <div className="rounded-[32px] overflow-hidden bg-[#07111f] text-white shadow-xl">
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* SELLERS */}
