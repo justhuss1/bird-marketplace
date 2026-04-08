@@ -414,7 +414,7 @@ export default function Home() {
       </section>
 
       {/* TRUST STRIP */}
-      <section className="max-w-6xl mx-auto px-4 mt-8 sm:mt-10 relative z-10">
+      <section className="max-w-7xl mx-auto px-4 mt-8 sm:mt-10 relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-green-50 rounded-2xl border border-green-100 p-6 shadow-sm hover:shadow-md transition">
             <div className="flex items-start gap-3">
@@ -483,7 +483,7 @@ export default function Home() {
       </section>
 
       {/* BROWSE BY CATEGORY */}
-      <section className="max-w-6xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up">
+      <section className="max-w-7xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up">
         <div className="mb-5">
           <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
             Browse by Category
@@ -508,14 +508,14 @@ export default function Home() {
                   block: "start",
                 });
               }}
-              className={`group bg-white rounded-2xl border p-4 text-left shadow-sm transition hover:shadow-md hover:-translate-y-[1px] ${
+              className={`group bg-white rounded-2xl border p-5 text-left shadow-sm transition hover:shadow-md hover:-translate-y-[1px] ${
                 categoryFilter === cat.name
                   ? "border-green-600 ring-2 ring-green-100"
                   : "border-gray-100"
               }`}
             >
               <div
-                className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${
+                className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${
                   categoryFilter === cat.name
                     ? "bg-green-600 text-white"
                     : "bg-green-50 text-green-600"
@@ -536,7 +536,7 @@ export default function Home() {
       {featuredListings.length > 0 && (
         <section
           id="featured-listings"
-          className="max-w-6xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up"
+          className="max-w-7xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up"
         >
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5">
             <div>
@@ -642,7 +642,7 @@ export default function Home() {
       {/* MAIN LISTINGS */}
       <section
         id="latest-listings"
-        className="max-w-6xl mx-auto px-4 mt-12 mb-16 animate-fade-in-up"
+        className="max-w-7xl mx-auto px-4 mt-12 mb-16 animate-fade-in-up"
       >
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5">
           <div>

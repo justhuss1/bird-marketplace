@@ -1,39 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import {
+  ArrowLeft,
+  Upload,
+  MapPin,
+  DollarSign,
+  FileText,
+  Tag,
+  Image as ImageIcon,
+} from "lucide-react";
+
+const PET_CATEGORIES = [
+  "Birds",
+  "Cats",
+  "Dogs",
+  "Fish",
+  "Horses & Ponies",
+  "Livestock",
+  "Reptiles & Amphibians",
+  "Rabbits",
+  "Pet Supplies",
+] as const;
 
 export default function CreateListingPage() {
   const router = useRouter();
 
-  const [checkingAuth, setCheckingAuth] = useState(true);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
-  const [image, setImage] = useState("");
-  const [images, setImages] = useState<string[]>([]);
+  const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [category, setCategory] = useState("");
 
-  useEffect(() => {
-    checkUser();
-  }, []);
-
-  const checkUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    setCheckingAuth(false);
-  };
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -41,16 +46,22 @@ export default function CreateListingPage() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    if (!cloudName || !uploadPreset) {
+      alert(
+        "Cloudinary environment variables are missing. Please check NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET."
+      );
+      return;
+    }
+
     setUploading(true);
 
     try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
       const uploadedUrls: string[] = [];
 
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("upload_preset", "bird_marketplace_upload");
+        formData.append("upload_preset", uploadPreset);
 
         const res = await fetch(
           `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
@@ -62,31 +73,31 @@ export default function CreateListingPage() {
 
         const data = await res.json();
 
-        if (data.secure_url) {
-          uploadedUrls.push(data.secure_url);
+        if (!res.ok || !data.secure_url) {
+          console.error("Cloudinary upload failed:", data);
+          throw new Error("Failed to upload one or more images.");
         }
+
+        uploadedUrls.push(data.secure_url);
       }
 
-      if (uploadedUrls.length === 0) {
-        alert("Image upload failed.");
-        return;
-      }
-
-      setImages(uploadedUrls);
-      setImage(uploadedUrls[0]);
+      setImages((prev) => [...prev, ...uploadedUrls]);
     } catch (error) {
       console.error(error);
       alert("Image upload failed.");
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const removeImage = (indexToRemove: number) => {
+    setImages((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
 
-    if (images.length === 0 && !image) {
-      alert("Please upload at least one image first.");
+  const handleCreateListing = async () => {
+    if (!title || !price || !location || !category || !description) {
+      alert("Please complete all required fields.");
       return;
     }
 
@@ -94,14 +105,16 @@ export default function CreateListingPage() {
 
     const {
       data: { user },
-      error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
-      alert("You must be logged in to post a listing.");
+    if (!user) {
+      alert("Please log in first.");
+      router.push("/login");
       setSubmitting(false);
       return;
     }
+
+    const primaryImage = images.length > 0 ? images[0] : null;
 
     const { error } = await supabase.from("listings").insert([
       {
@@ -109,204 +122,215 @@ export default function CreateListingPage() {
         price,
         location,
         category,
-        image: images[0] || image,
-        images,
         description,
+        image: primaryImage,
+        images,
         user_id: user.id,
       },
     ]);
 
     if (error) {
       console.error(error);
-      alert(error.message);
+      alert("Failed to create listing.");
       setSubmitting(false);
       return;
     }
 
-    alert("Listing created!");
-    setTitle("");
-    setPrice("");
-    setLocation("");
-    setCategory("");
-    setImage("");
-    setImages([]);
-    setDescription("");
     router.push("/my-listings");
   };
 
-  if (checkingAuth) {
-    return <main className="p-4">Checking login...</main>;
-  }
-
   return (
-    <main className="bg-gray-50 min-h-screen py-8 px-4 pb-24">
-      <div className="max-w-3xl mx-auto">
+    <main className="bg-gray-50 min-h-screen py-6 sm:py-8 px-4 pb-24">
+      <div className="max-w-4xl mx-auto">
         <button
           onClick={() => router.back()}
-          className="mb-4 text-sm text-gray-600 hover:text-black transition"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
         >
-          ← Back
+          <ArrowLeft size={16} />
+          Back
         </button>
 
-        <div className="bg-white rounded-2xl shadow p-6 md:p-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Create Listing
+        {/* HERO */}
+        <section className="mt-5 bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-[#07111f] via-[#102038] to-[#1b2e4a] px-6 sm:px-8 py-8 sm:py-10 text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
+              Create a New Listing
             </h1>
-            <p className="text-gray-500 mt-2">
-              Add your bird listing to the marketplace.
+
+            <p className="mt-3 text-white/80 max-w-2xl text-sm sm:text-base leading-7">
+              Add your pet or pet-related item to the marketplace with clear
+              details, great photos, and the right category.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="px-6 sm:px-8 py-6 sm:py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* LEFT COLUMN */}
+              <div className="space-y-5">
+                <div>
+                  <label className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <Tag size={16} />
+                    Listing Title
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Purebred Labrador Puppies"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <DollarSign size={16} />
+                    Price
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 500"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <MapPin size={16} />
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sydney"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <Tag size={16} />
+                    Category
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                  >
+                    <option value="">Select a category</option>
+                    {PET_CATEGORIES.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN */}
+              <div className="space-y-5">
+                <div>
+                  <label className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <FileText size={16} />
+                    Description
+                  </label>
+                  <textarea
+                    placeholder="Describe the pet or item, temperament, age, condition, pickup details, or anything buyers should know."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={10}
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500 resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* IMAGE UPLOAD */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Listing Photos
+            <div className="mt-8">
+              <label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <ImageIcon size={16} />
+                Images
               </label>
 
-              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 bg-gray-50 text-center hover:border-green-500 transition">
-                {images.length === 0 && (
-                  <>
-                    <p className="text-gray-500 text-sm mb-2">
-                      Click to upload or drag & drop
+              <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Upload listing photos
                     </p>
-                    <p className="text-xs text-gray-400">
-                      PNG, JPG up to 5MB. You can select multiple images.
+                    <p className="text-sm text-gray-500 mt-1">
+                      The first image will be used as your main cover photo.
                     </p>
-                  </>
-                )}
+                  </div>
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="w-full mt-3 text-sm text-gray-600"
-                />
-
-                {uploading && (
-                  <p className="text-sm text-gray-500 mt-3">
-                    Uploading images...
-                  </p>
-                )}
+                  <label className="inline-flex items-center justify-center gap-2 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md cursor-pointer">
+                    <Upload size={16} />
+                    {uploading ? "Uploading..." : "Upload Images"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
 
                 {images.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                     {images.map((img, index) => (
-                      <img
+                      <div
                         key={index}
-                        src={img}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-xl"
-                      />
+                        className="relative bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm"
+                      >
+                        <img
+                          src={img}
+                          alt={`Uploaded ${index + 1}`}
+                          className="w-full h-32 object-cover"
+                        />
+
+                        {index === 0 && (
+                          <span className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2.5 py-1 rounded-full">
+                            Cover
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-700 text-xs px-2 py-1 rounded-full shadow"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* TITLE */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Listing Title
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Pair of Budgies"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl p-3 text-black outline-none focus:ring-2 focus:ring-green-500"
-                required
-              />
-            </div>
-
-            {/* CATEGORY */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl p-3 text-black outline-none focus:ring-2 focus:ring-green-500"
-                required
+            {/* ACTIONS */}
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleCreateListing}
+                disabled={submitting || uploading}
+                className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3.5 text-sm font-semibold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">Select a category</option>
-                <option value="Parrots">Parrots</option>
-                <option value="Cockatiels">Cockatiels</option>
-                <option value="Finches">Finches</option>
-                <option value="Canaries">Canaries</option>
-                <option value="Supplies">Supplies</option>
-              </select>
+                {submitting ? "Creating Listing..." : "Create Listing"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3.5 text-sm font-semibold transition"
+              >
+                Cancel
+              </button>
             </div>
-
-            {/* PRICE + LOCATION */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-3 text-gray-500">$</span>
-                  <input
-                    type="text"
-                    placeholder="150"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl p-3 pl-8 text-black outline-none focus:ring-2 focus:ring-green-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Sydney, NSW"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl p-3 text-black outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* DESCRIPTION */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <p className="text-xs text-gray-400 mb-2">
-                Include age, temperament, and pickup details.
-              </p>
-              <textarea
-                placeholder="Describe the bird, age, temperament, condition, pickup details, etc."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={6}
-                className="w-full border border-gray-300 rounded-xl p-3 text-black outline-none focus:ring-2 focus:ring-green-500"
-                required
-              />
-            </div>
-
-            {/* SUBMIT */}
-            <button
-              type="submit"
-              disabled={uploading || submitting || images.length === 0}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-50"
-            >
-              {uploading
-                ? "Uploading..."
-                : submitting
-                ? "Posting..."
-                : "Post Listing"}
-            </button>
-          </form>
-        </div>
+          </div>
+        </section>
       </div>
     </main>
   );
