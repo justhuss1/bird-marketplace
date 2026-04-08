@@ -11,6 +11,13 @@ import {
   MessageCircle,
   Star,
   Search,
+  Cat,
+  Dog,
+  Fish,
+  Rabbit,
+  Package,
+  Turtle,
+  Beef,
 } from "lucide-react";
 
 type Listing = {
@@ -23,6 +30,18 @@ type Listing = {
   is_featured?: boolean | null;
   boost_until?: string | null;
 };
+
+const PET_CATEGORIES = [
+  "Birds",
+  "Cats",
+  "Dogs",
+  "Fish",
+  "Horses & Ponies",
+  "Livestock",
+  "Reptiles & Amphibians",
+  "Rabbits",
+  "Pet Supplies",
+] as const;
 
 export default function Home() {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -222,11 +241,15 @@ export default function Home() {
   const mainListings = filteredListings.filter((item) => !item.is_featured);
 
   const categoryItems = [
-    { name: "Parrots", icon: Bird },
-    { name: "Cockatiels", icon: Bird },
-    { name: "Finches", icon: Bird },
-    { name: "Canaries", icon: Bird },
-    { name: "Supplies", icon: Star },
+    { name: "Birds", icon: Bird },
+    { name: "Cats", icon: Cat },
+    { name: "Dogs", icon: Dog },
+    { name: "Fish", icon: Fish },
+    { name: "Horses & Ponies", icon: Bird },
+    { name: "Livestock", icon: Beef },
+    { name: "Reptiles & Amphibians", icon: Turtle },
+    { name: "Rabbits", icon: Rabbit },
+    { name: "Pet Supplies", icon: Package },
   ];
 
   return (
@@ -236,7 +259,7 @@ export default function Home() {
         <div className="max-w-6xl w-full mx-auto flex justify-between items-center">
           <h1 className="text-[15px] sm:text-lg font-bold text-green-600 flex items-center gap-2">
             <Bird size={18} />
-            Bird Marketplace
+            Pet Marketplace
           </h1>
 
           <div className="flex gap-2 items-center">
@@ -279,17 +302,17 @@ export default function Home() {
           <div className="max-w-3xl lg:max-w-[44rem]">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
               <ShieldCheck size={14} />
-              Trusted bird marketplace across Australia
+              Trusted pet marketplace across Australia
             </div>
 
             <h1 className="mt-5 text-[44px] leading-[0.95] font-bold tracking-tight text-white sm:text-5xl lg:text-[4.5rem] lg:leading-[0.95]">
               <span className="block">Buy, Sell & Rehome</span>
-              <span className="block">Birds Safely</span>
+              <span className="block">Pets Safely</span>
             </h1>
 
             <p className="mt-4 max-w-2xl text-[15px] leading-7 text-white/85 sm:text-lg">
-              Australia’s dedicated marketplace for bird lovers — discover
-              healthy birds, connect with verified sellers, and rehome with
+              Australia’s dedicated marketplace for pet lovers — discover
+              trusted listings, connect with verified sellers, and rehome with
               confidence.
             </p>
 
@@ -298,7 +321,10 @@ export default function Home() {
                 onClick={() => {
                   const listingsSection =
                     document.getElementById("latest-listings");
-                  listingsSection?.scrollIntoView({ behavior: "smooth" });
+                  listingsSection?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
                 }}
                 className="w-full sm:w-auto rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3.5 text-sm font-semibold transition shadow-md"
               >
@@ -318,7 +344,7 @@ export default function Home() {
                   <Search size={18} className="text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search by bird type, breed or keyword"
+                    placeholder="Search by pet type, breed or keyword"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
@@ -340,9 +366,12 @@ export default function Home() {
                   onClick={() => {
                     const listingsSection =
                       document.getElementById("latest-listings");
-                    listingsSection?.scrollIntoView({ behavior: "smooth" });
+                    listingsSection?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
                   }}
-                  className="rounded-2xl bg-green-600 hover:bg-green-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0c1a2d]"
+                  className="rounded-2xl bg-[#07111f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0c1a2d]"
                 >
                   Search
                 </button>
@@ -350,7 +379,7 @@ export default function Home() {
 
               <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600 sm:text-sm">
                 <span className="font-medium text-gray-700">
-                  Trusted by bird owners across Australia
+                  Trusted by pet owners across Australia
                 </span>
 
                 <span className="inline-flex items-center gap-1.5">
@@ -365,7 +394,7 @@ export default function Home() {
 
                 <span className="inline-flex items-center gap-1.5">
                   <Bird size={14} className="text-green-600" />
-                  Bird-focused marketplace
+                  Pet-focused marketplace
                 </span>
               </div>
 
@@ -384,32 +413,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CATEGORIES */}
-      <section className="max-w-6xl mx-auto px-4 -mt-10 mb-8 relative z-10">
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {categoryItems.map((cat) => (
-            <button
-              key={cat.name}
-              onClick={() => setCategoryFilter(cat.name)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-full whitespace-nowrap border transition ${
-                categoryFilter === cat.name
-                  ? "bg-green-600 text-white border-green-600 shadow-md"
-                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              <cat.icon size={16} />
-              <span className="text-sm font-medium">{cat.name}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
       {/* TRUST STRIP */}
-      <section className="max-w-6xl mx-auto px-4 -mt-4 sm:-mt-2 relative z-10">
+      <section className="max-w-6xl mx-auto px-4 mt-8 sm:mt-10 relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+          <div className="bg-green-50 rounded-2xl border border-green-100 p-6 shadow-sm hover:shadow-md transition">
             <div className="flex items-start gap-3">
-              <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
+              <div className="bg-white text-green-600 p-2.5 rounded-xl shrink-0">
                 <ShieldCheck size={20} />
               </div>
               <div>
@@ -417,7 +426,7 @@ export default function Home() {
                   Verified Sellers
                 </h4>
                 <p className="text-xs text-gray-500 mt-1 leading-5">
-                  All users are authenticated for safety
+                  All users are authenticated for safer pet transactions.
                 </p>
               </div>
             </div>
@@ -433,7 +442,7 @@ export default function Home() {
                   Secure Messaging
                 </h4>
                 <p className="text-xs text-gray-500 mt-1 leading-5">
-                  Chat safely within the platform
+                  Chat safely within the platform before you commit.
                 </p>
               </div>
             </div>
@@ -446,10 +455,10 @@ export default function Home() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold text-gray-900">
-                  Bird-Focused Marketplace
+                  Pet-Focused Marketplace
                 </h4>
                 <p className="text-xs text-gray-500 mt-1 leading-5">
-                  Built specifically for bird lovers
+                  Built specifically for pets, animals, and pet supplies.
                 </p>
               </div>
             </div>
@@ -465,11 +474,61 @@ export default function Home() {
                   Simple Rehoming
                 </h4>
                 <p className="text-xs text-gray-500 mt-1 leading-5">
-                  Easy process to buy, sell, or rehome
+                  Easy process to buy, sell, or responsibly rehome pets.
                 </p>
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* BROWSE BY CATEGORY */}
+      <section className="max-w-6xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up">
+        <div className="mb-5">
+          <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+            Browse by Category
+          </p>
+          <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+            Find the right pet category
+          </h2>
+          <p className="mt-2 text-sm text-gray-500 max-w-2xl">
+            Explore pets and supplies across popular categories.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {categoryItems.map((cat) => (
+            <button
+              key={cat.name}
+              onClick={() => {
+                setCategoryFilter(cat.name);
+                const listingsSection = document.getElementById("latest-listings");
+                listingsSection?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }}
+              className={`group bg-white rounded-2xl border p-4 text-left shadow-sm transition hover:shadow-md hover:-translate-y-[1px] ${
+                categoryFilter === cat.name
+                  ? "border-green-600 ring-2 ring-green-100"
+                  : "border-gray-100"
+              }`}
+            >
+              <div
+                className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${
+                  categoryFilter === cat.name
+                    ? "bg-green-600 text-white"
+                    : "bg-green-50 text-green-600"
+                }`}
+              >
+                <cat.icon size={20} />
+              </div>
+
+              <p className="text-sm font-semibold text-gray-900 leading-5">
+                {cat.name}
+              </p>
+            </button>
+          ))}
         </div>
       </section>
 
@@ -485,7 +544,7 @@ export default function Home() {
                 Featured
               </p>
               <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
-                Featured Birds
+                Featured Pets
               </h2>
               <p className="mt-2 text-sm text-gray-500 max-w-2xl">
                 Promoted listings from trusted sellers and standout breeders
@@ -565,7 +624,7 @@ export default function Home() {
 
                     <div className="mt-4 flex items-center justify-between gap-3">
                       <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                        {item.category || "Bird Listing"}
+                        {item.category || "Pet Listing"}
                       </span>
 
                       <span className="hidden sm:inline text-xs text-gray-400 uppercase tracking-wide">
@@ -591,11 +650,11 @@ export default function Home() {
               Latest Listings
             </p>
             <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
-              Fresh Birds Near You
+              Fresh Listings Near You
             </h2>
             <p className="mt-2 text-sm text-gray-500 max-w-2xl">
-              Newly listed birds from sellers across Australia, updated in real
-              time.
+              Newly listed pets and supplies from sellers across Australia,
+              updated in real time.
             </p>
           </div>
 
@@ -679,7 +738,7 @@ export default function Home() {
 
                     <div className="mt-4 flex items-center justify-between gap-3">
                       <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                        {item.category || "Bird Listing"}
+                        {item.category || "Pet Listing"}
                       </span>
 
                       <span className="text-xs text-gray-400">
@@ -704,7 +763,7 @@ export default function Home() {
               </p>
 
               <h3 className="mt-3 text-2xl sm:text-3xl font-bold leading-tight">
-                Ready to find a new home for your bird?
+                Ready to find a new home for your pet?
               </h3>
 
               <p className="mt-4 text-sm sm:text-base text-white/75 max-w-md leading-7">
@@ -745,11 +804,11 @@ export default function Home() {
               </p>
 
               <h3 className="mt-3 text-2xl sm:text-3xl font-bold leading-tight">
-                Looking for the right bird?
+                Looking for the right pet?
               </h3>
 
               <p className="mt-4 text-sm sm:text-base text-white/75 max-w-md leading-7">
-                Explore featured and newly listed birds from trusted sellers,
+                Explore featured and newly listed pets from trusted sellers,
                 compare options, and message directly within the platform.
               </p>
 
@@ -758,11 +817,14 @@ export default function Home() {
                   onClick={() => {
                     const listingsSection =
                       document.getElementById("latest-listings");
-                    listingsSection?.scrollIntoView({ behavior: "smooth" });
+                    listingsSection?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
                   }}
                   className="rounded-2xl bg-white text-[#07111f] hover:bg-gray-100 px-5 py-3 text-sm font-semibold transition shadow-md"
                 >
-                  Browse Birds
+                  Browse Pets
                 </button>
 
                 <Link href="/saved-listings">
@@ -775,7 +837,7 @@ export default function Home() {
               <div className="mt-6 flex flex-wrap gap-3 text-xs text-white/60">
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 border border-white/10">
                   <Bird size={14} className="text-green-400" />
-                  Bird-focused marketplace
+                  Pet-focused marketplace
                 </span>
 
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 border border-white/10">
@@ -795,12 +857,12 @@ export default function Home() {
             <div className="lg:col-span-1">
               <div className="flex items-center gap-2 text-green-600 font-semibold text-lg">
                 <Bird size={20} />
-                <span>Bird Marketplace</span>
+                <span>Pet Marketplace</span>
               </div>
 
               <p className="mt-4 text-sm text-gray-500 leading-7 max-w-sm">
-                A safer, simpler way to buy, sell, and rehome birds across
-                Australia. Built for bird lovers, trusted by verified users.
+                A safer, simpler way to buy, sell, and rehome pets across
+                Australia. Built for pet lovers, trusted by verified users.
               </p>
             </div>
 
@@ -814,7 +876,10 @@ export default function Home() {
                   onClick={() => {
                     const listingsSection =
                       document.getElementById("latest-listings");
-                    listingsSection?.scrollIntoView({ behavior: "smooth" });
+                    listingsSection?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
                   }}
                   className="text-left hover:text-gray-900 transition"
                 >
@@ -825,25 +890,44 @@ export default function Home() {
                   onClick={() => {
                     const featuredSection =
                       document.getElementById("featured-listings");
-                    featuredSection?.scrollIntoView({ behavior: "smooth" });
+                    featuredSection?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
                   }}
                   className="text-left hover:text-gray-900 transition"
                 >
-                  Featured Birds
+                  Featured Pets
                 </button>
 
                 <button
-                  onClick={() => setCategoryFilter("Parrots")}
+                  onClick={() => {
+                    setCategoryFilter("Dogs");
+                    const listingsSection =
+                      document.getElementById("latest-listings");
+                    listingsSection?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  }}
                   className="text-left hover:text-gray-900 transition"
                 >
-                  Parrots
+                  Dogs
                 </button>
 
                 <button
-                  onClick={() => setCategoryFilter("Cockatiels")}
+                  onClick={() => {
+                    setCategoryFilter("Cats");
+                    const listingsSection =
+                      document.getElementById("latest-listings");
+                    listingsSection?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  }}
                   className="text-left hover:text-gray-900 transition"
                 >
-                  Cockatiels
+                  Cats
                 </button>
               </div>
             </div>
@@ -912,8 +996,7 @@ export default function Home() {
 
           <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <p className="text-xs text-gray-400">
-              © {new Date().getFullYear()} Bird Marketplace. All rights
-              reserved.
+              © {new Date().getFullYear()} Pet Marketplace. All rights reserved.
             </p>
 
             <div className="flex items-center gap-4 text-xs text-gray-400">
