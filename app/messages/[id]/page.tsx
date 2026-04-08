@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { ArrowLeft, MapPin, Send } from "lucide-react";
 
 type Message = {
   id: string;
@@ -12,31 +14,48 @@ type Message = {
   created_at: string;
 };
 
+type Listing = {
+  title: string;
+  image: string | null;
+  location: string;
+};
+
 type Conversation = {
   id: string;
   buyer_id: string;
   seller_id: string;
   listing_id: string;
+  listings?: Listing;
 };
 
-export default function MessagesPage() {
+export default function MessagesThreadPage() {
   const params = useParams();
   const router = useRouter();
   const conversationId = params?.id as string;
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [newMessage, setNewMessage] = useState("");
-  const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState("");
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
 
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    checkUser();
-  }, []);
+    fetchThread();
+  }, [conversationId]);
 
-  const checkUser = async () => {
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const fetchThread = async () => {
+    setLoading(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -47,45 +66,46 @@ export default function MessagesPage() {
     }
 
     setUserId(user.id);
-    setLoading(false);
-  };
 
-  const fetchMessages = async () => {
-    const { data, error } = await supabase
+    const { data: conversationData, error: conversationError } = await supabase
+      .from("conversations")
+      .select(
+        `
+        *,
+        listings (
+          title,
+          image,
+          location
+        )
+      `
+      )
+      .eq("id", conversationId)
+      .single();
+
+    if (conversationError) {
+      console.error(conversationError);
+      setLoading(false);
+      return;
+    }
+
+    setConversation(conversationData as Conversation);
+
+    const { data: messageData, error: messageError } = await supabase
       .from("messages")
       .select("*")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
 
-    if (error) {
-      console.error(error);
-    } else {
-      setMessages((data || []) as Message[]);
+    if (messageError) {
+      console.error(messageError);
+      setLoading(false);
+      return;
     }
-  };
 
-  const fetchConversation = async () => {
-    const { data, error } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("id", conversationId)
-      .single();
-
-    if (error) {
-      console.error(error);
-    } else {
-      setConversation(data as Conversation);
-    }
-  };
-
-  useEffect(() => {
-    if (!conversationId || !userId) return;
-
-    fetchMessages();
-    fetchConversation();
+    setMessages((messageData || []) as Message[]);
 
     const channel = supabase
-      .channel(`messages-${conversationId}`)
+      .channel(`messages-thread-${conversationId}`)
       .on(
         "postgres_changes",
         {
@@ -95,41 +115,42 @@ export default function MessagesPage() {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          const newMsg = payload.new as Message;
+          const incoming = payload.new as Message;
+
           setMessages((prev) => {
-            const alreadyExists = prev.some((msg) => msg.id === newMsg.id);
-            if (alreadyExists) return prev;
-            return [...prev, newMsg];
+            const exists = prev.some((msg) => msg.id === incoming.id);
+            if (exists) return prev;
+            return [...prev, incoming];
           });
         }
       )
       .subscribe();
 
+    setLoading(false);
+
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, userId]);
+  };
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSend = async () => {
     if (!newMessage.trim()) return;
+    if (!conversation) return;
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return;
+    if (!user) {
+      router.push("/login");
+      return;
+    }
 
-    const messageText = newMessage;
+    const messageText = newMessage.trim();
 
     const { error } = await supabase.from("messages").insert([
       {
-        conversation_id: conversationId,
+        conversation_id: conversation.id,
         sender_id: user.id,
         text: messageText,
       },
@@ -143,113 +164,184 @@ export default function MessagesPage() {
 
     setNewMessage("");
 
-    if (conversation) {
-      const recipientId =
-        conversation.buyer_id === user.id
-          ? conversation.seller_id
-          : conversation.buyer_id;
+    const recipientId =
+      conversation.buyer_id === user.id
+        ? conversation.seller_id
+        : conversation.buyer_id;
 
-      const { error: notificationError } = await supabase
-        .from("notifications")
-        .insert([
-          {
-            user_id: recipientId,
-            type: "message",
-            title: "New message",
-            message: messageText,
-            link: `/messages/${conversationId}`,
-            is_read: false,
-          },
-        ]);
+    const { error: notificationError } = await supabase
+      .from("notifications")
+      .insert([
+        {
+          user_id: recipientId,
+          type: "message",
+          title: "New message",
+          message: messageText,
+          link: `/messages/${conversation.id}`,
+          is_read: false,
+        },
+      ]);
 
-      if (notificationError) {
-        console.error("Notification insert error:", notificationError);
-      }
-          }
-        };
+    if (notificationError) {
+      console.error("Notification insert error:", notificationError);
+    }
+  };
 
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const formatMessageTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString([], {
       hour: "numeric",
       minute: "2-digit",
     });
   };
 
   if (loading) {
-    return <main className="p-4">Loading chat...</main>;
+    return <main className="p-4">Loading conversation...</main>;
+  }
+
+  if (!conversation) {
+    return (
+      <main className="bg-gray-50 min-h-screen py-8 px-4">
+        <div className="max-w-5xl mx-auto">
+          <button
+            onClick={() => router.back()}
+            className="mb-4 text-sm text-gray-600 hover:text-black transition"
+          >
+            ← Back
+          </button>
+          <p>Conversation not found.</p>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen py-8 px-4 pb-24">
-      <div className="max-w-3xl mx-auto">
-        <button
-          onClick={() => router.back()}
-          className="mb-4 text-sm text-gray-600 hover:text-black transition"
-        >
-          ← Back
-        </button>
+    <main className="bg-gray-50 min-h-screen px-4 py-6 pb-24">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-4">
+          <button
+            onClick={() => router.push("/messages")}
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
+          >
+            <ArrowLeft size={16} />
+            Back to messages
+          </button>
+        </div>
 
-        <div className="bg-white rounded-2xl shadow overflow-hidden">
-          <div className="border-b px-6 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Real-time conversation
-            </p>
+        <div className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden">
+          {/* Header */}
+          <div className="border-b border-gray-100 p-4 sm:p-5 bg-white">
+            <div className="flex items-center gap-4">
+              <div className="shrink-0">
+                <img
+                  src={
+                    conversation.listings?.image &&
+                    conversation.listings.image !== ""
+                      ? conversation.listings.image
+                      : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
+                  }
+                  alt={conversation.listings?.title || "Listing"}
+                  className="w-16 h-16 rounded-2xl object-cover"
+                />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={`/listing/${conversation.listing_id}`}
+                  className="text-lg font-semibold text-gray-900 hover:text-green-600 transition"
+                >
+                  {conversation.listings?.title || "Untitled Listing"}
+                </Link>
+
+                <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                  <MapPin size={14} />
+                  {conversation.listings?.location || "Unknown location"}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="p-4 h-[500px] overflow-y-auto bg-gray-50 space-y-4">
+          {/* Messages */}
+          <div className="bg-gray-50 px-4 sm:px-5 py-5 h-[60vh] overflow-y-auto">
             {messages.length === 0 ? (
-              <p className="text-gray-500 text-sm">
-                No messages yet. Start the conversation.
-              </p>
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center max-w-sm">
+                  <div className="w-14 h-14 mx-auto rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
+                    <Send size={24} />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Start the conversation
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Ask about availability, pickup, price, or any details about
+                    this listing.
+                  </p>
+                </div>
+              </div>
             ) : (
-              messages.map((message) => {
-                const isMine = message.sender_id === userId;
+              <div className="space-y-3">
+                {messages.map((message) => {
+                  const isOwnMessage = message.sender_id === userId;
 
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-                  >
+                  return (
                     <div
-                      className={`max-w-[80%] px-4 py-3 rounded-2xl shadow-sm ${
-                        isMine
-                          ? "bg-green-600 text-white"
-                          : "bg-white border text-gray-800"
+                      key={message.id}
+                      className={`flex ${
+                        isOwnMessage ? "justify-end" : "justify-start"
                       }`}
                     >
-                      <p className="text-sm">{message.text}</p>
-                      <p
-                        className={`text-[11px] mt-2 ${
-                          isMine ? "text-green-100" : "text-gray-400"
+                      <div
+                        className={`max-w-[85%] sm:max-w-[70%] rounded-3xl px-4 py-3 shadow-sm ${
+                          isOwnMessage
+                            ? "bg-green-600 text-white rounded-br-md"
+                            : "bg-white text-gray-900 border border-gray-100 rounded-bl-md"
                         }`}
                       >
-                        {formatTime(message.created_at)}
-                      </p>
+                        <p className="text-sm leading-6 break-words">
+                          {message.text}
+                        </p>
+                        <p
+                          className={`mt-2 text-[11px] ${
+                            isOwnMessage ? "text-white/70" : "text-gray-400"
+                          }`}
+                        >
+                          {formatMessageTime(message.created_at)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
             )}
-
-            <div ref={bottomRef} />
           </div>
 
-          <form onSubmit={handleSend} className="border-t p-4 flex gap-2 bg-white">
-            <input
-              type="text"
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-black outline-none focus:ring-2 focus:ring-green-500"
-            />
-            <button
-              type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-medium transition"
-            >
-              Send
-            </button>
-          </form>
+          {/* Input */}
+          <div className="border-t border-gray-100 p-4 bg-white">
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="flex-1 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500 focus:bg-white"
+              />
+
+              <button
+                onClick={handleSend}
+                className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-4 py-3 transition shadow-md"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </main>
