@@ -64,7 +64,7 @@ export default function CreateListingPage() {
         formData.append("upload_preset", uploadPreset);
 
         const res = await fetch(
-          `https://api.cloudinary.com/v1_1/$ddqd3aauy/image/upload`,
+          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
           {
             method: "POST",
             body: formData,
@@ -138,6 +138,10 @@ export default function CreateListingPage() {
 
     router.push("/my-listings");
   };
+
+  <p className="text-xs text-red-500">
+  Cloud: {process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "missing"} | Preset: {process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "missing"}
+</p>
 
   return (
     <main className="bg-gray-50 min-h-screen py-6 sm:py-8 px-4 pb-24">
