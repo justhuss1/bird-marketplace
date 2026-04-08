@@ -339,32 +339,36 @@ export default function MyListingsPage() {
                     </div>
 
                     <div className="mt-5 grid grid-cols-2 gap-3">
+                      {/* EDIT */}
                       <Link href={`/edit/${listing.id}`}>
-                        <button className="w-full rounded-2xl bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 text-sm font-semibold transition shadow-sm inline-flex items-center justify-center gap-2">
+                        <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2">
                           <Pencil size={16} />
                           Edit
                         </button>
                       </Link>
 
+                      {/* DELETE */}
                       <button
                         onClick={() => handleDelete(listing.id)}
-                        className="w-full rounded-2xl bg-red-500 hover:bg-red-600 text-white px-4 py-3 text-sm font-semibold transition shadow-sm inline-flex items-center justify-center gap-2"
+                        className="w-full rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2"
                       >
                         <Trash2 size={16} />
                         Delete
                       </button>
 
+                      {/* FEATURE */}
                       <button
                         onClick={() => handleCheckout("feature", listing.id)}
-                        className="w-full rounded-2xl bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-3 text-sm font-semibold transition shadow-sm inline-flex items-center justify-center gap-2"
+                        className="w-full rounded-2xl border border-yellow-200 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2"
                       >
                         <Star size={16} />
                         Feature
                       </button>
 
+                      {/* BOOST */}
                       <button
                         onClick={() => handleCheckout("boost", listing.id)}
-                        className="w-full rounded-2xl bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 text-sm font-semibold transition shadow-sm inline-flex items-center justify-center gap-2"
+                        className="w-full rounded-2xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2"
                       >
                         <Star size={16} />
                         Boost
