@@ -1,447 +1,905 @@
+"use client";
+
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import {
   Bird,
+  Heart,
+  MapPin,
   ShieldCheck,
   MessageCircle,
-  Search,
-  MapPin,
-  ArrowRight,
-  CheckCircle2,
+  Zap,
   Star,
+  Search
 } from "lucide-react";
 
-const featuredListings = [
-  {
-    id: 1,
-    title: "Budgies",
-    price: "$50",
-    location: "Perth",
-    image:
-      "https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1200&q=80",
-    tag: "Featured",
-    category: "Parrots",
-  },
-  {
-    id: 2,
-    title: "Cockatiel Pair",
-    price: "$180",
-    location: "Sydney",
-    image:
-      "https://images.unsplash.com/photo-1552728089-57bdde30beb3?auto=format&fit=crop&w=1200&q=80",
-    tag: "Verified Seller",
-    category: "Cockatiels",
-  },
-  {
-    id: 3,
-    title: "Rainbow Lorikeet",
-    price: "$220",
-    location: "Brisbane",
-    image:
-      "https://images.unsplash.com/photo-1544923408-75c5cef46f14?auto=format&fit=crop&w=1200&q=80",
-    tag: "New",
-    category: "Lorikeets",
-  },
-];
+type Listing = {
+  id: string;
+  title: string;
+  price: string;
+  location: string;
+  image: string | null;
+  category?: string | null;
+  is_featured?: boolean | null;
+  boost_until?: string | null;
+};
 
-const latestListings = [
-  {
-    id: 4,
-    title: "Indian Ringneck",
-    price: "$350",
-    location: "Melbourne",
-    image:
-      "https://images.unsplash.com/photo-1444464666168-49d633b86797?auto=format&fit=crop&w=1200&q=80",
-    category: "Parrots",
-  },
-  {
-    id: 5,
-    title: "Lovebirds",
-    price: "$120",
-    location: "Adelaide",
-    image:
-      "https://images.unsplash.com/photo-1520808663317-647b476a81b9?auto=format&fit=crop&w=1200&q=80",
-    category: "Lovebirds",
-  },
-  {
-    id: 6,
-    title: "Canary",
-    price: "$70",
-    location: "NSW",
-    image:
-      "https://images.unsplash.com/photo-1497206365907-f5e630693df0?auto=format&fit=crop&w=1200&q=80",
-    category: "Canaries",
-  },
-];
+export default function Home() {
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
 
-export default function HomePage() {
+  useEffect(() => {
+    fetchListings();
+    getCurrentUser();
+    fetchSavedListings();
+  }, []);
+
+  const fetchListings = async () => {
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setListings(data || []);
+  };
+
+  const getCurrentUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    setUserEmail(user?.email || "");
+  };
+
+  const fetchSavedListings = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setSavedListingIds([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("saved_listings")
+      .select("listing_id")
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setSavedListingIds((data || []).map((item) => item.listing_id));
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUserEmail("");
+    setSavedListingIds([]);
+  };
+
+  const handleToggleSave = async (
+    e: React.MouseEvent,
+    listingId: string
+  ) => {
+    e.preventDefault();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("Please log in to save listings.");
+      return;
+    }
+
+    const isSaved = savedListingIds.includes(listingId);
+
+    if (isSaved) {
+      const { error } = await supabase
+        .from("saved_listings")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("listing_id", listingId);
+
+      if (error) {
+        console.error(error);
+        alert("Failed to remove saved listing");
+        return;
+      }
+
+      setSavedListingIds((prev) => prev.filter((id) => id !== listingId));
+    } else {
+      const { error } = await supabase.from("saved_listings").insert([
+        {
+          user_id: user.id,
+          listing_id: listingId,
+        },
+      ]);
+
+      if (error) {
+        console.error(error);
+        alert("Failed to save listing");
+        return;
+      }
+
+      setSavedListingIds((prev) => [...prev, listingId]);
+    }
+  };
+
+  const clearFilters = () => {
+    setCategoryFilter("");
+    setMinPrice("");
+    setMaxPrice("");
+    setSearchTerm("");
+    setLocationFilter("");
+    setSortBy("newest");
+  };
+
+  const hasActiveFilters =
+    !!categoryFilter ||
+    !!minPrice ||
+    !!maxPrice ||
+    !!searchTerm ||
+    !!locationFilter ||
+    sortBy !== "newest";
+
+  const filteredListings = listings
+    .filter((item) => {
+      const matchesSearch = item.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      const matchesLocation = item.location
+        ?.toLowerCase()
+        .includes(locationFilter.toLowerCase());
+
+      const matchesCategory = categoryFilter
+        ? item.category === categoryFilter
+        : true;
+
+      const numericPrice = Number(item.price || 0);
+
+      const matchesMinPrice = minPrice
+        ? numericPrice >= Number(minPrice)
+        : true;
+
+      const matchesMaxPrice = maxPrice
+        ? numericPrice <= Number(maxPrice)
+        : true;
+
+      return (
+        matchesSearch &&
+        matchesLocation &&
+        matchesCategory &&
+        matchesMinPrice &&
+        matchesMaxPrice
+      );
+    })
+    .sort((a, b) => {
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+
+      const now = new Date();
+
+      const aBoost = a.boost_until
+        ? new Date(a.boost_until).getTime() > now.getTime()
+        : false;
+
+      const bBoost = b.boost_until
+        ? new Date(b.boost_until).getTime() > now.getTime()
+        : false;
+
+      if (aBoost && !bBoost) return -1;
+      if (!aBoost && bBoost) return 1;
+
+      if (sortBy === "lowest") {
+        return Number(a.price || 0) - Number(b.price || 0);
+      }
+
+      if (sortBy === "highest") {
+        return Number(b.price || 0) - Number(a.price || 0);
+      }
+
+      return 0;
+    });
+
+  const featuredListings = filteredListings.filter((item) => item.is_featured);
+
+  const mainListings = filteredListings.filter(
+  (item) => !item.is_featured
+);
+
+  const categoryItems = [
+    { name: "Parrots", icon: Bird },
+    { name: "Cockatiels", icon: Bird },
+    { name: "Finches", icon: Bird },
+    { name: "Canaries", icon: Bird },
+    { name: "Supplies", icon: Star },
+  ];
+
   return (
-    <main className="min-h-screen bg-white text-gray-900">
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1444464666168-49d633b86797?auto=format&fit=crop&w=1600&q=80"
-            alt="Bird hero"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/45" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/35 to-white/95" />
-        </div>
+    <main className="bg-gray-50 min-h-screen pb-24 md:pb-20">
+      {/* TOP NAV */}
+      <div className="bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
+        <h1 className="text-base sm:text-lg font-bold text-green-600 flex items-center gap-2">
+          <Bird size={18} />
+          Bird Marketplace
+        </h1>
 
-        <div className="relative mx-auto flex min-h-[75vh] max-w-7xl flex-col justify-center px-4 pb-10 pt-24 sm:px-6 lg:px-8">
+        <div className="flex gap-2 items-center">
+          {userEmail ? (
+            <>
+              <span className="text-sm text-gray-600 hidden md:block">
+                {userEmail}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link href="/login">
+              <button className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm">
+                Login
+              </button>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* HERO */}
+      <div className="relative overflow-hidden bg-[#07111f]">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-40"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1800&q=80')",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#07111f]/95 via-[#07111f]/75 to-[#07111f]/25" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/20" />
+
+        <div className="relative max-w-6xl mx-auto px-4 pt-10 pb-16 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
           <div className="max-w-3xl">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur">
-              <ShieldCheck className="h-4 w-4" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
+              <ShieldCheck size={14} />
               Trusted bird marketplace across Australia
             </div>
 
-            <h1 className="max-w-2xl text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Buy, Sell & Rehome Birds Safely
+            <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Buy, Sell & Rehome
+              <br className="hidden sm:block" />
+              Birds Safely
             </h1>
 
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-white/90 sm:text-xl">
-              Australia’s dedicated marketplace for bird lovers — discover
-              healthy birds, connect with verified sellers, and rehome with
-              confidence.
+            <p className="mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg">
+              Australia’s dedicated marketplace for bird lovers — discover healthy
+              birds, connect with verified sellers, and rehome with confidence.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="#latest-listings"
-                className="inline-flex items-center justify-center rounded-2xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-green-700"
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <button
+                onClick={() => {
+                  const listingsSection = document.getElementById("latest-listings");
+                  listingsSection?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md"
               >
                 Browse Listings
-              </Link>
-
-              <Link
-                href="/create"
-                className="inline-flex items-center justify-center rounded-2xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
-              >
-                Post a Listing
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-10 max-w-4xl rounded-3xl border border-white/15 bg-white/95 p-4 shadow-2xl backdrop-blur sm:p-5">
-            <div className="grid gap-3 md:grid-cols-[1.3fr_1fr_auto]">
-              <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <Search className="h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by bird type, breed or keyword"
-                  className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                <MapPin className="h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Enter suburb, city or state"
-                  className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                />
-              </div>
-
-              <button className="rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-black">
-                Search
               </button>
+
+              <Link href="/create">
+                <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md">
+                  Post a Listing
+                </button>
+              </Link>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600">
-              <span className="font-medium text-gray-900">
-                Trusted by bird owners across Australia
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                Verified users
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                Secure messaging
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                Bird-focused marketplace
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-gray-100 bg-white">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-6 text-sm text-gray-700 sm:px-6 md:grid-cols-3 lg:px-8">
-          <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
-            <ShieldCheck className="h-5 w-5 text-green-600" />
-            <span>Authenticated accounts for a safer experience</span>
-          </div>
-          <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
-            <MessageCircle className="h-5 w-5 text-green-600" />
-            <span>Secure in-platform messaging between buyers and sellers</span>
-          </div>
-          <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4">
-            <Bird className="h-5 w-5 text-green-600" />
-            <span>Built specifically for birds, not general classifieds</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
-              Featured
-            </p>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
-              Featured Birds
-            </h2>
-            <p className="mt-2 text-gray-600">
-              Hand-picked listings from trusted sellers and popular breeders.
-            </p>
-          </div>
-
-          <Link
-            href="/listings?featured=true"
-            className="hidden items-center gap-1 text-sm font-semibold text-gray-900 hover:text-green-600 sm:inline-flex"
-          >
-            View all featured
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {featuredListings.map((listing) => (
-            <Link
-              key={listing.id}
-              href={`/listing/${listing.id}`}
-              className="group overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl"
-            >
-              <div className="relative h-64 overflow-hidden">
-                <img
-                  src={listing.image}
-                  alt={listing.title}
-                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                />
-                <div className="absolute left-4 top-4 rounded-full bg-yellow-400 px-3 py-1 text-xs font-semibold text-gray-900 shadow">
-                  {listing.tag}
-                </div>
-              </div>
-
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {listing.title}
-                    </h3>
-                    <p className="mt-2 text-3xl font-bold text-green-600">
-                      {listing.price}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex items-center gap-2 text-gray-500">
-                  <MapPin className="h-4 w-4" />
-                  <span>{listing.location}</span>
-                </div>
-
-                <div className="mt-4 inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
-                  {listing.category}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section id="latest-listings" className="bg-gray-50">
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
-                Latest listings
-              </p>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
-                Fresh Birds Near You
-              </h2>
-              <p className="mt-2 text-gray-600">
-                New birds added by sellers across Australia.
-              </p>
-            </div>
-
-            <Link
-              href="/listings"
-              className="hidden items-center gap-1 text-sm font-semibold text-gray-900 hover:text-green-600 sm:inline-flex"
-            >
-              View all listings
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {latestListings.map((listing) => (
-              <Link
-                key={listing.id}
-                href={`/listing/${listing.id}`}
-                className="group overflow-hidden rounded-3xl bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl"
-              >
-                <div className="h-60 overflow-hidden">
-                  <img
-                    src={listing.image}
-                    alt={listing.title}
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/95 p-4 shadow-2xl backdrop-blur sm:p-5">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.2fr_1fr_auto]">
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                  <Search size={18} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by bird type, breed or keyword"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
                   />
                 </div>
 
-                <div className="p-5">
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {listing.title}
-                  </h3>
-                  <p className="mt-2 text-3xl font-bold text-green-600">
-                    {listing.price}
-                  </p>
-
-                  <div className="mt-3 flex items-center gap-2 text-gray-500">
-                    <MapPin className="h-4 w-4" />
-                    <span>{listing.location}</span>
-                  </div>
-
-                  <div className="mt-4 inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-                    {listing.category}
-                  </div>
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                  <MapPin size={18} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Enter suburb, city or state"
+                    value={locationFilter}
+                    onChange={(e) => setLocationFilter(e.target.value)}
+                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                  />
                 </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-green-600">
-            Why Bird Marketplace
-          </p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Built for bird lovers, not general classifieds
-          </h2>
-          <p className="mt-4 text-lg text-gray-600">
-            A safer, simpler way to buy, sell, and rehome birds with more trust,
-            better discovery, and smoother communication.
-          </p>
-        </div>
-
-        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-            <ShieldCheck className="h-10 w-10 text-green-600" />
-            <h3 className="mt-4 text-xl font-semibold text-gray-900">
-              Verified Sellers
-            </h3>
-            <p className="mt-2 text-gray-600">
-              Every account is authenticated to help create a safer marketplace
-              experience.
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-            <MessageCircle className="h-10 w-10 text-green-600" />
-            <h3 className="mt-4 text-xl font-semibold text-gray-900">
-              Secure Messaging
-            </h3>
-            <p className="mt-2 text-gray-600">
-              Chat directly inside the platform without sharing personal details
-              upfront.
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-            <Bird className="h-10 w-10 text-green-600" />
-            <h3 className="mt-4 text-xl font-semibold text-gray-900">
-              Bird-Focused Marketplace
-            </h3>
-            <p className="mt-2 text-gray-600">
-              Find birds faster with categories, location search, and
-              bird-specific listings.
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-            <Star className="h-10 w-10 text-green-600" />
-            <h3 className="mt-4 text-xl font-semibold text-gray-900">
-              Simple Rehoming
-            </h3>
-            <p className="mt-2 text-gray-600">
-              Whether you’re buying, selling, or rehoming, the process is clear
-              and easy.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-gray-900 text-white">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-2">
-            <div className="rounded-3xl bg-white/5 p-8 ring-1 ring-white/10">
-              <p className="text-sm font-semibold uppercase tracking-wide text-green-400">
-                For sellers
-              </p>
-              <h3 className="mt-3 text-3xl font-bold">
-                Ready to find a new home for your bird?
-              </h3>
-              <p className="mt-4 text-white/75">
-                Create a listing, upload photos, and connect with interested
-                buyers across Australia.
-              </p>
-              <Link
-                href="/create"
-                className="mt-6 inline-flex rounded-2xl bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
-              >
-                Post Your Listing
-              </Link>
-            </div>
-
-            <div className="rounded-3xl bg-white/5 p-8 ring-1 ring-white/10">
-              <p className="text-sm font-semibold uppercase tracking-wide text-green-400">
-                For buyers
-              </p>
-              <h3 className="mt-3 text-3xl font-bold">
-                Looking for the right bird?
-              </h3>
-              <p className="mt-4 text-white/75">
-                Explore featured and newly listed birds from trusted sellers
-                near you.
-              </p>
-              <Link
-                href="/listings"
-                className="mt-6 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-100"
-              >
-                Browse Birds
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <footer className="border-t border-gray-100 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                <Bird className="h-5 w-5 text-green-600" />
-                Bird Marketplace
+                <button
+                  onClick={() => {
+                    const listingsSection = document.getElementById("latest-listings");
+                    listingsSection?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="rounded-2xl bg-[#07111f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0c1a2d]"
+                >
+                  Search
+                </button>
               </div>
-              <p className="mt-1 text-sm text-gray-600">
-                A safer, simpler way to buy, sell, and rehome birds in
+
+              <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600 sm:text-sm">
+                <span className="font-medium text-gray-700">
+                  Trusted by bird owners across Australia
+                </span>
+
+                <span className="inline-flex items-center gap-1.5">
+                  <ShieldCheck size={14} className="text-green-600" />
+                  Verified users
+                </span>
+
+                <span className="inline-flex items-center gap-1.5">
+                  <MessageCircle size={14} className="text-green-600" />
+                  Secure messaging
+                </span>
+
+                <span className="inline-flex items-center gap-1.5">
+                  <Bird size={14} className="text-green-600" />
+                  Bird-focused marketplace
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CATEGORIES */}
+      <div className="max-w-6xl mx-auto px-4 -mt-10 mb-8 relative z-10">
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          {categoryItems.map((cat) => (
+            <button
+              key={cat.name}
+              onClick={() => setCategoryFilter(cat.name)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-full whitespace-nowrap border transition ${
+                categoryFilter === cat.name
+                  ? "bg-green-600 text-white border-green-600 shadow-md"
+                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              <cat.icon size={16} />
+              <span className="text-sm font-medium">{cat.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* TRUST STRIP */}
+      <div className="bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 -mt-6 relative z-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-50 text-green-600 p-2.5 rounded-xl">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    Verified Sellers
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    All users are authenticated for safety
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-50 text-green-600 p-2.5 rounded-xl">
+                  <MessageCircle size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    Secure Messaging
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Chat safely within the platform
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-50 text-green-600 p-2 rounded-xl">
+                  <Bird size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    Bird-Focused Marketplace
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Built specifically for bird lovers
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-50 text-green-600 p-2 rounded-xl">
+                  <Star size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    Simple Rehoming
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Easy process to buy, sell, or rehome
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* FEATURED LISTINGS */}
+      {featuredListings.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up">
+          <div className="flex items-end justify-between gap-4 mb-5">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                Featured
+              </p>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+                Featured Birds
+              </h2>
+              <p className="mt-2 text-sm text-gray-500 max-w-2xl">
+                Promoted listings from trusted sellers and standout breeders across
                 Australia.
               </p>
             </div>
 
-            <div className="flex gap-5 text-sm text-gray-600">
-              <Link href="/listings" className="hover:text-gray-900">
+            <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
+              View all featured →
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-400 mb-3 sm:hidden">Swipe to explore →</p>
+
+          <div className="flex gap-5 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+            {featuredListings.map((item) => (
+              <Link
+                key={item.id}
+                href={`/listing/${item.id}`}
+                className="snap-start min-w-[300px] sm:min-w-[340px] max-w-[340px]"
+              >
+                <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={
+                        item.image && item.image !== ""
+                          ? item.image
+                          : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
+                      }
+                      alt={item.title}
+                      className="h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+
+                    <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                      ★ Featured
+                    </span>
+
+                    {item.boost_until &&
+                      new Date(item.boost_until) > new Date() && (
+                        <span className="absolute top-3 left-28 bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                          Boosted
+                        </span>
+                      )}
+
+                    <button
+                      onClick={(e) => handleToggleSave(e, item.id)}
+                      className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-medium shadow backdrop-blur transition ${
+                        savedListingIds.includes(item.id)
+                          ? "bg-red-500 text-white"
+                          : "bg-white/90 text-gray-800"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <Heart size={14} />
+                        {savedListingIds.includes(item.id) ? "Saved" : "Save"}
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">
+                        {item.title}
+                      </h3>
+
+                      <span className="text-green-600 font-semibold text-lg whitespace-nowrap">
+                        ${item.price}
+                      </span>
+                    </div>
+
+                    <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
+                      <MapPin size={14} />
+                      {item.location}
+                    </p>
+
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                        {item.category || "Bird Listing"}
+                      </span>
+
+                      <span className="text-xs text-gray-400">Promoted listing</span>
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+
+      {/* MAIN LISTINGS */}
+      <section
+        id="latest-listings"
+        className="max-w-6xl mx-auto px-4 mt-12 mb-16 animate-fade-in-up"
+      >
+        <div className="flex items-end justify-between gap-4 mb-5">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+              Latest Listings
+            </p>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+              Fresh Birds Near You
+            </h2>
+            <p className="mt-2 text-sm text-gray-500 max-w-2xl">
+              Newly listed birds from sellers across Australia, updated in real time.
+            </p>
+          </div>
+
+          <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
+            View all listings →
+          </button>
+        </div>
+
+        {mainListings.length === 0 ? (
+          <div className="bg-white border border-gray-100 rounded-3xl p-10 text-center shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900">
+              No listings found
+            </h3>
+            <p className="text-sm text-gray-500 mt-2">
+              Try adjusting your filters or searching a different location.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            {mainListings.map((item) => (
+              <Link key={item.id} href={`/listing/${item.id}`}>
+                <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={
+                        item.image && item.image !== ""
+                          ? item.image
+                          : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
+                      }
+                      alt={item.title}
+                      className="h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+
+                    {item.is_featured ? (
+                      <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                        ★ Featured
+                      </span>
+                    ) : (
+                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
+                        New
+                      </span>
+                    )}
+
+                    {item.boost_until &&
+                      new Date(item.boost_until) > new Date() && (
+                        <span className="absolute top-3 left-28 bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                          Boosted
+                        </span>
+                      )}
+
+                    <button
+                      onClick={(e) => handleToggleSave(e, item.id)}
+                      className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-medium shadow backdrop-blur transition ${
+                        savedListingIds.includes(item.id)
+                          ? "bg-red-500 text-white"
+                          : "bg-white/90 text-gray-800"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <Heart size={14} />
+                        {savedListingIds.includes(item.id) ? "Saved" : "Save"}
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">
+                        {item.title}
+                      </h3>
+
+                      <span className="text-green-600 font-semibold text-lg whitespace-nowrap">
+                        ${item.price}
+                      </span>
+                    </div>
+
+                    <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
+                      <MapPin size={14} />
+                      {item.location}
+                    </p>
+
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                        {item.category || "Bird Listing"}
+                      </span>
+
+                      <span className="text-xs text-gray-400">View details</span>
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* SELLER / BUYER CTA SECTION */}
+      <section className="max-w-6xl mx-auto px-4 mb-16 animate-fade-in-up">
+        <div className="rounded-[32px] overflow-hidden bg-[#07111f] text-white shadow-xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            {/* SELLERS */}
+            <div className="p-8 sm:p-10 lg:p-12 border-b lg:border-b-0 lg:border-r border-white/10">
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-400">
+                For Sellers
+              </p>
+
+              <h3 className="mt-3 text-2xl sm:text-3xl font-bold leading-tight">
+                Ready to find a new home for your bird?
+              </h3>
+
+              <p className="mt-4 text-sm sm:text-base text-white/75 max-w-md leading-7">
+                Create a listing, upload great photos, and connect with serious buyers
+                across Australia in just a few steps.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="/create">
+                  <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md">
+                    Post Your Listing
+                  </button>
+                </Link>
+
+                <Link href="/my-listings">
+                  <button className="rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white px-5 py-3 text-sm font-semibold transition">
+                    Manage Listings
+                  </button>
+                </Link>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3 text-xs text-white/60">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 border border-white/10">
+                  <ShieldCheck size={14} className="text-green-400" />
+                  Verified accounts
+                </span>
+
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 border border-white/10">
+                  <MessageCircle size={14} className="text-green-400" />
+                  Secure messaging
+                </span>
+              </div>
+            </div>
+
+            {/* BUYERS */}
+            <div className="p-8 sm:p-10 lg:p-12">
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-400">
+                For Buyers
+              </p>
+
+              <h3 className="mt-3 text-2xl sm:text-3xl font-bold leading-tight">
+                Looking for the right bird?
+              </h3>
+
+              <p className="mt-4 text-sm sm:text-base text-white/75 max-w-md leading-7">
+                Explore featured and newly listed birds from trusted sellers, compare
+                options, and message directly within the platform.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  onClick={() => {
+                    const listingsSection = document.getElementById("latest-listings");
+                    listingsSection?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="rounded-2xl bg-white text-[#07111f] hover:bg-gray-100 px-5 py-3 text-sm font-semibold transition shadow-md"
+                >
+                  Browse Birds
+                </button>
+
+                <Link href="/saved-listings">
+                  <button className="rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white px-5 py-3 text-sm font-semibold transition">
+                    View Saved
+                  </button>
+                </Link>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3 text-xs text-white/60">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 border border-white/10">
+                  <Bird size={14} className="text-green-400" />
+                  Bird-focused marketplace
+                </span>
+
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 border border-white/10">
+                  <Star size={14} className="text-green-400" />
+                  Featured listings available
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PREMIUM FOOTER */}
+      <footer className="bg-white border-t border-gray-100 mt-6">
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            {/* BRAND */}
+            <div className="lg:col-span-1">
+              <div className="flex items-center gap-2 text-green-600 font-semibold text-lg">
+                <Bird size={20} />
+                <span>Bird Marketplace</span>
+              </div>
+
+              <p className="mt-4 text-sm text-gray-500 leading-7 max-w-sm">
+                A safer, simpler way to buy, sell, and rehome birds across Australia.
+                Built for bird lovers, trusted by verified users.
+              </p>
+            </div>
+
+            {/* BROWSE */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-[0.14em]">
                 Browse
-              </Link>
-              <Link href="/create" className="hover:text-gray-900">
+              </h4>
+
+              <div className="mt-4 flex flex-col gap-3 text-sm text-gray-500">
+                <button
+                  onClick={() => {
+                    const listingsSection = document.getElementById("latest-listings");
+                    listingsSection?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="text-left hover:text-gray-900 transition"
+                >
+                  Latest Listings
+                </button>
+
+                <button
+                  onClick={() => {
+                    const listingsSection = document.getElementById("latest-listings");
+                    listingsSection?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="text-left hover:text-gray-900 transition"
+                >
+                  Featured Birds
+                </button>
+
+                <button
+                  onClick={() => setCategoryFilter("Parrots")}
+                  className="text-left hover:text-gray-900 transition"
+                >
+                  Parrots
+                </button>
+
+                <button
+                  onClick={() => setCategoryFilter("Cockatiels")}
+                  className="text-left hover:text-gray-900 transition"
+                >
+                  Cockatiels
+                </button>
+              </div>
+            </div>
+
+            {/* SELL */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-[0.14em]">
                 Sell
-              </Link>
-              <Link href="/messages" className="hover:text-gray-900">
-                Messages
-              </Link>
+              </h4>
+
+              <div className="mt-4 flex flex-col gap-3 text-sm text-gray-500">
+                <Link href="/create" className="hover:text-gray-900 transition">
+                  Post a Listing
+                </Link>
+
+                <Link href="/my-listings" className="hover:text-gray-900 transition">
+                  Manage Listings
+                </Link>
+
+                <Link href="/messages" className="hover:text-gray-900 transition">
+                  Messages
+                </Link>
+
+                <Link href="/notifications" className="hover:text-gray-900 transition">
+                  Notifications
+                </Link>
+              </div>
+            </div>
+
+            {/* ACCOUNT */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-[0.14em]">
+                Account
+              </h4>
+
+              <div className="mt-4 flex flex-col gap-3 text-sm text-gray-500">
+                <Link href="/saved-listings" className="hover:text-gray-900 transition">
+                  Saved Listings
+                </Link>
+
+                <Link href="/login" className="hover:text-gray-900 transition">
+                  Login
+                </Link>
+
+                <button
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="text-left hover:text-gray-900 transition"
+                >
+                  Back to top
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <p className="text-xs text-gray-400">
+              © {new Date().getFullYear()} Bird Marketplace. All rights reserved.
+            </p>
+
+            <div className="flex items-center gap-4 text-xs text-gray-400">
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheck size={14} />
+                Verified users
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MessageCircle size={14} />
+                Secure messaging
+              </span>
             </div>
           </div>
         </div>
