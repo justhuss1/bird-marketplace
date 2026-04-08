@@ -346,7 +346,19 @@ export default function MyListingsPage() {
                         </button>
                       </Link>
 
-                      
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {listing.is_featured && (
+                          <span className="text-xs bg-yellow-50 text-yellow-700 px-2.5 py-1 rounded-full">
+                            ★ Featured
+                          </span>
+                        )}
+
+                        {listing.boost_until && new Date(listing.boost_until) > new Date() && (
+                          <span className="text-xs bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full">
+                            Boosted
+                          </span>
+                        )}
+                      </div>
 
                       <button
                         onClick={() => handleDelete(listing.id)}
