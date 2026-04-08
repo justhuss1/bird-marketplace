@@ -8,9 +8,10 @@ import {
   ArrowLeft,
   Heart,
   MapPin,
-  Bird,
+  PawPrint,
   Trash2,
   ShieldCheck,
+  Tag,
 } from "lucide-react";
 
 type SavedListing = {
@@ -26,7 +27,7 @@ type SavedListing = {
     is_featured?: boolean | null;
     boost_until?: string | null;
     created_at?: string;
-  };
+  } | null;
 };
 
 export default function SavedListingsPage() {
@@ -78,13 +79,13 @@ export default function SavedListingsPage() {
       return;
     }
 
-    setSavedListings(
-    (data || []).map((item: any) => ({
+    const formatted: SavedListing[] = (data || []).map((item: any) => ({
       id: item.id,
       listing_id: item.listing_id,
-      listings: item.listings || null,
-    }))
-  );
+      listings: item.listings ?? null,
+    }));
+
+    setSavedListings(formatted);
     setLoading(false);
   };
 
@@ -157,16 +158,17 @@ export default function SavedListingsPage() {
                 </h1>
 
                 <p className="mt-3 text-white/80 max-w-2xl text-sm sm:text-base leading-7">
-                  Keep track of birds you’re interested in, compare options,
-                  and come back when you’re ready to message a seller.
+                  Keep track of pets and pet-related listings you’re interested
+                  in, compare options, and come back when you’re ready to message
+                  a seller.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-3">
                 <Link href="/">
                   <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md inline-flex items-center gap-2">
-                    <Bird size={16} />
-                    Browse More Birds
+                    <PawPrint size={16} />
+                    Browse More Pets
                   </button>
                 </Link>
               </div>
@@ -212,14 +214,14 @@ export default function SavedListingsPage() {
             <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
               <div className="flex items-start gap-3">
                 <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
-                  <Bird size={18} />
+                  <PawPrint size={18} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
                     Ready to Compare
                   </p>
                   <p className="text-xs text-gray-500 mt-1 leading-5">
-                    Review saved birds before contacting sellers directly.
+                    Review saved pets before contacting sellers directly.
                   </p>
                 </div>
               </div>
@@ -235,7 +237,7 @@ export default function SavedListingsPage() {
                 Wishlist
               </p>
               <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
-                Your saved birds
+                Your saved pets
               </h2>
               <p className="mt-2 text-sm text-gray-500 max-w-2xl">
                 Revisit saved listings, compare details, and message sellers
@@ -253,13 +255,13 @@ export default function SavedListingsPage() {
                 No saved listings yet
               </h3>
               <p className="text-gray-500 mt-2 max-w-md mx-auto">
-                Save birds you like so you can compare them later and message
-                sellers when the time is right.
+                Save pets and pet-related listings you like so you can compare
+                them later and message sellers when the time is right.
               </p>
 
               <Link href="/">
                 <button className="mt-6 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md inline-flex items-center gap-2">
-                  <Bird size={16} />
+                  <PawPrint size={16} />
                   Browse listings
                 </button>
               </Link>
@@ -269,7 +271,7 @@ export default function SavedListingsPage() {
               {validSavedListings.map((savedItem) => {
                 const listing = savedItem.listings!;
                 const isBoosted =
-                  listing.boost_until &&
+                  !!listing.boost_until &&
                   new Date(listing.boost_until) > new Date();
 
                 return (
@@ -322,8 +324,9 @@ export default function SavedListingsPage() {
                       </p>
 
                       <div className="mt-4 flex items-center justify-between gap-3">
-                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                          {listing.category || "Bird Listing"}
+                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full items-center gap-1.5">
+                          <Tag size={12} />
+                          {listing.category || "Pet Listing"}
                         </span>
 
                         <span className="text-xs text-gray-400">
@@ -334,7 +337,7 @@ export default function SavedListingsPage() {
                       <div className="mt-5 grid grid-cols-2 gap-3">
                         <Link href={`/listing/${listing.id}`}>
                           <button className="w-full rounded-2xl bg-green-600 hover:bg-green-700 text-white px-4 py-3 text-sm font-semibold transition shadow-sm inline-flex items-center justify-center gap-2">
-                            <Bird size={16} />
+                            <PawPrint size={16} />
                             View
                           </button>
                         </Link>

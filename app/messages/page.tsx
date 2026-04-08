@@ -121,7 +121,7 @@ export default function MessagesInboxPage() {
           </p>
           <h1 className="mt-2 text-3xl font-bold text-gray-900">Messages</h1>
           <p className="text-gray-500 mt-2">
-            View your buyer and seller conversations in one place.
+            View your buyer and seller conversations for pets and listings in one place.
           </p>
         </div>
 
@@ -152,7 +152,7 @@ export default function MessagesInboxPage() {
 
             <p className="text-gray-500 mt-2 max-w-md mx-auto">
               {conversations.length === 0
-                ? "When you message a seller, your conversations will appear here."
+                ? "When you message a seller about a pet or listing, your conversations will appear here."
                 : "Try searching for a listing title, location, or message preview."}
             </p>
           </div>

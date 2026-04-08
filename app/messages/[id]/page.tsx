@@ -279,8 +279,7 @@ export default function MessagesThreadPage() {
                     Start the conversation
                   </h2>
                   <p className="text-sm text-gray-500 mt-2">
-                    Ask about availability, pickup, price, or any details about
-                    this listing.
+                    Ask about availability, pickup, price, or any details about this pet or listing.
                   </p>
                 </div>
               </div>
