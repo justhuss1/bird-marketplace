@@ -342,7 +342,7 @@ export default function Home() {
                       document.getElementById("latest-listings");
                     listingsSection?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="rounded-2xl bg-[#07111f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0c1a2d]"
+                  className="rounded-2xl bg-green-600 hover:bg-green-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0c1a2d]"
                 >
                   Search
                 </button>

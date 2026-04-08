@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import {
+  Heart,
+  MapPin,
+  ShieldCheck,
+  MessageCircle,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+} from "lucide-react";
 
 type Listing = {
   id: string;
@@ -13,6 +24,16 @@ type Listing = {
   images?: string[] | null;
   description: string;
   user_id: string;
+  category?: string | null;
+  is_featured?: boolean | null;
+  boost_until?: string | null;
+  created_at?: string;
+};
+
+type SellerProfile = {
+  id: string;
+  username: string | null;
+  created_at: string;
 };
 
 const normalizeImages = (
@@ -47,10 +68,12 @@ export default function ListingPage() {
   const id = params?.id as string;
 
   const [listing, setListing] = useState<Listing | null>(null);
+  const [seller, setSeller] = useState<SellerProfile | null>(null);
+  const [sellerListingCount, setSellerListingCount] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
-  const [seller, setSeller] = useState<any>(null);
-  const [sellerListingCount, setSellerListingCount] = useState(0);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -59,7 +82,23 @@ export default function ListingPage() {
     }
   }, [id]);
 
+  const fetchSellerStats = async (sellerId: string) => {
+    const { count, error } = await supabase
+      .from("listings")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", sellerId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setSellerListingCount(count || 0);
+  };
+
   const fetchListing = async () => {
+    setLoading(true);
+
     const { data, error } = await supabase
       .from("listings")
       .select("*")
@@ -68,23 +107,31 @@ export default function ListingPage() {
 
     if (error) {
       console.error("ERROR:", error);
+      setLoading(false);
       return;
     }
 
     setListing(data);
-    fetchSellerStats(data.user_id);
 
-      // 🔥 Fetch seller profile
-      const { data: sellerData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", data.user_id)
-        .single();
+    const normalized = normalizeImages(data.images, data.image);
+    setGalleryImages(normalized);
+    setSelectedImage(
+      normalized[0] ||
+        "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1200"
+    );
 
+    const { data: sellerData, error: sellerError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", data.user_id)
+      .single();
+
+    if (!sellerError) {
       setSeller(sellerData);
+    }
 
-    const galleryImages = normalizeImages(data.images, data.image);
-    setSelectedImage(galleryImages[0] || "");
+    fetchSellerStats(data.user_id);
+    setLoading(false);
   };
 
   const checkIfSaved = async () => {
@@ -101,25 +148,7 @@ export default function ListingPage() {
       .eq("listing_id", id)
       .maybeSingle();
 
-    if (!error && data) {
-      setIsSaved(true);
-    } else {
-      setIsSaved(false);
-    }
-  };
-
-  const fetchSellerStats = async (sellerId: string) => {
-    const { count, error } = await supabase
-      .from("listings")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", sellerId);
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setSellerListingCount(count || 0);
+    setIsSaved(!error && !!data);
   };
 
   const handleToggleSave = async () => {
@@ -225,154 +254,314 @@ export default function ListingPage() {
     router.push(`/messages/${newConversation.id}`);
   };
 
-  if (!listing) {
-    return <main className="p-4">Loading...</main>;
+  const goToPrevImage = () => {
+    if (galleryImages.length <= 1) return;
+    const currentIndex = galleryImages.indexOf(selectedImage);
+    const prevIndex =
+      currentIndex <= 0 ? galleryImages.length - 1 : currentIndex - 1;
+    setSelectedImage(galleryImages[prevIndex]);
+  };
+
+  const goToNextImage = () => {
+    if (galleryImages.length <= 1) return;
+    const currentIndex = galleryImages.indexOf(selectedImage);
+    const nextIndex =
+      currentIndex >= galleryImages.length - 1 ? 0 : currentIndex + 1;
+    setSelectedImage(galleryImages[nextIndex]);
+  };
+
+  const formatJoinedDate = (date?: string) => {
+    if (!date) return "recently";
+    return new Date(date).toLocaleDateString(undefined, {
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatPostedDate = (date?: string) => {
+    if (!date) return "Recently listed";
+    const posted = new Date(date);
+    const now = new Date();
+    const diffMs = now.getTime() - posted.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) return "Listed today";
+    if (diffDays === 1) return "Listed yesterday";
+    if (diffDays < 7) return `Listed ${diffDays} days ago`;
+
+    return `Listed ${posted.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    })}`;
+  };
+
+  if (loading) {
+    return <main className="p-4">Loading listing...</main>;
   }
 
-  const galleryImages = normalizeImages(listing.images, listing.image);
-  console.log("galleryImages", galleryImages);
+  if (!listing) {
+    return (
+      <main className="bg-gray-50 min-h-screen px-4 py-8 pb-24">
+        <div className="max-w-6xl mx-auto">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </button>
 
-  return (
-    <main className="bg-gray-50 min-h-screen py-8 pb-24">
-      <div className="max-w-5xl mx-auto px-4">
-        <button
-          onClick={() => router.back()}
-          className="mb-4 text-sm text-gray-600 hover:text-black transition"
-        >
-          ← Back
-        </button>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl shadow overflow-hidden relative">
-            <img
-              src={
-                selectedImage ||
-                "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=1200"
-              }
-              alt={listing.title}
-              className="w-full h-[420px] object-cover"
-            />
-
-            <div className="absolute top-3 left-3 bg-yellow-400 text-black text-xs px-3 py-1 rounded-full font-semibold">
-              Featured
-            </div>
-
-            <button
-              onClick={handleToggleSave}
-              className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-semibold ${
-                isSaved
-                  ? "bg-red-500 text-white"
-                  : "bg-white/90 text-gray-800"
-              }`}
-            >
-              {isSaved ? "♥ Saved" : "♡ Save"}
-            </button>
-          </div>
-
-          {galleryImages.length > 1 && (
-            <div className="bg-white rounded-2xl shadow p-3">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {galleryImages.map((img, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => setSelectedImage(img)}
-                    className={`rounded-xl overflow-hidden border-2 transition ${
-                      selectedImage === img
-                        ? "border-green-600"
-                        : "border-gray-200"
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      alt={`Thumbnail ${index + 1}`}
-                      className="w-full h-24 object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-white rounded-2xl shadow p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {listing.title}
-                </h1>
-                <p className="text-gray-500 mt-2">📍 {listing.location}</p>
-                <p className="text-xs text-gray-400 mt-1">Posted recently</p>
-              </div>
-
-              <div className="text-3xl font-bold text-green-600 bg-green-50 px-4 py-2 rounded-xl">
-                ${listing.price}
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">
-                Bird Listing
-              </span>
-              <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
-                Available Now
-              </span>
-            </div>
-
-            <div className="mt-8 border-t pt-6">
-              <h2 className="text-lg font-semibold mb-3">Description</h2>
-              <p className="text-gray-700 leading-7 text-base">
-                {listing.description || "No description provided."}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Contact Seller</h2>
-
-            <button
-              onClick={handleMessageSeller}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition shadow-md hover:shadow-lg"
-            >
-              Message Seller
-            </button>
-
-            <p className="text-sm text-gray-500 mt-3">
-              Ask about availability, pickup, and more.
+          <div className="mt-8 bg-white rounded-3xl border border-gray-100 shadow-sm p-10 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Listing not found</h1>
+            <p className="mt-2 text-gray-500">
+              This listing may have been removed or is no longer available.
             </p>
           </div>
+        </div>
+      </main>
+    );
+  }
 
-         <div
-            onClick={() => listing && router.push(`/seller/${listing.user_id}`)}
-            className="bg-white rounded-2xl shadow hover:shadow-md transition p-6 cursor-pointer"
-          >
-            <h2 className="text-lg font-semibold mb-4">Seller Info</h2>
+  return (
+    <main className="bg-gray-50 min-h-screen px-4 py-6 sm:py-8 pb-24">
+      <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
+        >
+          <ArrowLeft size={16} />
+          Back
+        </button>
 
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-lg font-bold text-green-700 shadow-sm">
-                {seller?.username?.charAt(0).toUpperCase() || "U"}
+        <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1.35fr_0.9fr] gap-6">
+          {/* LEFT */}
+          <div className="space-y-5">
+            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
+              <div className="relative overflow-hidden">
+                <img
+                  src={selectedImage}
+                  alt={listing.title}
+                  className="w-full h-[320px] sm:h-[460px] object-cover"
+                />
+
+                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/35 to-transparent pointer-events-none" />
+
+                {listing.is_featured && (
+                  <span className="absolute top-4 left-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                    ★ Featured
+                  </span>
+                )}
+
+                {galleryImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={goToPrevImage}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow flex items-center justify-center hover:bg-white transition"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+
+                    <button
+                      onClick={goToNextImage}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow flex items-center justify-center hover:bg-white transition"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={handleToggleSave}
+                  className={`absolute top-4 right-4 text-xs px-3 py-1 rounded-full font-medium shadow backdrop-blur transition ${
+                    isSaved ? "bg-red-500 text-white" : "bg-white/90 text-gray-800"
+                  }`}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <Heart size={14} />
+                    {isSaved ? "Saved" : "Save"}
+                  </span>
+                </button>
               </div>
-              <div>
-                <p className="font-medium text-gray-800">
-                  {seller?.username || "User"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Member since{" "}
-                  {seller?.created_at
-                    ? new Date(seller.created_at).toLocaleDateString()
-                    : "recently"}
+
+              {galleryImages.length > 1 && (
+                <div className="p-3 sm:p-4 border-t border-gray-100">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                    {galleryImages.map((img, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setSelectedImage(img)}
+                        className={`rounded-2xl overflow-hidden border-2 transition ${
+                          selectedImage === img
+                            ? "border-green-600"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <img
+                          src={img}
+                          alt={`Thumbnail ${index + 1}`}
+                          className="w-full h-20 sm:h-24 object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    {listing.category && (
+                      <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">
+                        {listing.category}
+                      </span>
+                    )}
+                    <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                      Available now
+                    </span>
+                    {listing.boost_until &&
+                      new Date(listing.boost_until) > new Date() && (
+                        <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">
+                          Boosted
+                        </span>
+                      )}
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-gray-900">
+                    {listing.title}
+                  </h1>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
+                    <span className="inline-flex items-center gap-1.5">
+                      <MapPin size={15} />
+                      {listing.location}
+                    </span>
+                    <span>{formatPostedDate(listing.created_at)}</span>
+                  </div>
+                </div>
+
+                <div className="shrink-0">
+                  <div className="bg-green-50 text-green-600 px-5 py-3 rounded-2xl text-3xl font-semibold">
+                    ${listing.price}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                  Description
+                </h2>
+                <p className="text-gray-700 leading-7 whitespace-pre-line">
+                  {listing.description || "No description provided."}
                 </p>
               </div>
-            </div>
+            </section>
+          </div>
 
-            <div className="mt-4 text-sm text-gray-600 space-y-2">
-              <p>📦 {sellerListingCount} active listing{sellerListingCount === 1 ? "" : "s"}</p>
-              <p>✅ Safe in-app messaging</p>
-              <p>👤 View seller profile</p>
-            </div>
+          {/* RIGHT */}
+          <div className="space-y-5">
+            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Contact Seller
+              </h2>
+
+              <button
+                onClick={handleMessageSeller}
+                className="w-full rounded-2xl bg-green-600 hover:bg-green-700 text-white py-3.5 text-sm font-semibold transition shadow-md"
+              >
+                Message Seller
+              </button>
+
+              <p className="text-sm text-gray-500 mt-3 leading-6">
+                Ask about availability, pickup arrangements, price, or anything
+                else before you commit.
+              </p>
+
+              <div className="mt-5 grid grid-cols-1 gap-3">
+                <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-700 flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-green-600" />
+                  Safe in-app messaging
+                </div>
+                <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-700 flex items-center gap-2">
+                  <MessageCircle size={16} className="text-green-600" />
+                  Direct buyer and seller chat
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold text-gray-900">Seller</h2>
+                <Link
+                  href={`/seller/${listing.user_id}`}
+                  className="text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+                >
+                  View profile
+                </Link>
+              </div>
+
+              <div className="mt-4 flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-lg font-bold text-green-700 shadow-sm">
+                  {seller?.username?.charAt(0).toUpperCase() || <User size={18} />}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-900 line-clamp-1">
+                    {seller?.username || "User"}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Member since {formatJoinedDate(seller?.created_at)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
+                  <ShieldCheck size={16} className="text-green-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Verified account
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Authenticated user profile
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
+                  <MessageCircle size={16} className="text-green-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {sellerListingCount} active listing
+                      {sellerListingCount === 1 ? "" : "s"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Browse more from this seller
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
+                  <User size={16} className="text-green-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Seller profile available
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      View seller details and listings
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Link href={`/seller/${listing.user_id}`}>
+                <button className="w-full mt-5 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 py-3 text-sm font-semibold transition">
+                  View Seller Profile
+                </button>
+              </Link>
+            </section>
           </div>
         </div>
       </div>
