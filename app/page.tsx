@@ -233,57 +233,58 @@ export default function Home() {
     <main className="bg-gray-50 min-h-screen pb-24 md:pb-20">
       {/* TOP NAV */}
       <div className="bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
-        <h1 className="text-[15px] sm:text-lg font-bold text-green-600 flex items-center gap-2">
-          <Bird size={18} />
-          Bird Marketplace
-        </h1>
+        <div className="max-w-6xl w-full mx-auto flex justify-between items-center">
+          <h1 className="text-[15px] sm:text-lg font-bold text-green-600 flex items-center gap-2">
+            <Bird size={18} />
+            Bird Marketplace
+          </h1>
 
-        <div className="flex gap-2 items-center">
-          {userEmail ? (
-            <>
-              <span className="text-sm text-gray-600 hidden md:block">
-                {userEmail}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 text-white px-3 py-2 rounded-xl text-sm font-medium"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link href="/login">
-              <button className="bg-green-600 text-white px-3 py-2 rounded-xl text-sm font-medium">
-                Login
-              </button>
-            </Link>
-          )}
+          <div className="flex gap-2 items-center">
+            {userEmail ? (
+              <>
+                <span className="text-sm text-gray-600 hidden md:block">
+                  {userEmail}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white px-3 py-2 rounded-xl text-sm font-medium"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link href="/login">
+                <button className="bg-green-600 text-white px-3 py-2 rounded-xl text-sm font-medium">
+                  Login
+                </button>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
       {/* HERO */}
-      <div className="relative overflow-hidden bg-[#07111f]">
+      <section className="relative overflow-hidden bg-[#07111f]">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-40"
+          className="absolute inset-0 bg-cover bg-center opacity-35"
           style={{
             backgroundImage:
               "url('https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1800&q=80')",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#07111f]/95 via-[#07111f]/75 to-[#07111f]/25" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#07111f]/95 via-[#07111f]/80 to-[#07111f]/30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/10" />
 
-        <div className="relative max-w-6xl mx-auto px-4 pt-8 pb-12 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
-          <div className="max-w-3xl">
+        <div className="relative max-w-6xl mx-auto px-4 pt-8 pb-14 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
+          <div className="max-w-3xl lg:max-w-[44rem]">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
               <ShieldCheck size={14} />
               Trusted bird marketplace across Australia
             </div>
 
-            <h1 className="mt-5 text-[44px] leading-[0.95] font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              <span className="block sm:inline">Buy, Sell &</span>{" "}
-              <span className="block sm:inline">Rehome</span>{" "}
-              <span className="block sm:inline">Birds Safely</span>
+            <h1 className="mt-5 text-[44px] leading-[0.95] font-bold tracking-tight text-white sm:text-5xl lg:text-[4.5rem] lg:leading-[0.95]">
+              <span className="block">Buy, Sell & Rehome</span>
+              <span className="block">Birds Safely</span>
             </h1>
 
             <p className="mt-4 max-w-2xl text-[15px] leading-7 text-white/85 sm:text-lg">
@@ -311,8 +312,8 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mt-8 rounded-3xl border border-white/10 bg-white/95 p-4 shadow-2xl backdrop-blur sm:p-5">
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.2fr_1fr_auto]">
+            <div className="mt-8 rounded-[28px] border border-white/10 bg-white/95 p-4 sm:p-5 shadow-2xl backdrop-blur max-w-4xl">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.15fr_0.95fr_auto]">
                 <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
                   <Search size={18} className="text-gray-400" />
                   <input
@@ -381,10 +382,10 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* CATEGORIES */}
-      <div className="max-w-6xl mx-auto px-4 -mt-10 mb-8 relative z-10">
+      <section className="max-w-6xl mx-auto px-4 -mt-10 mb-8 relative z-10">
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {categoryItems.map((cat) => (
             <button
@@ -401,84 +402,82 @@ export default function Home() {
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* TRUST STRIP */}
-      <div className="bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 -mt-6 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-50 text-green-600 p-2.5 rounded-xl">
-                  <ShieldCheck size={20} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    Verified Sellers
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1">
-                    All users are authenticated for safety
-                  </p>
-                </div>
+      <section className="max-w-6xl mx-auto px-4 -mt-4 sm:-mt-2 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+            <div className="flex items-start gap-3">
+              <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Verified Sellers
+                </h4>
+                <p className="text-xs text-gray-500 mt-1 leading-5">
+                  All users are authenticated for safety
+                </p>
               </div>
             </div>
+          </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-50 text-green-600 p-2.5 rounded-xl">
-                  <MessageCircle size={20} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    Secure Messaging
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Chat safely within the platform
-                  </p>
-                </div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+            <div className="flex items-start gap-3">
+              <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
+                <MessageCircle size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Secure Messaging
+                </h4>
+                <p className="text-xs text-gray-500 mt-1 leading-5">
+                  Chat safely within the platform
+                </p>
               </div>
             </div>
+          </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-50 text-green-600 p-2.5 rounded-xl">
-                  <Bird size={20} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    Bird-Focused Marketplace
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Built specifically for bird lovers
-                  </p>
-                </div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+            <div className="flex items-start gap-3">
+              <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
+                <Bird size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Bird-Focused Marketplace
+                </h4>
+                <p className="text-xs text-gray-500 mt-1 leading-5">
+                  Built specifically for bird lovers
+                </p>
               </div>
             </div>
+          </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-50 text-green-600 p-2.5 rounded-xl">
-                  <Star size={20} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    Simple Rehoming
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Easy process to buy, sell, or rehome
-                  </p>
-                </div>
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition">
+            <div className="flex items-start gap-3">
+              <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
+                <Star size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Simple Rehoming
+                </h4>
+                <p className="text-xs text-gray-500 mt-1 leading-5">
+                  Easy process to buy, sell, or rehome
+                </p>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* FEATURED LISTINGS */}
       {featuredListings.length > 0 && (
         <section
           id="featured-listings"
-          className="max-w-6xl mx-auto px-4 mt-10 sm:mt-12 mb-10 sm:mb-12 animate-fade-in-up"
+          className="max-w-6xl mx-auto px-4 mt-12 mb-12 animate-fade-in-up"
         >
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5">
             <div>
@@ -584,7 +583,7 @@ export default function Home() {
       {/* MAIN LISTINGS */}
       <section
         id="latest-listings"
-        className="max-w-6xl mx-auto px-4 mt-10 sm:mt-12 mb-14 sm:mb-16 animate-fade-in-up"
+        className="max-w-6xl mx-auto px-4 mt-12 mb-16 animate-fade-in-up"
       >
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5">
           <div>
@@ -696,10 +695,9 @@ export default function Home() {
       </section>
 
       {/* SELLER / BUYER CTA SECTION */}
-      <section className="max-w-6xl mx-auto px-4 mb-14 sm:mb-16 animate-fade-in-up">
+      <section className="max-w-6xl mx-auto px-4 mb-16 animate-fade-in-up">
         <div className="rounded-[32px] overflow-hidden bg-[#07111f] text-white shadow-xl">
           <div className="grid grid-cols-1 lg:grid-cols-2">
-            {/* SELLERS */}
             <div className="p-8 sm:p-10 lg:p-12 border-b lg:border-b-0 lg:border-r border-white/10">
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-400">
                 For Sellers
@@ -741,7 +739,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* BUYERS */}
             <div className="p-8 sm:p-10 lg:p-12">
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-400">
                 For Buyers
@@ -795,7 +792,6 @@ export default function Home() {
       <footer className="bg-white border-t border-gray-100 mt-6">
         <div className="max-w-6xl mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-            {/* BRAND */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-2 text-green-600 font-semibold text-lg">
                 <Bird size={20} />
@@ -808,7 +804,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* BROWSE */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-[0.14em]">
                 Browse
@@ -853,7 +848,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* SELL */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-[0.14em]">
                 Sell
@@ -887,7 +881,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ACCOUNT */}
             <div>
               <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-[0.14em]">
                 Account
