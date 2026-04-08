@@ -152,8 +152,8 @@ export default function CreateListingPage() {
 
         {/* HERO */}
         <section className="mt-5 bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-[#07111f] via-[#102038] to-[#1b2e4a] px-6 sm:px-8 py-8 sm:py-10 text-white">
-            <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
+          <div className="bg-gradient-to-r from-[#07111f] via-[#102038] to-[#1b2e4a] px-6 sm:px-8 py-10 sm:py-12 text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold leading-tight tracking-tight">
               Create a New Listing
             </h1>
 
@@ -166,7 +166,7 @@ export default function CreateListingPage() {
           <div className="px-6 sm:px-8 py-6 sm:py-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* LEFT COLUMN */}
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
                   <label className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
                     <Tag size={16} />
@@ -254,7 +254,7 @@ export default function CreateListingPage() {
                 Images
               </label>
 
-              <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-5 sm:p-6">
+              <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-6 sm:p-7 hover:border-green-400 transition">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-900">
@@ -265,7 +265,7 @@ export default function CreateListingPage() {
                     </p>
                   </div>
 
-                  <label className="inline-flex items-center justify-center gap-2 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md cursor-pointer">
+                  <label className="inline-flex items-center justify-center gap-2 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md hover:shadow-lg cursor-pointer">
                     <Upload size={16} />
                     {uploading ? "Uploading..." : "Upload Images"}
                     <input
@@ -312,12 +312,11 @@ export default function CreateListingPage() {
             </div>
 
             {/* ACTIONS */}
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <div className="mt-10 flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleCreateListing}
                 disabled={submitting || uploading}
-                className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3.5 text-sm font-semibold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+                className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 text-sm font-semibold transition shadow-md hover:shadow-lg"              >
                 {submitting ? "Creating Listing..." : "Create Listing"}
               </button>
 
