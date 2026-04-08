@@ -139,10 +139,6 @@ export default function CreateListingPage() {
     router.push("/my-listings");
   };
 
-  <p className="text-xs text-red-500">
-  Cloud: {process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "missing"} | Preset: {process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "missing"}
-</p>
-
   return (
     <main className="bg-gray-50 min-h-screen py-6 sm:py-8 px-4 pb-24">
       <div className="max-w-4xl mx-auto">
