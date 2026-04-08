@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   User,
   CalendarDays,
+  Tag,
 } from "lucide-react";
 
 type Profile = {
@@ -224,7 +225,7 @@ export default function SellerPage() {
                     Marketplace Profile
                   </p>
                   <p className="text-xs text-gray-500 mt-1 leading-5">
-                    Browse this seller’s birds and connect directly through in-app
+                    Browse this seller’s pets and connect directly through in-app
                     messaging.
                   </p>
                 </div>
@@ -241,7 +242,7 @@ export default function SellerPage() {
                 Seller Listings
               </p>
               <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
-                Birds from {profile.username || "this seller"}
+                Pets from {profile.username || "this seller"}
               </h2>
               <p className="mt-2 text-sm text-gray-500 max-w-2xl">
                 Explore active listings from this seller across the marketplace.
@@ -308,8 +309,9 @@ export default function SellerPage() {
                       </p>
 
                       <div className="mt-4 flex items-center justify-between gap-3">
-                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                          {listing.category || "Bird Listing"}
+                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full items-center gap-1.5">
+                          <Tag size={12} />
+                          {listing.category || "Pet Listing"}
                         </span>
 
                         <span className="text-xs text-gray-400">

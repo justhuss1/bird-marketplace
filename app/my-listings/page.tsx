@@ -6,13 +6,14 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft,
-  Bird,
+  PawPrint,
   MapPin,
   Pencil,
   Trash2,
   Plus,
   ShieldCheck,
   Star,
+  Tag,
 } from "lucide-react";
 
 type Listing = {
@@ -91,27 +92,27 @@ export default function MyListingsPage() {
   };
 
   const handleCheckout = async (type: "feature" | "boost", listingId: string) => {
-  try {
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ type, listingId }),
-    });
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ type, listingId }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      alert("Failed to start checkout");
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Failed to start checkout");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong");
     }
-  } catch (error) {
-    console.error(error);
-    alert("Something went wrong");
-  }
-};
+  };
 
   const formatPostedDate = (date?: string) => {
     if (!date) return "Recently listed";
@@ -166,7 +167,7 @@ export default function MyListingsPage() {
                 </h1>
 
                 <p className="mt-3 text-white/80 max-w-2xl text-sm sm:text-base leading-7">
-                  Manage your active bird listings, keep them updated, and track
+                  Manage your active pet listings, keep them updated, and track
                   featured or boosted visibility in one place.
                 </p>
 
@@ -190,7 +191,7 @@ export default function MyListingsPage() {
             <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
               <div className="flex items-start gap-3">
                 <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
-                  <Bird size={18} />
+                  <PawPrint size={18} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
@@ -251,7 +252,8 @@ export default function MyListingsPage() {
                 Your active listings
               </h2>
               <p className="mt-2 text-sm text-gray-500 max-w-2xl">
-                Edit, review, or remove your current marketplace listings.
+                Edit, review, promote, or remove your current marketplace
+                listings.
               </p>
             </div>
           </div>
@@ -259,13 +261,13 @@ export default function MyListingsPage() {
           {listings.length === 0 ? (
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 text-center">
               <div className="w-14 h-14 mx-auto rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
-                <Bird size={24} />
+                <PawPrint size={24} />
               </div>
               <h3 className="text-xl font-semibold text-gray-900">
                 No listings yet
               </h3>
               <p className="text-gray-500 mt-2 max-w-md mx-auto">
-                Create your first listing to start connecting with bird buyers
+                Create your first pet listing to start connecting with buyers
                 across Australia.
               </p>
 
@@ -278,124 +280,118 @@ export default function MyListingsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {listings.map((listing) => (
-                <article
-                  key={listing.id}
-                  className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden"
-                >
-                  <Link href={`/listing/${listing.id}`}>
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={
-                          listing.image && listing.image !== ""
-                            ? listing.image
-                            : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
-                        }
-                        alt={listing.title}
-                        className="w-full h-56 object-cover group-hover:scale-105 transition duration-500"
-                      />
+              {listings.map((listing) => {
+                const isFeatured = !!listing.is_featured;
+                const isBoosted =
+                  !!listing.boost_until &&
+                  new Date(listing.boost_until) > new Date();
 
-                      {listing.is_featured && (
-                        <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
-                          ★ Featured
-                        </span>
-                      )}
+                return (
+                  <article
+                    key={listing.id}
+                    className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden"
+                  >
+                    <Link href={`/listing/${listing.id}`}>
+                      <div className="relative overflow-hidden">
+                        <img
+                          src={
+                            listing.image && listing.image !== ""
+                              ? listing.image
+                              : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
+                          }
+                          alt={listing.title}
+                          className="w-full h-56 object-cover group-hover:scale-105 transition duration-500"
+                        />
 
-                      {listing.boost_until &&
-                        new Date(listing.boost_until) > new Date() && (
+                        {listing.is_featured && (
+                          <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                            ★ Featured
+                          </span>
+                        )}
+
+                        {isBoosted && (
                           <span className="absolute top-3 right-3 bg-purple-600 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
                             Boosted
                           </span>
                         )}
-                    </div>
-                  </Link>
+                      </div>
+                    </Link>
 
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <Link href={`/listing/${listing.id}`}>
-                        <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug hover:text-green-600 transition">
-                          {listing.title}
-                        </h3>
-                      </Link>
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <Link href={`/listing/${listing.id}`}>
+                          <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug hover:text-green-600 transition">
+                            {listing.title}
+                          </h3>
+                        </Link>
 
-                      <span className="text-green-600 font-semibold text-[18px] whitespace-nowrap">
-                        ${listing.price}
-                      </span>
-                    </div>
+                        <span className="text-green-600 font-semibold text-[18px] whitespace-nowrap">
+                          ${listing.price}
+                        </span>
+                      </div>
 
-                    <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
-                      <MapPin size={14} />
-                      {listing.location}
-                    </p>
+                      <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
+                        <MapPin size={14} />
+                        {listing.location}
+                      </p>
 
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                        {listing.category || "Bird Listing"}
-                      </span>
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full items-center gap-1.5">
+                          <Tag size={12} />
+                          {listing.category || "Pet Listing"}
+                        </span>
 
-                      <span className="text-xs text-gray-400">
-                        {formatPostedDate(listing.created_at)}
-                      </span>
-                    </div>
+                        <span className="text-xs text-gray-400">
+                          {formatPostedDate(listing.created_at)}
+                        </span>
+                      </div>
 
-                    <div className="mt-5 grid grid-cols-2 gap-3">
-                      {/* EDIT */}
-                      <Link href={`/edit/${listing.id}`}>
-                        <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2">
-                          <Pencil size={16} />
-                          Edit
+                      <div className="mt-5 grid grid-cols-2 gap-3">
+                        <Link href={`/edit/${listing.id}`}>
+                          <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2">
+                            <Pencil size={16} />
+                            Edit
+                          </button>
+                        </Link>
+
+                        <button
+                          onClick={() => handleDelete(listing.id)}
+                          className="w-full rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2"
+                        >
+                          <Trash2 size={16} />
+                          Delete
                         </button>
-                      </Link>
 
-                      {/* DELETE */}
-                      <button
-                        onClick={() => handleDelete(listing.id)}
-                        className="w-full rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2"
-                      >
-                        <Trash2 size={16} />
-                        Delete
-                      </button>
-
-                      {/* FEATURE */}
-                      <button
-                        onClick={() => handleCheckout("feature", listing.id)}
-                        disabled={!!listing.is_featured}
-                        className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2
-                          ${
-                            listing.is_featured
+                        <button
+                          onClick={() => handleCheckout("feature", listing.id)}
+                          disabled={isFeatured}
+                          className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2 ${
+                            isFeatured
                               ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                               : "border-yellow-200 bg-yellow-50 hover:bg-yellow-100 text-yellow-700"
                           }`}
-                      >
-                        <Star size={16} />
-                        {listing.is_featured ? "Featured" : "Feature"}
-                      </button>
+                        >
+                          <Star size={16} />
+                          {isFeatured ? "Featured" : "Feature"}
+                        </button>
 
-                      {/* BOOST */}
-                      <button
-                        onClick={() => handleCheckout("boost", listing.id)}
-                        disabled={
-                          !!listing.boost_until && 
-                          new Date(listing.boost_until) > new Date()
-                        }
-                        className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2
-                          ${
-                            listing.boost_until &&
-                            new Date(listing.boost_until) > new Date()
+                        <button
+                          onClick={() => handleCheckout("boost", listing.id)}
+                          disabled={isBoosted}
+                          className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2 ${
+                            isBoosted
                               ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                               : "border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700"
                           }`}
-                      >
-                        <Star size={16} />
-                        {listing.boost_until &&
-                        new Date(listing.boost_until) > new Date()
-                          ? "Boosted"
-                          : "Boost"}
-                      </button>
+                        >
+                          <Star size={16} />
+                          {isBoosted ? "Boosted" : "Boost"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>

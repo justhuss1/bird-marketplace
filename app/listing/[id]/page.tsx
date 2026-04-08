@@ -13,6 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  CalendarDays,
+  Tag,
 } from "lucide-react";
 
 type Listing = {
@@ -414,7 +416,8 @@ export default function ListingPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     {listing.category && (
-                      <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">
+                      <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
+                        <Tag size={12} />
                         {listing.category}
                       </span>
                     )}
@@ -438,7 +441,10 @@ export default function ListingPage() {
                       <MapPin size={15} />
                       {listing.location}
                     </span>
-                    <span>{formatPostedDate(listing.created_at)}</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <CalendarDays size={15} />
+                      {formatPostedDate(listing.created_at)}
+                    </span>
                   </div>
                 </div>
 
