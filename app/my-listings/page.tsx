@@ -359,19 +359,38 @@ export default function MyListingsPage() {
                       {/* FEATURE */}
                       <button
                         onClick={() => handleCheckout("feature", listing.id)}
-                        className="w-full rounded-2xl border border-yellow-200 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2"
+                        disabled={!!listing.is_featured}
+                        className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2
+                          ${
+                            listing.is_featured
+                              ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "border-yellow-200 bg-yellow-50 hover:bg-yellow-100 text-yellow-700"
+                          }`}
                       >
                         <Star size={16} />
-                        Feature
+                        {listing.is_featured ? "Featured" : "Feature"}
                       </button>
 
                       {/* BOOST */}
                       <button
                         onClick={() => handleCheckout("boost", listing.id)}
-                        className="w-full rounded-2xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2"
+                        disabled={
+                          !!listing.boost_until && 
+                          new Date(listing.boost_until) > new Date()
+                        }
+                        className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2
+                          ${
+                            listing.boost_until &&
+                            new Date(listing.boost_until) > new Date()
+                              ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700"
+                          }`}
                       >
                         <Star size={16} />
-                        Boost
+                        {listing.boost_until &&
+                        new Date(listing.boost_until) > new Date()
+                          ? "Boosted"
+                          : "Boost"}
                       </button>
                     </div>
                   </div>
