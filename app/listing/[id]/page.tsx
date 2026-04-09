@@ -15,6 +15,9 @@ import {
   ArrowLeft,
   CalendarDays,
   Tag,
+  Eye,
+  Flag,
+  Share2,
 } from "lucide-react";
 
 type Listing = {
@@ -31,6 +34,7 @@ type Listing = {
   boost_until?: string | null;
   created_at?: string;
   attributes?: Record<string, string> | null;
+  view_count?: number | null;
 };
 
 type SellerProfile = {
@@ -117,6 +121,7 @@ export default function ListingPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -140,6 +145,47 @@ export default function ListingPage() {
     setSellerListingCount(count || 0);
   };
 
+  const incrementViewCount = async (listingId: string, currentCount?: number | null) => {
+    const nextCount = (currentCount || 0) + 1;
+
+    const { error } = await supabase
+      .from("listings")
+      .update({ view_count: nextCount })
+      .eq("id", listingId);
+
+    if (!error) {
+      setListing((prev) => (prev ? { ...prev, view_count: nextCount } : prev));
+    }
+  };
+
+  const fetchSimilarListings = async (
+    listingId: string,
+    category?: string | null,
+    location?: string | null
+  ) => {
+    let query = supabase
+      .from("listings")
+      .select("*")
+      .neq("id", listingId)
+      .order("created_at", { ascending: false })
+      .limit(4);
+
+    if (category) {
+      query = query.eq("category", category);
+    } else if (location) {
+      query = query.eq("location", location);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setSimilarListings((data || []) as Listing[]);
+  };
+
   const fetchListing = async () => {
     setLoading(true);
 
@@ -155,7 +201,8 @@ export default function ListingPage() {
       return;
     }
 
-    setListing(data as Listing);
+    const listingData = data as Listing;
+    setListing(listingData);
 
     const normalized = normalizeImages(data.images, data.image);
     setGalleryImages(normalized);
@@ -175,6 +222,8 @@ export default function ListingPage() {
     }
 
     fetchSellerStats(data.user_id);
+    fetchSimilarListings(data.id, data.category, data.location);
+    incrementViewCount(data.id, data.view_count);
     setLoading(false);
   };
 
@@ -238,6 +287,57 @@ export default function ListingPage() {
 
       setIsSaved(true);
     }
+  };
+
+  const handleShareListing = async () => {
+    const shareUrl = window.location.href;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: listing?.title || "Pet Marketplace Listing",
+          text: "Check out this listing on Pet Marketplace",
+          url: shareUrl,
+        });
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      alert("Listing link copied to clipboard.");
+    } catch (error) {
+      console.error(error);
+      alert("Could not share this listing.");
+    }
+  };
+
+  const handleReportListing = async () => {
+    if (!listing) return;
+
+    const reason = window.prompt(
+      "Please enter a short reason for reporting this listing:"
+    );
+
+    if (!reason || !reason.trim()) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { error } = await supabase.from("reported_listings").insert([
+      {
+        listing_id: listing.id,
+        user_id: user?.id || null,
+        reason: reason.trim(),
+      },
+    ]);
+
+    if (error) {
+      console.error(error);
+      alert("Could not report this listing.");
+      return;
+    }
+
+    alert("Thanks. This listing has been reported for review.");
   };
 
   const handleMessageSeller = async () => {
@@ -378,14 +478,13 @@ export default function ListingPage() {
         </button>
 
         <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1.35fr_0.9fr] gap-6">
-          {/* LEFT */}
           <div className="space-y-5">
             <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
               <div className="relative overflow-hidden">
                 <img
                   src={selectedImage}
                   alt={listing.title}
-                  className="w-full h-[320px] sm:h-[460px] object-cover"
+                  className="w-full h-[320px] sm:h-[460px] object-cover transition duration-500 hover:scale-[1.02]"
                 />
 
                 <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/35 to-transparent pointer-events-none" />
@@ -459,8 +558,7 @@ export default function ListingPage() {
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     {listing.category && (
                       <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-                        <Tag size={12} />
-                        {listing.category}
+                        🐾 {listing.category}
                       </span>
                     )}
 
@@ -490,6 +588,11 @@ export default function ListingPage() {
                       <CalendarDays size={15} />
                       {formatPostedDate(listing.created_at)}
                     </span>
+
+                    <span className="inline-flex items-center gap-1.5">
+                      <Eye size={15} />
+                      {listing.view_count || 0} views
+                    </span>
                   </div>
                 </div>
 
@@ -498,6 +601,24 @@ export default function ListingPage() {
                     ${listing.price}
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  onClick={handleShareListing}
+                  className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-medium transition inline-flex items-center gap-2"
+                >
+                  <Share2 size={16} />
+                  Share listing
+                </button>
+
+                <button
+                  onClick={handleReportListing}
+                  className="rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 text-sm font-medium transition inline-flex items-center gap-2"
+                >
+                  <Flag size={16} />
+                  Report listing
+                </button>
               </div>
 
               {listing.attributes && Object.keys(listing.attributes).length > 0 && (
@@ -545,7 +666,6 @@ export default function ListingPage() {
             </section>
           </div>
 
-          {/* RIGHT */}
           <div className="space-y-5">
             <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -653,6 +773,72 @@ export default function ListingPage() {
             </section>
           </div>
         </div>
+
+        {similarListings.length > 0 && (
+          <section className="mt-10">
+            <div className="flex items-end justify-between gap-4 mb-5">
+              <div>
+                <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                  Similar Listings
+                </p>
+                <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+                  You may also like
+                </h2>
+                <p className="mt-2 text-sm text-gray-500 max-w-2xl">
+                  More listings related to this category and location.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+              {similarListings.map((item) => (
+                <Link key={item.id} href={`/listing/${item.id}`}>
+                  <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={
+                          item.image && item.image !== ""
+                            ? item.image
+                            : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
+                        }
+                        alt={item.title}
+                        className="h-52 w-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+
+                      {item.is_featured && (
+                        <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                          ★ Featured
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-1">
+                          {item.title}
+                        </h3>
+                        <span className="text-green-600 font-semibold whitespace-nowrap">
+                          ${item.price}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
+                        <MapPin size={14} />
+                        {item.location}
+                      </p>
+
+                      <div className="mt-3">
+                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                          {item.category || "Pet Listing"}
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );
