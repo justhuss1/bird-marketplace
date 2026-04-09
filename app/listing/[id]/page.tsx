@@ -670,31 +670,75 @@ export default function ListingPage() {
 
           <div className="space-y-5">
             <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Contact Seller
-              </h2>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Contact Seller
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Start a conversation about this listing
+                  </p>
+                </div>
+
+                <div className="bg-green-50 text-green-700 text-xs font-medium px-3 py-1 rounded-full">
+                  Secure chat
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-3xl border border-green-100 bg-gradient-to-br from-green-50 to-white p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-white border border-green-100 flex items-center justify-center shrink-0">
+                    <MessageCircle size={18} className="text-green-600" />
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Message the seller directly
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1 leading-6">
+                      Ask about availability, pickup, health details, inclusions, or negotiate before committing.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               <button
                 onClick={handleMessageSeller}
-                className="w-full rounded-2xl bg-green-600 hover:bg-green-700 text-white py-3.5 text-sm font-semibold transition shadow-md"
+                className="w-full mt-5 rounded-2xl bg-green-600 hover:bg-green-700 text-white py-3.5 text-sm font-semibold transition shadow-md hover:shadow-lg"
               >
                 Message Seller
               </button>
 
-              <p className="text-sm text-gray-500 mt-3 leading-6">
-                Ask about availability, pickup arrangements, price, or any
-                details about this pet or listing before you commit.
-              </p>
+              <button
+                onClick={handleShareListing}
+                className="w-full mt-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 py-3.5 text-sm font-semibold transition"
+              >
+                Share Listing
+              </button>
 
               <div className="mt-5 grid grid-cols-1 gap-3">
-                <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-700 flex items-center gap-2">
-                  <ShieldCheck size={16} className="text-green-600" />
-                  Safe in-app messaging
+                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
+                  <ShieldCheck size={16} className="text-green-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Safe in-app messaging
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Keep conversations secure inside the platform
+                    </p>
+                  </div>
                 </div>
 
-                <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-700 flex items-center gap-2">
-                  <MessageCircle size={16} className="text-green-600" />
-                  Direct buyer and seller chat
+                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
+                  <MessageCircle size={16} className="text-green-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Direct buyer and seller chat
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Ask questions before arranging pickup or payment
+                    </p>
+                  </div>
                 </div>
               </div>
             </section>
