@@ -29,6 +29,7 @@ type Listing = {
   category?: string | null;
   is_featured?: boolean | null;
   boost_until?: string | null;
+  attributes?: Record<string, string> | null;
 };
 
 const PET_CATEGORIES = [
@@ -43,6 +44,74 @@ const PET_CATEGORIES = [
   "Pet Supplies",
 ] as const;
 
+const getCategoryFields = (category: string) => {
+  switch (category) {
+    case "Dogs":
+    case "Cats":
+    case "Rabbits":
+      return [
+        { key: "breed", label: "Breed" },
+        { key: "age", label: "Age" },
+        { key: "gender", label: "Gender" },
+        { key: "vaccinated", label: "Vaccinated" },
+        { key: "desexed", label: "Desexed" },
+      ];
+
+    case "Birds":
+      return [
+        { key: "species", label: "Species / Breed" },
+        { key: "age", label: "Age" },
+        { key: "gender", label: "Gender" },
+        { key: "handRaised", label: "Hand Raised" },
+        { key: "cageIncluded", label: "Cage Included" },
+      ];
+
+    case "Fish":
+      return [
+        { key: "species", label: "Species" },
+        { key: "tankSize", label: "Tank Size" },
+        { key: "waterType", label: "Water Type" },
+        { key: "age", label: "Age" },
+      ];
+
+    case "Horses & Ponies":
+      return [
+        { key: "breed", label: "Breed" },
+        { key: "age", label: "Age" },
+        { key: "gender", label: "Gender" },
+        { key: "height", label: "Height" },
+        { key: "experienceLevel", label: "Experience Level" },
+      ];
+
+    case "Livestock":
+      return [
+        { key: "animalType", label: "Animal Type" },
+        { key: "breed", label: "Breed" },
+        { key: "age", label: "Age" },
+        { key: "quantity", label: "Quantity" },
+      ];
+
+    case "Reptiles & Amphibians":
+      return [
+        { key: "species", label: "Species" },
+        { key: "age", label: "Age" },
+        { key: "sex", label: "Sex" },
+        { key: "enclosureIncluded", label: "Enclosure Included" },
+        { key: "feedingType", label: "Feeding Type" },
+      ];
+
+    case "Pet Supplies":
+      return [
+        { key: "itemType", label: "Item Type" },
+        { key: "brand", label: "Brand" },
+        { key: "condition", label: "Condition" },
+      ];
+
+    default:
+      return [];
+  }
+};
+
 export default function Home() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,6 +122,9 @@ export default function Home() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [sortBy, setSortBy] = useState("newest");
+  const [attributeFilters, setAttributeFilters] = useState<
+    Record<string, string>
+  >({});
 
   useEffect(() => {
     fetchListings();
@@ -71,7 +143,7 @@ export default function Home() {
       return;
     }
 
-    setListings(data || []);
+    setListings((data || []) as Listing[]);
   };
 
   const getCurrentUser = async () => {
@@ -160,6 +232,13 @@ export default function Home() {
     }
   };
 
+  const handleAttributeFilterChange = (key: string, value: string) => {
+    setAttributeFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
   const clearFilters = () => {
     setCategoryFilter("");
     setMinPrice("");
@@ -167,6 +246,7 @@ export default function Home() {
     setSearchTerm("");
     setLocationFilter("");
     setSortBy("newest");
+    setAttributeFilters({});
   };
 
   const hasActiveFilters =
@@ -175,7 +255,8 @@ export default function Home() {
     !!maxPrice ||
     !!searchTerm ||
     !!locationFilter ||
-    sortBy !== "newest";
+    sortBy !== "newest" ||
+    Object.values(attributeFilters).some((value) => !!value);
 
   const filteredListings = listings
     .filter((item) => {
@@ -201,12 +282,22 @@ export default function Home() {
         ? numericPrice <= Number(maxPrice)
         : true;
 
+      const matchesAttributes = Object.entries(attributeFilters).every(
+        ([key, value]) => {
+          if (!value) return true;
+
+          const listingValue = item.attributes?.[key] || "";
+          return listingValue.toLowerCase().includes(value.toLowerCase());
+        }
+      );
+
       return (
         matchesSearch &&
         matchesLocation &&
         matchesCategory &&
         matchesMinPrice &&
-        matchesMaxPrice
+        matchesMaxPrice &&
+        matchesAttributes
       );
     })
     .sort((a, b) => {
@@ -298,7 +389,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#07111f]/95 via-[#07111f]/80 to-[#07111f]/30" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/10" />
 
-        <div className="relative max-w-6xl mx-auto px-4 pt-8 pb-14 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
+        <div className="relative max-w-6xl mx-auto px-4 pt-20 pb-14 sm:pt-24 sm:pb-20 lg:pt-28 lg:pb-24">
           <div className="max-w-3xl lg:max-w-[44rem]">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
               <ShieldCheck size={14} />
@@ -376,6 +467,67 @@ export default function Home() {
                   Search
                 </button>
               </div>
+
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => {
+                    setCategoryFilter(e.target.value);
+                    setAttributeFilters({});
+                  }}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                >
+                  <option value="">All Categories</option>
+                  {PET_CATEGORIES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="number"
+                  placeholder="Min Price"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                />
+
+                <input
+                  type="number"
+                  placeholder="Max Price"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                />
+
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="lowest">Price: Low to High</option>
+                  <option value="highest">Price: High to Low</option>
+                </select>
+              </div>
+
+              {categoryFilter && getCategoryFields(categoryFilter).length > 0 && (
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {getCategoryFields(categoryFilter).map((field) => (
+                    <input
+                      key={field.key}
+                      type="text"
+                      placeholder={`Filter by ${field.label}`}
+                      value={attributeFilters[field.key] || ""}
+                      onChange={(e) =>
+                        handleAttributeFilterChange(field.key, e.target.value)
+                      }
+                      className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                    />
+                  ))}
+                </div>
+              )}
 
               <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600 sm:text-sm">
                 <span className="font-medium text-gray-700">
@@ -502,7 +654,9 @@ export default function Home() {
               key={cat.name}
               onClick={() => {
                 setCategoryFilter(cat.name);
-                const listingsSection = document.getElementById("latest-listings");
+                setAttributeFilters({});
+                const listingsSection =
+                  document.getElementById("latest-listings");
                 listingsSection?.scrollIntoView({
                   behavior: "smooth",
                   block: "start",
@@ -903,6 +1057,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setCategoryFilter("Dogs");
+                    setAttributeFilters({});
                     const listingsSection =
                       document.getElementById("latest-listings");
                     listingsSection?.scrollIntoView({
@@ -918,6 +1073,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setCategoryFilter("Cats");
+                    setAttributeFilters({});
                     const listingsSection =
                       document.getElementById("latest-listings");
                     listingsSection?.scrollIntoView({
@@ -996,7 +1152,8 @@ export default function Home() {
 
           <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <p className="text-xs text-gray-400">
-              © {new Date().getFullYear()} Pet Marketplace. All rights reserved.
+              © {new Date().getFullYear()} Pet Marketplace. All rights
+              reserved.
             </p>
 
             <div className="flex items-center gap-4 text-xs text-gray-400">
