@@ -25,6 +25,74 @@ const PET_CATEGORIES = [
   "Pet Supplies",
 ] as const;
 
+const getCategoryFields = (category: string) => {
+  switch (category) {
+    case "Dogs":
+    case "Cats":
+    case "Rabbits":
+      return [
+        { key: "breed", label: "Breed" },
+        { key: "age", label: "Age" },
+        { key: "gender", label: "Gender" },
+        { key: "vaccinated", label: "Vaccinated" },
+        { key: "desexed", label: "Desexed" },
+      ];
+
+    case "Birds":
+      return [
+        { key: "species", label: "Species / Breed" },
+        { key: "age", label: "Age" },
+        { key: "gender", label: "Gender" },
+        { key: "handRaised", label: "Hand Raised" },
+        { key: "cageIncluded", label: "Cage Included" },
+      ];
+
+    case "Fish":
+      return [
+        { key: "species", label: "Species" },
+        { key: "tankSize", label: "Tank Size" },
+        { key: "waterType", label: "Water Type" },
+        { key: "age", label: "Age" },
+      ];
+
+    case "Horses & Ponies":
+      return [
+        { key: "breed", label: "Breed" },
+        { key: "age", label: "Age" },
+        { key: "gender", label: "Gender" },
+        { key: "height", label: "Height" },
+        { key: "experienceLevel", label: "Experience Level" },
+      ];
+
+    case "Livestock":
+      return [
+        { key: "animalType", label: "Animal Type" },
+        { key: "breed", label: "Breed" },
+        { key: "age", label: "Age" },
+        { key: "quantity", label: "Quantity" },
+      ];
+
+    case "Reptiles & Amphibians":
+      return [
+        { key: "species", label: "Species" },
+        { key: "age", label: "Age" },
+        { key: "sex", label: "Sex" },
+        { key: "enclosureIncluded", label: "Enclosure Included" },
+        { key: "feedingType", label: "Feeding Type" },
+      ];
+
+    case "Pet Supplies":
+      return [
+        { key: "itemType", label: "Item Type" },
+        { key: "brand", label: "Brand" },
+        { key: "condition", label: "Condition" },
+      ];
+
+    default:
+      return [];
+  }
+};
+
 const normalizeImages = (
   images: unknown,
   fallbackImage?: string | null
@@ -66,6 +134,7 @@ export default function EditListingPage() {
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [attributes, setAttributes] = useState<Record<string, string>>({});
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -128,6 +197,19 @@ export default function EditListingPage() {
     setCategory(data.category || "");
     setDescription(data.description || "");
     setImages(normalizeImages(data.images, data.image));
+    setAttributes(data.attributes || {});
+  };
+
+  const handleAttributeChange = (key: string, value: string) => {
+    setAttributes((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleCategoryChange = (newCategory: string) => {
+    setCategory(newCategory);
+    setAttributes({});
   };
 
   const handleImageUpload = async (
@@ -218,6 +300,7 @@ export default function EditListingPage() {
         description,
         image: primaryImage,
         images,
+        attributes,
       })
       .eq("id", id)
       .eq("user_id", user.id);
@@ -256,14 +339,13 @@ export default function EditListingPage() {
 
             <p className="mt-3 text-white/80 max-w-2xl text-sm sm:text-base leading-7">
               Update your pet or pet-related listing with fresh details, better
-              photos, or a more relevant category.
+              photos, or more accurate category-specific information.
             </p>
           </div>
 
           <div className="px-6 sm:px-8 py-6 sm:py-8">
             <form onSubmit={handleUpdate}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* LEFT COLUMN */}
                 <div className="space-y-6">
                   <div>
                     <label className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
@@ -314,7 +396,7 @@ export default function EditListingPage() {
                     </label>
                     <select
                       value={category}
-                      onChange={(e) => setCategory(e.target.value)}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
                       className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
                     >
                       <option value="">Select a category</option>
@@ -330,9 +412,35 @@ export default function EditListingPage() {
                       listing faster.
                     </p>
                   </div>
+
+                  {category && getCategoryFields(category).length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                        Category Details
+                      </h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {getCategoryFields(category).map((field) => (
+                          <div key={field.key}>
+                            <label className="text-sm font-semibold text-gray-900 mb-2 block">
+                              {field.label}
+                            </label>
+                            <input
+                              type="text"
+                              value={attributes[field.key] || ""}
+                              onChange={(e) =>
+                                handleAttributeChange(field.key, e.target.value)
+                              }
+                              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                              placeholder={field.label}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* RIGHT COLUMN */}
                 <div className="space-y-6">
                   <div>
                     <label className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
@@ -343,14 +451,13 @@ export default function EditListingPage() {
                       placeholder="Describe the pet or item, temperament, age, condition, pickup details, or anything buyers should know."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      rows={10}
+                      rows={12}
                       className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500 resize-none"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* IMAGE UPLOAD */}
               <div className="mt-8">
                 <label className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <ImageIcon size={16} />
@@ -414,7 +521,6 @@ export default function EditListingPage() {
                 </div>
               </div>
 
-              {/* ACTIONS */}
               <div className="mt-10 flex flex-col sm:flex-row gap-3">
                 <button
                   type="submit"
