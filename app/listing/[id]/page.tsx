@@ -596,9 +596,11 @@ export default function ListingPage() {
                   </div>
                 </div>
 
-                <div className="shrink-0">
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 text-green-700 px-6 py-4 rounded-2xl text-3xl font-bold shadow-sm">
-                    ${listing.price}
+                <div className="mt-5 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-3xl font-bold text-gray-900">
+                      ${listing.price}
+                    </p>
                   </div>
                 </div>
               </div>
