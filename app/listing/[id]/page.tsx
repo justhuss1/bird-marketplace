@@ -30,6 +30,7 @@ type Listing = {
   is_featured?: boolean | null;
   boost_until?: string | null;
   created_at?: string;
+  attributes?: Record<string, string> | null;
 };
 
 type SellerProfile = {
@@ -62,6 +63,47 @@ const normalizeImages = (
   }
 
   return fallbackImage ? [fallbackImage] : [];
+};
+
+const formatAttributeLabel = (key: string) => {
+  const customLabels: Record<string, string> = {
+    breed: "Breed",
+    age: "Age",
+    gender: "Gender",
+    vaccinated: "Vaccinated",
+    desexed: "Desexed",
+    species: "Species / Breed",
+    handRaised: "Hand Raised",
+    cageIncluded: "Cage Included",
+    tankSize: "Tank Size",
+    waterType: "Water Type",
+    height: "Height",
+    experienceLevel: "Experience Level",
+    animalType: "Animal Type",
+    quantity: "Quantity",
+    sex: "Sex",
+    enclosureIncluded: "Enclosure Included",
+    feedingType: "Feeding Type",
+    itemType: "Item Type",
+    brand: "Brand",
+    condition: "Condition",
+  };
+
+  return (
+    customLabels[key] ||
+    key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())
+  );
+};
+
+const formatAttributeValue = (value: string) => {
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "yes") return "Yes";
+  if (normalized === "no") return "No";
+  if (normalized === "male") return "Male";
+  if (normalized === "female") return "Female";
+
+  return value;
 };
 
 export default function ListingPage() {
@@ -107,13 +149,13 @@ export default function ListingPage() {
       .eq("id", id)
       .single();
 
-    if (error) {
+    if (error || !data) {
       console.error("ERROR:", error);
       setLoading(false);
       return;
     }
 
-    setListing(data);
+    setListing(data as Listing);
 
     const normalized = normalizeImages(data.images, data.image);
     setGalleryImages(normalized);
@@ -128,8 +170,8 @@ export default function ListingPage() {
       .eq("id", data.user_id)
       .single();
 
-    if (!sellerError) {
-      setSeller(sellerData);
+    if (!sellerError && sellerData) {
+      setSeller(sellerData as SellerProfile);
     }
 
     fetchSellerStats(data.user_id);
@@ -421,9 +463,11 @@ export default function ListingPage() {
                         {listing.category}
                       </span>
                     )}
+
                     <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
                       Available now
                     </span>
+
                     {listing.boost_until &&
                       new Date(listing.boost_until) > new Date() && (
                         <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">
@@ -441,6 +485,7 @@ export default function ListingPage() {
                       <MapPin size={15} />
                       {listing.location}
                     </span>
+
                     <span className="inline-flex items-center gap-1.5">
                       <CalendarDays size={15} />
                       {formatPostedDate(listing.created_at)}
@@ -454,6 +499,40 @@ export default function ListingPage() {
                   </div>
                 </div>
               </div>
+
+              {listing.attributes && Object.keys(listing.attributes).length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Category Details
+                    </h2>
+
+                    {listing.category && (
+                      <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">
+                        {listing.category}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {Object.entries(listing.attributes)
+                      .filter(([, value]) => value && value.trim() !== "")
+                      .map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4"
+                        >
+                          <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
+                            {formatAttributeLabel(key)}
+                          </p>
+                          <p className="text-sm sm:text-[15px] font-semibold text-gray-900 mt-2">
+                            {formatAttributeValue(value)}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-8 pt-6 border-t border-gray-100">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">
@@ -481,8 +560,8 @@ export default function ListingPage() {
               </button>
 
               <p className="text-sm text-gray-500 mt-3 leading-6">
-                Ask about availability, pickup arrangements, price, or anything
-                else before you commit.
+                Ask about availability, pickup arrangements, price, or any
+                details about this pet or listing before you commit.
               </p>
 
               <div className="mt-5 grid grid-cols-1 gap-3">
@@ -490,6 +569,7 @@ export default function ListingPage() {
                   <ShieldCheck size={16} className="text-green-600" />
                   Safe in-app messaging
                 </div>
+
                 <div className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-700 flex items-center gap-2">
                   <MessageCircle size={16} className="text-green-600" />
                   Direct buyer and seller chat
