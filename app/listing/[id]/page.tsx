@@ -494,7 +494,7 @@ export default function ListingPage() {
                 </div>
 
                 <div className="shrink-0">
-                  <div className="bg-green-50 text-green-600 px-5 py-3 rounded-2xl text-3xl font-semibold">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 text-green-700 px-6 py-4 rounded-2xl text-3xl font-bold shadow-sm">
                     ${listing.price}
                   </div>
                 </div>
@@ -538,7 +538,7 @@ export default function ListingPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">
                   Description
                 </h2>
-                <p className="text-gray-700 leading-7 whitespace-pre-line">
+                <p className="text-gray-700 leading-8 whitespace-pre-line text-[15px]">
                   {listing.description || "No description provided."}
                 </p>
               </div>
@@ -599,6 +599,9 @@ export default function ListingPage() {
                   </p>
                   <p className="text-sm text-gray-500">
                     Member since {formatJoinedDate(seller?.created_at)}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1 font-medium">
+                    ✓ Trusted marketplace member
                   </p>
                 </div>
               </div>
