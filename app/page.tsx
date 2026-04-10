@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 import {
   Bird,
   Heart,
@@ -122,6 +123,9 @@ export default function Home() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [sortBy, setSortBy] = useState("newest");
+  const router = useRouter();
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [attributeFilters, setAttributeFilters] = useState<
     Record<string, string>
   >({});
@@ -131,6 +135,51 @@ export default function Home() {
     getCurrentUser();
     fetchSavedListings();
   }, []);
+
+  const buildSuggestions = (value: string) => {
+  if (!value.trim()) {
+    setSuggestions([]);
+    return;
+  }
+
+  const query = value.toLowerCase().trim();
+
+  const pool = new Set<string>();
+
+  listings.forEach((item) => {
+    if (item.title) pool.add(item.title);
+    if (item.category) pool.add(item.category);
+
+    if (item.attributes) {
+      Object.values(item.attributes).forEach((attrValue) => {
+        if (typeof attrValue === "string" && attrValue.trim()) {
+          pool.add(attrValue);
+        }
+      });
+    }
+  });
+
+  const matched = Array.from(pool)
+    .filter((entry) => entry.toLowerCase().includes(query))
+    .slice(0, 6);
+
+  setSuggestions(matched);
+};
+
+const runSearch = (overrideQuery?: string) => {
+  const params = new URLSearchParams();
+
+  const finalQuery = overrideQuery ?? searchTerm;
+
+  if (finalQuery.trim()) params.set("q", finalQuery.trim());
+  if (locationFilter.trim()) params.set("location", locationFilter.trim());
+  if (categoryFilter.trim()) params.set("category", categoryFilter.trim());
+  if (minPrice.trim()) params.set("minPrice", minPrice.trim());
+  if (maxPrice.trim()) params.set("maxPrice", maxPrice.trim());
+  if (sortBy.trim()) params.set("sortBy", sortBy.trim());
+
+  router.push(`/search?${params.toString()}`);
+};
 
   const fetchListings = async () => {
     const { data, error } = await supabase
@@ -399,36 +448,56 @@ export default function Home() {
 
             <div className="mt-8 rounded-[28px] border border-white/10 bg-white/95 p-4 sm:p-5 shadow-2xl backdrop-blur max-w-4xl">
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.15fr_0.95fr_auto]">
-                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                  <Search size={18} className="text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search by pet type, breed or keyword"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                  />
-                </div>
+                <div className="relative">
+                  <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                    <Search size={18} className="text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search by pet type, breed or keyword"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        buildSuggestions(e.target.value);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => {
+                        if (suggestions.length > 0) setShowSuggestions(true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setShowSuggestions(false);
+                          runSearch();
+                        }
+                      }}
+                      className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                    />
+                  </div>
 
-                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                  <MapPin size={18} className="text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Enter suburb, city or state"
-                    value={locationFilter}
-                    onChange={(e) => setLocationFilter(e.target.value)}
-                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                  />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
+                      {suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => {
+                            setSearchTerm(suggestion);
+                            setShowSuggestions(false);
+                            runSearch(suggestion);
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <button
                   onClick={() => {
-                    const listingsSection =
-                      document.getElementById("latest-listings");
-                    listingsSection?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    });
+                    setShowSuggestions(false);
+                    runSearch();
                   }}
                   className="rounded-2xl bg-[#07111f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0c1a2d]"
                 >
