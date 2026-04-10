@@ -2,9 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Heart, MapPin, Search, SlidersHorizontal } from "lucide-react";
+import {
+  Heart,
+  MapPin,
+  Search,
+  SlidersHorizontal,
+  RotateCcw,
+} from "lucide-react";
 
 type Listing = {
   id: string;
@@ -19,15 +25,28 @@ type Listing = {
   created_at?: string;
 };
 
+const PET_CATEGORIES = [
+  "Birds",
+  "Cats",
+  "Dogs",
+  "Fish",
+  "Horses & Ponies",
+  "Livestock",
+  "Reptiles & Amphibians",
+  "Rabbits",
+  "Pet Supplies",
+] as const;
+
 export default function SearchPageClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
-  const q = searchParams.get("q") || "";
-  const location = searchParams.get("location") || "";
-  const category = searchParams.get("category") || "";
-  const minPrice = searchParams.get("minPrice") || "";
-  const maxPrice = searchParams.get("maxPrice") || "";
-  const sortBy = searchParams.get("sortBy") || "newest";
+  const [q, setQ] = useState(searchParams.get("q") || "");
+  const [location, setLocation] = useState(searchParams.get("location") || "");
+  const [category, setCategory] = useState(searchParams.get("category") || "");
+  const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
+  const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
+  const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "newest");
 
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -36,7 +55,20 @@ export default function SearchPageClient() {
   useEffect(() => {
     fetchListings();
     fetchSavedListings();
-  }, [q, location, category, minPrice, maxPrice, sortBy]);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (q.trim()) params.set("q", q.trim());
+    if (location.trim()) params.set("location", location.trim());
+    if (category.trim()) params.set("category", category.trim());
+    if (minPrice.trim()) params.set("minPrice", minPrice.trim());
+    if (maxPrice.trim()) params.set("maxPrice", maxPrice.trim());
+    if (sortBy.trim()) params.set("sortBy", sortBy.trim());
+
+    router.replace(`/search?${params.toString()}`);
+  }, [q, location, category, minPrice, maxPrice, sortBy, router]);
 
   const fetchListings = async () => {
     setLoading(true);
@@ -128,13 +160,22 @@ export default function SearchPageClient() {
     }
   };
 
+  const resetFilters = () => {
+    setQ("");
+    setLocation("");
+    setCategory("");
+    setMinPrice("");
+    setMaxPrice("");
+    setSortBy("newest");
+  };
+
   const filteredListings = useMemo(() => {
     return listings
       .filter((item) => {
-        const query = q.toLowerCase();
+        const query = q.toLowerCase().trim();
 
         const matchesSearch =
-          !q ||
+          !query ||
           item.title.toLowerCase().includes(query) ||
           item.category?.toLowerCase().includes(query) ||
           Object.values(item.attributes || {}).some((value) =>
@@ -142,7 +183,7 @@ export default function SearchPageClient() {
           );
 
         const matchesLocation =
-          !location ||
+          !location.trim() ||
           item.location?.toLowerCase().includes(location.toLowerCase());
 
         const matchesCategory = !category || item.category === category;
@@ -227,6 +268,80 @@ export default function SearchPageClient() {
                 Price: {minPrice || "0"} - {maxPrice || "Any"}
               </span>
             )}
+          </div>
+        </section>
+
+        <section className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <SlidersHorizontal size={18} className="text-gray-500" />
+            <h2 className="text-base font-semibold text-gray-900">Filter Results</h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <input
+              type="text"
+              placeholder="Keyword"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+            />
+
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+            >
+              <option value="">All Categories</option>
+              {PET_CATEGORIES.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="text"
+              placeholder="Location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+            />
+
+            <input
+              type="number"
+              placeholder="Min $"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+            />
+
+            <input
+              type="number"
+              placeholder="Max $"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+            />
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+            >
+              <option value="newest">Newest</option>
+              <option value="lowest">Price: Low → High</option>
+              <option value="highest">Price: High → Low</option>
+            </select>
+          </div>
+
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={resetFilters}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition"
+            >
+              <RotateCcw size={14} />
+              Reset
+            </button>
           </div>
         </section>
 
