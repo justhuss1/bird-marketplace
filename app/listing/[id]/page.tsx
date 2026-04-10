@@ -18,6 +18,7 @@ import {
   Eye,
   Flag,
   Share2,
+  Star,
 } from "lucide-react";
 
 type Listing = {
@@ -110,6 +111,8 @@ const formatAttributeValue = (value: string) => {
   return value;
 };
 
+
+
 export default function ListingPage() {
   const params = useParams();
   const router = useRouter();
@@ -123,6 +126,10 @@ export default function ListingPage() {
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sellerListings, setSellerListings] = useState<any[]>([]);
+  const sellerName = seller?.username || "Seller";
+  const sellerListingsCount = sellerListings?.length || 0;
+  
 
   useEffect(() => {
     if (id) {
@@ -130,6 +137,26 @@ export default function ListingPage() {
       checkIfSaved();
     }
   }, [id]);
+
+  useEffect(() => {
+  if (listing?.user_id) {
+    fetchSellerListings(listing.user_id);
+  }
+  }, [listing]);
+
+  const fetchSellerListings = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("listings")
+      .select("id")
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setSellerListings(data || []);
+  };
 
   const fetchSellerStats = async (sellerId: string) => {
     const { count, error } = await supabase
@@ -744,37 +771,36 @@ export default function ListingPage() {
             </section>
 
             <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold text-gray-900">Seller</h2>
+              {/* HEADER */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-green-100 text-green-700 flex items-center justify-center font-semibold text-lg">
+                    {sellerName?.charAt(0)?.toUpperCase() || "U"}
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-500">Seller</p>
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {sellerName || "Unknown Seller"}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Member since recently
+                    </p>
+                  </div>
+                </div>
+
                 <Link
                   href={`/seller/${listing.user_id}`}
-                  className="text-sm font-medium text-gray-600 hover:text-gray-900 transition"
+                  className="text-sm text-green-600 font-medium hover:underline"
                 >
                   View profile
                 </Link>
               </div>
 
-              <div className="mt-4 flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-lg font-bold text-green-700 shadow-sm">
-                  {seller?.username?.charAt(0).toUpperCase() || <User size={18} />}
-                </div>
-
-                <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 line-clamp-1">
-                    {seller?.username || "User"}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Member since {formatJoinedDate(seller?.created_at)}
-                  </p>
-                  <p className="text-xs text-green-600 mt-1 font-medium">
-                    ✓ Trusted marketplace member
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-3">
-                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
-                  <ShieldCheck size={16} className="text-green-600 shrink-0" />
+              {/* TRUST BADGES */}
+              <div className="mt-5 grid grid-cols-1 gap-3">
+                <div className="flex items-start gap-3 bg-gray-50 rounded-2xl px-4 py-3">
+                  <ShieldCheck size={16} className="text-green-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       Verified account
@@ -785,12 +811,11 @@ export default function ListingPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
-                  <MessageCircle size={16} className="text-green-600 shrink-0" />
+                <div className="flex items-start gap-3 bg-gray-50 rounded-2xl px-4 py-3">
+                  <Star size={16} className="text-green-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {sellerListingCount} active listing
-                      {sellerListingCount === 1 ? "" : "s"}
+                      {sellerListingsCount || 0} active listings
                     </p>
                     <p className="text-xs text-gray-500">
                       Browse more from this seller
@@ -798,21 +823,22 @@ export default function ListingPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
-                  <User size={16} className="text-green-600 shrink-0" />
+                <div className="flex items-start gap-3 bg-gray-50 rounded-2xl px-4 py-3">
+                  <User size={16} className="text-green-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       Seller profile available
                     </p>
                     <p className="text-xs text-gray-500">
-                      View seller details and listings
+                      View details and all listings
                     </p>
                   </div>
                 </div>
               </div>
 
+              {/* CTA */}
               <Link href={`/seller/${listing.user_id}`}>
-                <button className="w-full mt-5 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 py-3 text-sm font-semibold transition">
+                <button className="w-full mt-5 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 py-3.5 text-sm font-semibold transition">
                   View Seller Profile
                 </button>
               </Link>
@@ -886,6 +912,30 @@ export default function ListingPage() {
           </section>
         )}
       </div>
+      {/* STICKY MOBILE CTA */}
+      <div className="fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur md:hidden">
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleToggleSave}
+              className={`flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition min-w-[110px] ${
+                isSaved
+                  ? "bg-red-50 text-red-600 border border-red-200"
+                  : "bg-gray-100 text-gray-800 border border-gray-200"
+              }`}
+            >
+              {isSaved ? "Saved" : "Save"}
+            </button>
+
+            <button
+              onClick={handleMessageSeller}
+              className="flex-1 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md"
+            >
+              Message Seller
+            </button>
+          </div>
+        </div>
+      </div>
     </main>
-  );
+    );
 }
