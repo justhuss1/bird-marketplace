@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -197,9 +197,27 @@ export default function SearchPageClient() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
 
+  const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
+  const [showKeywordSuggestions, setShowKeywordSuggestions] = useState(false);
+  const keywordBoxRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     fetchListings();
     fetchSavedListings();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        keywordBoxRef.current &&
+        !keywordBoxRef.current.contains(event.target as Node)
+      ) {
+        setShowKeywordSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -331,6 +349,41 @@ export default function SearchPageClient() {
     setMaxPrice("");
     setSortBy("newest");
     setAttributeFilters({});
+    setKeywordSuggestions([]);
+    setShowKeywordSuggestions(false);
+  };
+
+  const buildKeywordSuggestions = (value: string) => {
+    const query = value.toLowerCase().trim();
+
+    if (!query) {
+      setKeywordSuggestions([]);
+      return;
+    }
+
+    const pool = new Set<string>();
+
+    listings.forEach((item) => {
+      if (item.title?.trim()) pool.add(item.title.trim());
+      if (item.category?.trim()) pool.add(item.category.trim());
+
+      Object.values(item.attributes || {}).forEach((attrValue) => {
+        if (typeof attrValue === "string" && attrValue.trim()) {
+          pool.add(attrValue.trim());
+        }
+      });
+    });
+
+    const matches = Array.from(pool)
+      .filter((entry) => entry.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aStarts = a.toLowerCase().startsWith(query) ? 0 : 1;
+        const bStarts = b.toLowerCase().startsWith(query) ? 0 : 1;
+        return aStarts - bStarts || a.localeCompare(b);
+      })
+      .slice(0, 8);
+
+    setKeywordSuggestions(matches);
   };
 
   const filteredListings = useMemo(() => {
@@ -461,13 +514,46 @@ export default function SearchPageClient() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-            <input
-              type="text"
-              placeholder="Keyword"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
-            />
+            <div className="relative sm:col-span-2 lg:col-span-1" ref={keywordBoxRef}>
+              <input
+                type="text"
+                placeholder="Keyword"
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  buildKeywordSuggestions(e.target.value);
+                  setShowKeywordSuggestions(true);
+                }}
+                onFocus={() => {
+                  buildKeywordSuggestions(q);
+                  if (q.trim()) setShowKeywordSuggestions(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setShowKeywordSuggestions(false);
+                  }
+                }}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+              />
+
+              {showKeywordSuggestions && keywordSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
+                  {keywordSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => {
+                        setQ(suggestion);
+                        setShowKeywordSuggestions(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <select
               value={category}
