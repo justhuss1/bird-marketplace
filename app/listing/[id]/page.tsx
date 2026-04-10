@@ -494,7 +494,7 @@ export default function ListingPage() {
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen px-4 py-6 sm:py-8 pb-24">
+    <main className="bg-gray-50 min-h-screen px-4 py-6 sm:py-8 pb-32">
       <div className="max-w-6xl mx-auto">
         <button
           onClick={() => router.back()}
