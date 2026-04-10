@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import {
   Bird,
   Heart,
@@ -58,6 +61,15 @@ export default function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showStickySearch, setShowStickySearch] = useState(false);
+  const categoryScrollRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollCategoriesLeft = () => {
+    categoryScrollRef.current?.scrollBy({ left: -220, behavior: "smooth" });
+  };
+
+  const scrollCategoriesRight = () => {
+    categoryScrollRef.current?.scrollBy({ left: 220, behavior: "smooth" });
+  };
 
   useEffect(() => {
     fetchListings();
@@ -302,9 +314,9 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* SEARCH CARD */}
             <div className="mt-6 sm:mt-8 rounded-[28px] border border-white/10 bg-white/95 p-4 sm:p-5 shadow-2xl backdrop-blur max-w-4xl">
-              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr_auto] gap-3">
+              {/* TOP SEARCH ROW */}
+              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr_auto] gap-3 items-start">
                 <div className="relative">
                   <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
                     <Search size={18} className="text-gray-400" />
@@ -353,34 +365,12 @@ export default function Home() {
                       ))}
                     </div>
                   )}
-                  {!searchTerm.trim() && recentSearches.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-xs font-medium text-gray-500 mb-2">Recent searches</p>
-                      <div className="flex flex-wrap gap-2">
-                        {recentSearches.map((item) => (
-                          <button
-                            key={item}
-                            type="button"
-                            onClick={() => {
-                              setSearchTerm(item);
-                              runSearch(item);
-                            }}
-                            className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
-                          >
-                            {item}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                <input
-                  type="text"
-                  placeholder="Location"
+                <LocationAutocomplete
                   value={locationFilter}
-                  onChange={(e) => setLocationFilter(e.target.value)}
-                  className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                  onChange={setLocationFilter}
+                  placeholder="Location"
                 />
 
                 <button
@@ -388,11 +378,34 @@ export default function Home() {
                     setShowSuggestions(false);
                     runSearch();
                   }}
-                  className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-5 py-3 text-sm font-semibold transition"
+                  className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-5 py-3 text-sm font-semibold transition h-[50px]"
                 >
                   Search
                 </button>
               </div>
+
+              {/* RECENT SEARCHES */}
+              {!searchTerm.trim() && recentSearches.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-medium text-gray-500 mb-2">Recent searches</p>
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => {
+                          setSearchTerm(item);
+                          setShowSuggestions(false);
+                          runSearch(item);
+                        }}
+                        className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* MOBILE QUICK ACTION */}
               <div className="mt-3 sm:hidden">
@@ -404,22 +417,43 @@ export default function Home() {
               </div>
 
               {/* CATEGORY CHIPS */}
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                {categoryItems.map((cat) => (
-                  <button
-                    key={cat.name}
-                    onClick={() => {
-                      const params = new URLSearchParams();
-                      params.set("category", cat.name);
-                      params.set("sortBy", "newest");
-                      router.push(`/search?${params.toString()}`);
-                    }}
-                    className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                  >
-                    <cat.icon size={15} />
-                    {cat.name}
-                  </button>
-                ))}
+              <div className="mt-4 relative">
+                <button
+                  type="button"
+                  onClick={scrollCategoriesLeft}
+                  className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                <div
+                  ref={categoryScrollRef}
+                  className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide lg:px-12"
+                >
+                  {categoryItems.map((cat) => (
+                    <button
+                      key={cat.name}
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        params.set("category", cat.name);
+                        params.set("sortBy", "newest");
+                        router.push(`/search?${params.toString()}`);
+                      }}
+                      className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      <cat.icon size={15} />
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={scrollCategoriesRight}
+                  className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
+                >
+                  <ChevronRight size={16} />
+                </button>
               </div>
             </div>
           </div>
