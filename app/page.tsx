@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -56,11 +56,27 @@ export default function Home() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [showStickySearch, setShowStickySearch] = useState(false);
 
   useEffect(() => {
     fetchListings();
     getCurrentUser();
     fetchSavedListings();
+
+    const storedRecentSearches = localStorage.getItem("recentSearches");
+    if (storedRecentSearches) {
+      setRecentSearches(JSON.parse(storedRecentSearches));
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowStickySearch(window.scrollY > 280);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const fetchListings = async () => {
@@ -190,11 +206,30 @@ export default function Home() {
     setSuggestions(matches);
   };
 
+  const saveRecentSearch = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    const updated = [
+      trimmed,
+      ...recentSearches.filter(
+        (item) => item.toLowerCase() !== trimmed.toLowerCase()
+      ),
+    ].slice(0, 5);
+
+    setRecentSearches(updated);
+    localStorage.setItem("recentSearches", JSON.stringify(updated));
+  };
+
   const runSearch = (overrideQuery?: string) => {
     const params = new URLSearchParams();
     const finalQuery = overrideQuery ?? searchTerm;
 
-    if (finalQuery.trim()) params.set("q", finalQuery.trim());
+    if (finalQuery.trim()) {
+      params.set("q", finalQuery.trim());
+      saveRecentSearch(finalQuery);
+    }
+
     if (locationFilter.trim()) params.set("location", locationFilter.trim());
     if (categoryFilter.trim()) params.set("category", categoryFilter.trim());
     params.set("sortBy", "newest");
@@ -316,6 +351,26 @@ export default function Home() {
                           {suggestion}
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {!searchTerm.trim() && recentSearches.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-gray-500 mb-2">Recent searches</p>
+                      <div className="flex flex-wrap gap-2">
+                        {recentSearches.map((item) => (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => {
+                              setSearchTerm(item);
+                              runSearch(item);
+                            }}
+                            className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+                          >
+                            {item}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -653,6 +708,39 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {showStickySearch && (
+        <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
+          <div className="max-w-7xl mx-auto">
+            <div className="mt-3 rounded-2xl border border-gray-200 bg-white/95 backdrop-blur shadow-lg p-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-1 rounded-xl bg-gray-50 px-3 py-2.5">
+                  <Search size={16} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search pets..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        runSearch();
+                      }
+                    }}
+                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                  />
+                </div>
+
+                <button
+                  onClick={() => runSearch()}
+                  className="shrink-0 rounded-xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-2.5 text-sm font-semibold transition"
+                >
+                  Search
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
