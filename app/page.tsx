@@ -1,6 +1,5 @@
 "use client";
 
-import TopNavbar from "@/components/TopNavbar";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -345,41 +344,7 @@ export default function Home() {
   ];
 
   return (
-    <>
-    <TopNavbar />
     <main className="bg-gray-50 min-h-screen pb-24 md:pb-20">
-      {/* TOP NAV */}
-      <div className="bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
-        <div className="max-w-6xl w-full mx-auto flex justify-between items-center">
-          <h1 className="text-[15px] sm:text-lg font-bold text-green-600 flex items-center gap-2">
-            <Bird size={18} />
-            Pet Marketplace
-          </h1>
-
-          <div className="flex gap-2 items-center">
-            {userEmail ? (
-              <>
-                <span className="text-sm text-gray-600 hidden md:block">
-                  {userEmail}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-500 text-white px-3 py-2 rounded-xl text-sm font-medium"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link href="/login">
-                <button className="bg-green-600 text-white px-3 py-2 rounded-xl text-sm font-medium">
-                  Login
-                </button>
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* HERO */}
       <section className="relative overflow-hidden bg-[#07111f]">
         <div
@@ -1173,6 +1138,5 @@ export default function Home() {
         </div>
       </footer>
     </main>
-    </>
   );
 }
