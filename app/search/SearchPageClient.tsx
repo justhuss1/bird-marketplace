@@ -25,6 +25,13 @@ type Listing = {
   created_at?: string;
 };
 
+type CategoryField = {
+  key: string;
+  label: string;
+  type?: "text" | "select";
+  options?: string[];
+};
+
 const PET_CATEGORIES = [
   "Birds",
   "Cats",
@@ -37,6 +44,134 @@ const PET_CATEGORIES = [
   "Pet Supplies",
 ] as const;
 
+const getCategoryFields = (category: string): CategoryField[] => {
+  switch (category) {
+    case "Dogs":
+    case "Cats":
+    case "Rabbits":
+      return [
+        { key: "breed", label: "Breed", type: "text" },
+        { key: "age", label: "Age", type: "text" },
+        {
+          key: "gender",
+          label: "Gender",
+          type: "select",
+          options: ["Male", "Female"],
+        },
+        {
+          key: "vaccinated",
+          label: "Vaccinated",
+          type: "select",
+          options: ["Yes", "No"],
+        },
+        {
+          key: "desexed",
+          label: "Desexed",
+          type: "select",
+          options: ["Yes", "No"],
+        },
+      ];
+
+    case "Birds":
+      return [
+        { key: "species", label: "Species / Breed", type: "text" },
+        { key: "age", label: "Age", type: "text" },
+        {
+          key: "gender",
+          label: "Gender",
+          type: "select",
+          options: ["Male", "Female"],
+        },
+        {
+          key: "handRaised",
+          label: "Hand Raised",
+          type: "select",
+          options: ["Yes", "No"],
+        },
+        {
+          key: "cageIncluded",
+          label: "Cage Included",
+          type: "select",
+          options: ["Yes", "No"],
+        },
+      ];
+
+    case "Fish":
+      return [
+        { key: "species", label: "Species", type: "text" },
+        { key: "tankSize", label: "Tank Size", type: "text" },
+        {
+          key: "waterType",
+          label: "Water Type",
+          type: "select",
+          options: ["Freshwater", "Saltwater"],
+        },
+        { key: "age", label: "Age", type: "text" },
+      ];
+
+    case "Horses & Ponies":
+      return [
+        { key: "breed", label: "Breed", type: "text" },
+        { key: "age", label: "Age", type: "text" },
+        {
+          key: "gender",
+          label: "Gender",
+          type: "select",
+          options: ["Male", "Female"],
+        },
+        { key: "height", label: "Height", type: "text" },
+        {
+          key: "experienceLevel",
+          label: "Experience Level",
+          type: "select",
+          options: ["Beginner", "Intermediate", "Experienced"],
+        },
+      ];
+
+    case "Livestock":
+      return [
+        { key: "animalType", label: "Animal Type", type: "text" },
+        { key: "breed", label: "Breed", type: "text" },
+        { key: "age", label: "Age", type: "text" },
+        { key: "quantity", label: "Quantity", type: "text" },
+      ];
+
+    case "Reptiles & Amphibians":
+      return [
+        { key: "species", label: "Species", type: "text" },
+        { key: "age", label: "Age", type: "text" },
+        {
+          key: "sex",
+          label: "Sex",
+          type: "select",
+          options: ["Male", "Female"],
+        },
+        {
+          key: "enclosureIncluded",
+          label: "Enclosure Included",
+          type: "select",
+          options: ["Yes", "No"],
+        },
+        { key: "feedingType", label: "Feeding Type", type: "text" },
+      ];
+
+    case "Pet Supplies":
+      return [
+        { key: "itemType", label: "Item Type", type: "text" },
+        { key: "brand", label: "Brand", type: "text" },
+        {
+          key: "condition",
+          label: "Condition",
+          type: "select",
+          options: ["New", "Used"],
+        },
+      ];
+
+    default:
+      return [];
+  }
+};
+
 export default function SearchPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,6 +182,16 @@ export default function SearchPageClient() {
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
   const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "newest");
+
+  const [attributeFilters, setAttributeFilters] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    searchParams.forEach((value, key) => {
+      if (key.startsWith("attr_")) {
+        initial[key.replace("attr_", "")] = value;
+      }
+    });
+    return initial;
+  });
 
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -67,8 +212,14 @@ export default function SearchPageClient() {
     if (maxPrice.trim()) params.set("maxPrice", maxPrice.trim());
     if (sortBy.trim()) params.set("sortBy", sortBy.trim());
 
+    Object.entries(attributeFilters).forEach(([key, value]) => {
+      if (value.trim()) {
+        params.set(`attr_${key}`, value.trim());
+      }
+    });
+
     router.replace(`/search?${params.toString()}`);
-  }, [q, location, category, minPrice, maxPrice, sortBy, router]);
+  }, [q, location, category, minPrice, maxPrice, sortBy, attributeFilters, router]);
 
   const fetchListings = async () => {
     setLoading(true);
@@ -160,6 +311,18 @@ export default function SearchPageClient() {
     }
   };
 
+  const handleAttributeFilterChange = (key: string, value: string) => {
+    setAttributeFilters((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategory(value);
+    setAttributeFilters({});
+  };
+
   const resetFilters = () => {
     setQ("");
     setLocation("");
@@ -167,6 +330,7 @@ export default function SearchPageClient() {
     setMinPrice("");
     setMaxPrice("");
     setSortBy("newest");
+    setAttributeFilters({});
   };
 
   const filteredListings = useMemo(() => {
@@ -192,12 +356,21 @@ export default function SearchPageClient() {
         const matchesMinPrice = !minPrice || numericPrice >= Number(minPrice);
         const matchesMaxPrice = !maxPrice || numericPrice <= Number(maxPrice);
 
+        const matchesAttributes = Object.entries(attributeFilters).every(
+          ([key, value]) => {
+            if (!value.trim()) return true;
+            const listingValue = item.attributes?.[key] || "";
+            return listingValue.toLowerCase().includes(value.toLowerCase());
+          }
+        );
+
         return (
           matchesSearch &&
           matchesLocation &&
           matchesCategory &&
           matchesMinPrice &&
-          matchesMaxPrice
+          matchesMaxPrice &&
+          matchesAttributes
         );
       })
       .sort((a, b) => {
@@ -217,7 +390,7 @@ export default function SearchPageClient() {
           new Date(a.created_at || 0).getTime()
         );
       });
-  }, [listings, q, location, category, minPrice, maxPrice, sortBy]);
+  }, [listings, q, location, category, minPrice, maxPrice, sortBy, attributeFilters]);
 
   return (
     <main className="bg-gray-50 min-h-screen px-4 py-6 pb-24">
@@ -268,6 +441,16 @@ export default function SearchPageClient() {
                 Price: {minPrice || "0"} - {maxPrice || "Any"}
               </span>
             )}
+            {Object.entries(attributeFilters).map(([key, value]) =>
+              value ? (
+                <span
+                  key={key}
+                  className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700"
+                >
+                  {key}: {value}
+                </span>
+              ) : null
+            )}
           </div>
         </section>
 
@@ -288,7 +471,7 @@ export default function SearchPageClient() {
 
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
             >
               <option value="">All Categories</option>
@@ -334,6 +517,41 @@ export default function SearchPageClient() {
             </select>
           </div>
 
+          {category && getCategoryFields(category).length > 0 && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {getCategoryFields(category).map((field) =>
+                field.type === "select" ? (
+                  <select
+                    key={field.key}
+                    value={attributeFilters[field.key] || ""}
+                    onChange={(e) =>
+                      handleAttributeFilterChange(field.key, e.target.value)
+                    }
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+                  >
+                    <option value="">{field.label}</option>
+                    {field.options?.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    key={field.key}
+                    type="text"
+                    placeholder={`Filter by ${field.label}`}
+                    value={attributeFilters[field.key] || ""}
+                    onChange={(e) =>
+                      handleAttributeFilterChange(field.key, e.target.value)
+                    }
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+                  />
+                )
+              )}
+            </div>
+          )}
+
           <div className="mt-4 flex justify-end">
             <button
               onClick={resetFilters}
@@ -363,7 +581,7 @@ export default function SearchPageClient() {
                 No listings found
               </h3>
               <p className="text-gray-500 mt-2">
-                Try a different keyword, category, or location.
+                Try a different keyword, category, location, or filter combination.
               </p>
             </div>
           ) : (
