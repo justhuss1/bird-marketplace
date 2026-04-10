@@ -709,32 +709,38 @@ export default function Home() {
         </div>
       </section>
       {showStickySearch && (
-      <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="mt-3 rounded-2xl border border-gray-200 bg-white/95 backdrop-blur shadow-lg p-2">
-            <div className="grid grid-cols-[1fr_auto] gap-2">
-              <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2.5">
-                <Search size={16} className="text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search pets..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                />
-              </div>
+        <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
+          <div className="max-w-7xl mx-auto">
+            <div className="mt-3 rounded-2xl border border-gray-200 bg-white/95 backdrop-blur shadow-lg p-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-1 rounded-xl bg-gray-50 px-3 py-2.5">
+                  <Search size={16} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search pets..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        runSearch();
+                      }
+                    }}
+                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                  />
+                </div>
 
-              <button
-                onClick={() => runSearch()}
-                className="rounded-xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-2.5 text-sm font-semibold transition"
-              >
-                Search
-              </button>
+                <button
+                  onClick={() => runSearch()}
+                  className="shrink-0 rounded-xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-2.5 text-sm font-semibold transition"
+                >
+                  Search
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </main>
   );
 }
