@@ -34,6 +34,7 @@ export default function MessagesThreadPage() {
   const conversationId = params?.id as string;
 
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [userId, setUserId] = useState("");
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -42,100 +43,122 @@ export default function MessagesThreadPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    fetchThread();
-  }, [conversationId]);
+    if (!conversationId) return;
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    let isMounted = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+    const init = async () => {
+      setLoading(true);
 
-  const fetchThread = async () => {
-    setLoading(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
 
-    if (!user) {
-      router.push("/login");
-      return;
-    }
+      if (!isMounted) return;
 
-    setUserId(user.id);
+      setUserId(user.id);
 
-    const { data: conversationData, error: conversationError } = await supabase
-      .from("conversations")
-      .select(
+      const { data: conversationData, error: conversationError } = await supabase
+        .from("conversations")
+        .select(
+          `
+          *,
+          listings (
+            title,
+            image,
+            location
+          )
         `
-        *,
-        listings (
-          title,
-          image,
-          location
         )
-      `
-      )
-      .eq("id", conversationId)
-      .single();
+        .eq("id", conversationId)
+        .single();
 
-    if (conversationError) {
-      console.error(conversationError);
-      setLoading(false);
-      return;
-    }
-
-    setConversation(conversationData as Conversation);
-
-    const { data: messageData, error: messageError } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true });
-
-    if (messageError) {
-      console.error(messageError);
-      setLoading(false);
-      return;
-    }
-
-    setMessages((messageData || []) as Message[]);
-
-    const channel = supabase
-      .channel(`messages-thread-${conversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          const incoming = payload.new as Message;
-
-          setMessages((prev) => {
-            const exists = prev.some((msg) => msg.id === incoming.id);
-            if (exists) return prev;
-            return [...prev, incoming];
-          });
+      if (conversationError || !conversationData) {
+        console.error(conversationError);
+        if (isMounted) {
+          setConversation(null);
+          setLoading(false);
         }
-      )
-      .subscribe();
+        return;
+      }
 
-    setLoading(false);
+      if (
+        conversationData.buyer_id !== user.id &&
+        conversationData.seller_id !== user.id
+      ) {
+        alert("You do not have access to this conversation.");
+        router.push("/messages");
+        return;
+      }
+
+      if (!isMounted) return;
+
+      setConversation(conversationData as Conversation);
+
+      const { data: messageData, error: messageError } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+
+      if (messageError) {
+        console.error(messageError);
+        if (isMounted) {
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (!isMounted) return;
+
+      setMessages((messageData || []) as Message[]);
+      setLoading(false);
+
+      channel = supabase
+        .channel(`messages-thread-${conversationId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          (payload) => {
+            const incoming = payload.new as Message;
+
+            setMessages((prev) => {
+              const exists = prev.some((msg) => msg.id === incoming.id);
+              if (exists) return prev;
+              return [...prev, incoming];
+            });
+          }
+        )
+        .subscribe();
+    };
+
+    init();
 
     return () => {
-      supabase.removeChannel(channel);
+      isMounted = false;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  };
+  }, [conversationId, router]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSend = async () => {
-    if (!newMessage.trim()) return;
-    if (!conversation) return;
+    if (!newMessage.trim() || !conversation || sending) return;
 
     const {
       data: { user },
@@ -147,8 +170,9 @@ export default function MessagesThreadPage() {
     }
 
     const messageText = newMessage.trim();
+    setSending(true);
 
-    const { error } = await supabase.from("messages").insert([
+    const { error: messageError } = await supabase.from("messages").insert([
       {
         conversation_id: conversation.id,
         sender_id: user.id,
@@ -156,9 +180,10 @@ export default function MessagesThreadPage() {
       },
     ]);
 
-    if (error) {
-      console.error(error);
+    if (messageError) {
+      console.error(messageError);
       alert("Failed to send message");
+      setSending(false);
       return;
     }
 
@@ -169,6 +194,10 @@ export default function MessagesThreadPage() {
         ? conversation.seller_id
         : conversation.buyer_id;
 
+    const notificationMessage = `You have a new message about ${
+      conversation.listings?.title || "a listing"
+    }.`;
+
     const { error: notificationError } = await supabase
       .from("notifications")
       .insert([
@@ -176,7 +205,7 @@ export default function MessagesThreadPage() {
           user_id: recipientId,
           type: "message",
           title: "New message",
-          message: messageText,
+          message: notificationMessage,
           link: `/messages/${conversation.id}`,
           is_read: false,
         },
@@ -185,6 +214,8 @@ export default function MessagesThreadPage() {
     if (notificationError) {
       console.error("Notification insert error:", notificationError);
     }
+
+    setSending(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -207,15 +238,24 @@ export default function MessagesThreadPage() {
 
   if (!conversation) {
     return (
-      <main className="bg-gray-50 min-h-screen py-8 px-4">
+      <main className="bg-gray-50 min-h-screen px-4 py-6 pb-24">
         <div className="max-w-5xl mx-auto">
           <button
-            onClick={() => router.back()}
-            className="mb-4 text-sm text-gray-600 hover:text-black transition"
+            onClick={() => router.push("/messages")}
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
           >
-            ← Back
+            <ArrowLeft size={16} />
+            Back to messages
           </button>
-          <p>Conversation not found.</p>
+
+          <div className="mt-6 bg-white rounded-3xl border border-gray-100 shadow-sm p-10 text-center">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Conversation not found
+            </h2>
+            <p className="text-gray-500 mt-2">
+              This conversation may have been removed or is no longer available.
+            </p>
+          </div>
         </div>
       </main>
     );
@@ -279,7 +319,8 @@ export default function MessagesThreadPage() {
                     Start the conversation
                   </h2>
                   <p className="text-sm text-gray-500 mt-2">
-                    Ask about availability, pickup, price, or any details about this pet or listing.
+                    Ask about availability, pickup, price, or any details about
+                    this pet or listing.
                   </p>
                 </div>
               </div>
@@ -335,7 +376,8 @@ export default function MessagesThreadPage() {
 
               <button
                 onClick={handleSend}
-                className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-4 py-3 transition shadow-md"
+                disabled={sending || !newMessage.trim()}
+                className="rounded-2xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 transition shadow-md"
               >
                 <Send size={18} />
               </button>
