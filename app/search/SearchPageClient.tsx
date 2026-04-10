@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 import {
   Heart,
   MapPin,
@@ -200,6 +201,7 @@ export default function SearchPageClient() {
   const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
   const [showKeywordSuggestions, setShowKeywordSuggestions] = useState(false);
   const keywordBoxRef = useRef<HTMLDivElement | null>(null);
+  const [locationFilter, setLocationFilter] = useState("");
 
   useEffect(() => {
     fetchListings();
@@ -568,13 +570,11 @@ export default function SearchPageClient() {
               ))}
             </select>
 
-            <input
-              type="text"
+            <LocationAutocomplete
+              value={locationFilter}
+              onChange={setLocationFilter}
               placeholder="Location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
-            />
+              />
 
             <input
               type="number"

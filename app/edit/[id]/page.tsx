@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
+
 import {
   ArrowLeft,
   Upload,
@@ -380,12 +382,10 @@ export default function EditListingPage() {
                       <MapPin size={16} />
                       Location
                     </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Sydney"
+                    <LocationAutocomplete
                       value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                      onChange={setLocation}
+                      placeholder="Enter Location"
                     />
                   </div>
 
