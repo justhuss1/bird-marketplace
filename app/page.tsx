@@ -1,5 +1,6 @@
 "use client";
 
+import TopNavbar from "@/components/TopNavbar";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -344,6 +345,8 @@ export default function Home() {
   ];
 
   return (
+    <>
+    <TopNavbar />
     <main className="bg-gray-50 min-h-screen pb-24 md:pb-20">
       {/* TOP NAV */}
       <div className="bg-white/90 backdrop-blur border-b border-gray-100 px-4 py-3 flex justify-between items-center sticky top-0 z-40">
@@ -1170,5 +1173,6 @@ export default function Home() {
         </div>
       </footer>
     </main>
+    </>
   );
 }
