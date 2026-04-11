@@ -11,6 +11,8 @@ import {
   Search,
   SlidersHorizontal,
   RotateCcw,
+  X,
+  ChevronDown,
 } from "lucide-react";
 
 type Listing = {
@@ -197,11 +199,11 @@ export default function SearchPageClient() {
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
   const [showKeywordSuggestions, setShowKeywordSuggestions] = useState(false);
   const keywordBoxRef = useRef<HTMLDivElement | null>(null);
-  const [locationFilter, setLocationFilter] = useState("");
 
   useEffect(() => {
     fetchListings();
@@ -388,6 +390,18 @@ export default function SearchPageClient() {
     setKeywordSuggestions(matches);
   };
 
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (q.trim()) count++;
+    if (location.trim()) count++;
+    if (category.trim()) count++;
+    if (minPrice.trim()) count++;
+    if (maxPrice.trim()) count++;
+    if (sortBy !== "newest") count++;
+    count += Object.values(attributeFilters).filter((v) => v.trim()).length;
+    return count;
+  }, [q, location, category, minPrice, maxPrice, sortBy, attributeFilters]);
+
   const filteredListings = useMemo(() => {
     return listings
       .filter((item) => {
@@ -447,6 +461,150 @@ export default function SearchPageClient() {
       });
   }, [listings, q, location, category, minPrice, maxPrice, sortBy, attributeFilters]);
 
+  const FilterPanel = () => (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="relative sm:col-span-2 lg:col-span-1" ref={keywordBoxRef}>
+          <input
+            type="text"
+            placeholder="Keyword"
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              buildKeywordSuggestions(e.target.value);
+              setShowKeywordSuggestions(true);
+            }}
+            onFocus={() => {
+              buildKeywordSuggestions(q);
+              if (q.trim()) setShowKeywordSuggestions(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setShowKeywordSuggestions(false);
+              }
+            }}
+            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+          />
+
+          {showKeywordSuggestions && keywordSuggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
+              {keywordSuggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => {
+                    setQ(suggestion);
+                    setShowKeywordSuggestions(false);
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <select
+          value={category}
+          onChange={(e) => handleCategoryChange(e.target.value)}
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+        >
+          <option value="">All Categories</option>
+          {PET_CATEGORIES.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+
+        <LocationAutocomplete
+          value={location}
+          onChange={setLocation}
+          placeholder="Location"
+        />
+
+        <input
+          type="number"
+          placeholder="Min $"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+        />
+
+        <input
+          type="number"
+          placeholder="Max $"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+        />
+
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+        >
+          <option value="newest">Newest</option>
+          <option value="lowest">Price: Low → High</option>
+          <option value="highest">Price: High → Low</option>
+        </select>
+      </div>
+
+      {category && getCategoryFields(category).length > 0 && (
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {getCategoryFields(category).map((field) =>
+            field.type === "select" ? (
+              <select
+                key={field.key}
+                value={attributeFilters[field.key] || ""}
+                onChange={(e) =>
+                  handleAttributeFilterChange(field.key, e.target.value)
+                }
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+              >
+                <option value="">{field.label}</option>
+                {field.options?.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                key={field.key}
+                type="text"
+                placeholder={`Filter by ${field.label}`}
+                value={attributeFilters[field.key] || ""}
+                onChange={(e) =>
+                  handleAttributeFilterChange(field.key, e.target.value)
+                }
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+              />
+            )
+          )}
+        </div>
+      )}
+
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <button
+          onClick={resetFilters}
+          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition"
+        >
+          <RotateCcw size={14} />
+          Reset
+        </button>
+
+        <button
+          onClick={() => setMobileFiltersOpen(false)}
+          className="md:hidden inline-flex items-center gap-2 rounded-xl bg-[#07111f] text-white px-4 py-2 text-sm font-medium"
+        >
+          Show Results
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <main className="bg-gray-50 min-h-screen px-4 py-6 pb-24">
       <div className="max-w-7xl mx-auto">
@@ -468,7 +626,7 @@ export default function SearchPageClient() {
               </p>
             </div>
 
-            <Link href="/">
+            <Link href="/" className="hidden sm:block">
               <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
                 Back to Home
               </button>
@@ -509,144 +667,70 @@ export default function SearchPageClient() {
           </div>
         </section>
 
-        <section className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <SlidersHorizontal size={18} className="text-gray-500" />
-            <h2 className="text-base font-semibold text-gray-900">Filter Results</h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-            <div className="relative sm:col-span-2 lg:col-span-1" ref={keywordBoxRef}>
-              <input
-                type="text"
-                placeholder="Keyword"
-                value={q}
-                onChange={(e) => {
-                  setQ(e.target.value);
-                  buildKeywordSuggestions(e.target.value);
-                  setShowKeywordSuggestions(true);
-                }}
-                onFocus={() => {
-                  buildKeywordSuggestions(q);
-                  if (q.trim()) setShowKeywordSuggestions(true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setShowKeywordSuggestions(false);
-                  }
-                }}
-                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
-              />
-
-              {showKeywordSuggestions && keywordSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
-                  {keywordSuggestions.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      type="button"
-                      onClick={() => {
-                        setQ(suggestion);
-                        setShowKeywordSuggestions(false);
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
+        {/* MOBILE FILTER TOGGLE */}
+        <section className="mt-6 md:hidden">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileFiltersOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 shadow-sm"
+            >
+              <SlidersHorizontal size={16} />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">
+                  {activeFilterCount}
+                </span>
               )}
+            </button>
+
+            <div className="flex-1" />
+
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="appearance-none rounded-2xl border border-gray-200 bg-white pl-4 pr-10 py-3 text-sm font-semibold text-gray-800 shadow-sm outline-none"
+              >
+                <option value="newest">Newest</option>
+                <option value="lowest">Price: Low → High</option>
+                <option value="highest">Price: High → Low</option>
+              </select>
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+              />
             </div>
-
-            <select
-              value={category}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
-            >
-              <option value="">All Categories</option>
-              {PET_CATEGORIES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-
-            <LocationAutocomplete
-              value={locationFilter}
-              onChange={setLocationFilter}
-              placeholder="Location"
-              />
-
-            <input
-              type="number"
-              placeholder="Min $"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
-            />
-
-            <input
-              type="number"
-              placeholder="Max $"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
-            />
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
-            >
-              <option value="newest">Newest</option>
-              <option value="lowest">Price: Low → High</option>
-              <option value="highest">Price: High → Low</option>
-            </select>
           </div>
 
-          {category && getCategoryFields(category).length > 0 && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {getCategoryFields(category).map((field) =>
-                field.type === "select" ? (
-                  <select
-                    key={field.key}
-                    value={attributeFilters[field.key] || ""}
-                    onChange={(e) =>
-                      handleAttributeFilterChange(field.key, e.target.value)
-                    }
-                    className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
-                  >
-                    <option value="">{field.label}</option>
-                    {field.options?.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    key={field.key}
-                    type="text"
-                    placeholder={`Filter by ${field.label}`}
-                    value={attributeFilters[field.key] || ""}
-                    onChange={(e) =>
-                      handleAttributeFilterChange(field.key, e.target.value)
-                    }
-                    className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
-                  />
-                )
-              )}
+          {mobileFiltersOpen && (
+            <div className="mt-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-4">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h2 className="text-base font-semibold text-gray-900">
+                  Filter Results
+                </h2>
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="rounded-full p-2 hover:bg-gray-50"
+                >
+                  <X size={16} className="text-gray-500" />
+                </button>
+              </div>
+
+              <FilterPanel />
             </div>
           )}
+        </section>
 
-          <div className="mt-4 flex justify-end">
-            <button
-              onClick={resetFilters}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition"
-            >
-              <RotateCcw size={14} />
-              Reset
-            </button>
+        {/* DESKTOP FILTER PANEL */}
+        <section className="hidden md:block mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <SlidersHorizontal size={18} className="text-gray-500" />
+            <h2 className="text-base font-semibold text-gray-900">
+              Filter Results
+            </h2>
           </div>
+
+          <FilterPanel />
         </section>
 
         <section className="mt-8">

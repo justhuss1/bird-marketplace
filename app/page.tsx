@@ -417,43 +417,45 @@ export default function Home() {
               </div>
 
               {/* CATEGORY CHIPS */}
-              <div className="mt-4 relative">
-                <button
-                  type="button"
-                  onClick={scrollCategoriesLeft}
-                  className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
-                >
-                  <ChevronLeft size={16} />
-                </button>
+              <div className="mt-4">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={scrollCategoriesLeft}
+                    className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
+                  >
+                    <ChevronLeft size={15} />
+                  </button>
 
-                <div
-                  ref={categoryScrollRef}
-                  className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide lg:px-12"
-                >
-                  {categoryItems.map((cat) => (
-                    <button
-                      key={cat.name}
-                      onClick={() => {
-                        const params = new URLSearchParams();
-                        params.set("category", cat.name);
-                        params.set("sortBy", "newest");
-                        router.push(`/search?${params.toString()}`);
-                      }}
-                      className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      <cat.icon size={15} />
-                      {cat.name}
-                    </button>
-                  ))}
+                  <div
+                    ref={categoryScrollRef}
+                    className="flex gap-2 overflow-x-auto scrollbar-hide px-0 lg:px-12 py-1"
+                  >
+                    {categoryItems.map((cat) => (
+                      <button
+                        key={cat.name}
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          params.set("category", cat.name);
+                          params.set("sortBy", "newest");
+                          router.push(`/search?${params.toString()}`);
+                        }}
+                        className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        <cat.icon size={15} />
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={scrollCategoriesRight}
+                    className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
+                  >
+                    <ChevronRight size={15} />
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={scrollCategoriesRight}
-                  className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
-                >
-                  <ChevronRight size={16} />
-                </button>
               </div>
             </div>
           </div>
