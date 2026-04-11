@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
@@ -14,6 +14,8 @@ import {
   FileText,
   Tag,
   Image as ImageIcon,
+  Camera,
+  FolderOpen,
 } from "lucide-react";
 
 const PET_CATEGORIES = [
@@ -141,6 +143,12 @@ export default function EditListingPage() {
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [attributes, setAttributes] = useState<Record<string, string>>({});
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+  const [cameraFlowActive, setCameraFlowActive] = useState(false);
+
+  const libraryInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const filesInputRef = useRef<HTMLInputElement | null>(null);
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -221,7 +229,8 @@ export default function EditListingPage() {
   };
 
   const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
+    source: "camera" | "library" | "files" = "library"
   ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -262,6 +271,14 @@ export default function EditListingPage() {
       }
 
       setImages((prev) => [...prev, ...uploadedUrls]);
+
+      if (source === "camera") {
+        setCameraFlowActive(true);
+      } else {
+        setCameraFlowActive(false);
+      }
+
+      setShowPhotoOptions(false);
     } catch (error) {
       console.error(error);
       alert("Image upload failed.");
@@ -412,6 +429,29 @@ export default function EditListingPage() {
         setGettingLocation(false);
       }
     );
+  };
+
+  const openCamera = () => {
+    setShowPhotoOptions(false);
+    cameraInputRef.current?.click();
+  };
+
+  const openLibrary = () => {
+    setShowPhotoOptions(false);
+    libraryInputRef.current?.click();
+  };
+
+  const openFiles = () => {
+    setShowPhotoOptions(false);
+    filesInputRef.current?.click();
+  };
+
+  const handleTakeAnotherPhoto = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const handleDoneWithCamera = () => {
+    setCameraFlowActive(false);
   };
 
   return (
@@ -589,24 +629,166 @@ export default function EditListingPage() {
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <label className="inline-flex items-center justify-center gap-2 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md hover:shadow-lg cursor-pointer">
-                        <Upload size={16} />
-                        {uploading ? "Uploading..." : "Add Photos"}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleImageUpload}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPhotoOptions(true)}
+                      disabled={uploading}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Upload size={16} />
+                      {uploading ? "Uploading..." : "Add Photos"}
+                    </button>
                   </div>
 
                   <p className="mt-3 text-xs text-gray-500">
-                    On supported devices, this can let users choose camera, photo library, or files.
+                    Choose how you want to add photos from your device.
                   </p>
+
+                  {/* Hidden Inputs */}
+                  <input
+                    ref={libraryInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleImageUpload(e, "library")}
+                    className="hidden"
+                  />
+
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => handleImageUpload(e, "camera")}
+                    className="hidden"
+                  />
+
+                  <input
+                    ref={filesInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleImageUpload(e, "files")}
+                    className="hidden"
+                  />
+
+                  {/* Camera Flow Bar */}
+                  {cameraFlowActive && (
+                    <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          Photo added
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Keep taking photos or finish when you’re done.
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleTakeAnotherPhoto}
+                          className="inline-flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-semibold transition"
+                        >
+                          <Camera size={14} />
+                          Take Another
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleDoneWithCamera}
+                          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-2 text-sm font-semibold transition"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Photo Options Sheet */}
+                  {showPhotoOptions && (
+                    <>
+                      <div
+                        className="fixed inset-0 bg-black/40 z-40"
+                        onClick={() => setShowPhotoOptions(false)}
+                      />
+
+                      <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-[28px] bg-white border-t border-gray-200 shadow-2xl p-5 sm:max-w-md sm:left-1/2 sm:-translate-x-1/2 sm:bottom-6 sm:rounded-[28px]">
+                        <div className="w-12 h-1.5 rounded-full bg-gray-200 mx-auto mb-5 sm:hidden" />
+
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Add Photos
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Choose how you’d like to add images to your listing.
+                        </p>
+
+                        <div className="mt-5 grid gap-3">
+                          <button
+                            type="button"
+                            onClick={openCamera}
+                            className="w-full flex items-center gap-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 px-4 py-4 text-left transition"
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                              <Camera size={18} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                Take Photo
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Open your camera and add photos one by one
+                              </p>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={openLibrary}
+                            className="w-full flex items-center gap-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 px-4 py-4 text-left transition"
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                              <ImageIcon size={18} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                Choose from Library
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Select existing photos from your device
+                              </p>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={openFiles}
+                            className="w-full flex items-center gap-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 px-4 py-4 text-left transition"
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                              <FolderOpen size={18} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                Browse Files
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Pick images from your files app
+                              </p>
+                            </div>
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPhotoOptions(false)}
+                          className="w-full mt-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-3 text-sm font-semibold transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  )}
 
                   {images.length > 0 && (
                     <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -665,24 +847,6 @@ export default function EditListingPage() {
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div className="mt-10 flex flex-col sm:flex-row gap-3">
-                <button
-                  type="submit"
-                  disabled={submitting || uploading}
-                  className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 text-sm font-semibold transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? "Saving Changes..." : "Save Changes"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => router.back()}
-                  className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3.5 text-sm font-semibold transition"
-                >
-                  Cancel
-                </button>
               </div>
             </form>
           </div>
