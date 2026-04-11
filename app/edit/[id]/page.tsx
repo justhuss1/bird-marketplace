@@ -275,6 +275,17 @@ export default function EditListingPage() {
     setImages((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
+  const moveImage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= images.length) return;
+
+    setImages((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      return updated;
+    });
+  };
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -628,13 +639,39 @@ export default function EditListingPage() {
                             </span>
                           )}
 
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-700 text-xs px-2 py-1 rounded-full shadow"
-                          >
-                            Remove
-                          </button>
+                          <div className="absolute top-2 right-2 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => moveImage(index, index - 1)}
+                              disabled={index === 0}
+                              className="bg-white/90 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-xs px-2 py-1 rounded-full shadow"
+                            >
+                              ←
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => moveImage(index, index + 1)}
+                              disabled={index === images.length - 1}
+                              className="bg-white/90 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-xs px-2 py-1 rounded-full shadow"
+                            >
+                              →
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="bg-white/90 hover:bg-white text-gray-700 text-xs px-2 py-1 rounded-full shadow"
+                            >
+                              Remove
+                            </button>
+                          </div>
+
+                          <div className="px-3 py-2 border-t border-gray-100 bg-white">
+                            <p className="text-xs text-gray-500">
+                              {index === 0 ? "Main cover photo" : `Image ${index + 1}`}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>

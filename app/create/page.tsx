@@ -322,6 +322,17 @@ export default function CreateListingPage() {
     setImages((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
+  const moveImage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= images.length) return;
+
+    setImages((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      return updated;
+    });
+  };
+
   const handleCreateListing = async () => {
     if (!title || !price || !location || !category || !description) {
       alert("Please complete all required fields.");
