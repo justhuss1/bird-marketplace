@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+
 import {
   Bird,
   Heart,
@@ -22,6 +23,7 @@ import {
   Package,
   Turtle,
   Beef,
+  X,
 } from "lucide-react";
 
 type Listing = {
@@ -233,6 +235,20 @@ export default function Home() {
     localStorage.setItem("recentSearches", JSON.stringify(updated));
   };
 
+  const removeRecentSearch = (itemToRemove: string) => {
+    const updated = recentSearches.filter(
+      (item) => item.toLowerCase() !== itemToRemove.toLowerCase()
+    );
+
+    setRecentSearches(updated);
+    localStorage.setItem("recentSearches", JSON.stringify(updated));
+  };
+
+  const clearAllRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem("recentSearches");
+  };
+
   const runSearch = (overrideQuery?: string) => {
     const params = new URLSearchParams();
     const finalQuery = overrideQuery ?? searchTerm;
@@ -387,21 +403,45 @@ export default function Home() {
               {/* RECENT SEARCHES */}
               {!searchTerm.trim() && recentSearches.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-xs font-medium text-gray-500 mb-2">Recent searches</p>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className="text-xs font-medium text-gray-500">Recent searches</p>
+
+                    <button
+                      type="button"
+                      onClick={clearAllRecentSearches}
+                      className="text-xs font-medium text-gray-500 hover:text-gray-800 transition"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+
                   <div className="flex flex-wrap gap-2">
                     {recentSearches.map((item) => (
-                      <button
+                      <div
                         key={item}
-                        type="button"
-                        onClick={() => {
-                          setSearchTerm(item);
-                          setShowSuggestions(false);
-                          runSearch(item);
-                        }}
-                        className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+                        className="inline-flex items-center rounded-full border border-gray-200 bg-white shadow-sm overflow-hidden"
                       >
-                        {item}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchTerm(item);
+                            setShowSuggestions(false);
+                            runSearch(item);
+                          }}
+                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          {item}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => removeRecentSearch(item)}
+                          className="pr-3 pl-1 py-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition"
+                          aria-label={`Remove ${item} from recent searches`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>
