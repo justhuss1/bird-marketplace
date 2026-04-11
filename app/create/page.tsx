@@ -214,39 +214,58 @@ export default function CreateListingPage() {
   };
 
   const handleUseCurrentLocation = async () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported on this device.");
-      return;
-    }
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported on this device.");
+    return;
+  }
 
-    setGettingLocation(true);
+  setGettingLocation(true);
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
 
-        setLatitude(lat);
-        setLongitude(lng);
+      setLatitude(lat);
+      setLongitude(lng);
 
+      try {
         const result = await reverseGeocode(lat, lng);
         if (result.displayName) {
           setLocation(result.displayName);
         }
-
-        setGettingLocation(false);
-      },
-      (error) => {
-        console.error(error);
-        alert("Unable to get your location.");
-        setGettingLocation(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
+      } catch (err) {
+        console.error("Reverse geocode failed:", err);
       }
-    );
-  };
+
+      setGettingLocation(false);
+    },
+    (error) => {
+      console.error("Geolocation error:", error);
+
+      let message = "Unable to get your location.";
+
+      if (error.code === 1) {
+        message =
+          "Location permission denied. Please allow location access in your browser.";
+      } else if (error.code === 2) {
+        message =
+          "Location unavailable. Try again or check your device location settings.";
+      } else if (error.code === 3) {
+        message =
+          "Location request timed out. Try again or move to a better signal area.";
+      }
+
+      alert(message);
+      setGettingLocation(false);
+    },
+    {
+      enableHighAccuracy: false, // 🔑 IMPORTANT (fixes most desktop issues)
+      timeout: 20000,            // more forgiving
+      maximumAge: 60000,
+    }
+  );
+};
 
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
