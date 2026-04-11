@@ -12,6 +12,7 @@ import {
   FileText,
   Tag,
   Image as ImageIcon,
+  Crosshair,
 } from "lucide-react";
 
 const PET_CATEGORIES = [
@@ -94,6 +95,12 @@ const getCategoryFields = (category: string) => {
   }
 };
 
+type GeocodeResult = {
+  latitude: number | null;
+  longitude: number | null;
+  displayName?: string;
+};
+
 export default function CreateListingPage() {
   const router = useRouter();
 
@@ -106,6 +113,10 @@ export default function CreateListingPage() {
   const [attributes, setAttributes] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
+
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -120,6 +131,121 @@ export default function CreateListingPage() {
   const handleCategoryChange = (newCategory: string) => {
     setCategory(newCategory);
     setAttributes({});
+  };
+
+  const geocodeLocation = async (query: string): Promise<GeocodeResult> => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=au&q=${encodeURIComponent(
+          query
+        )}`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        return { latitude: null, longitude: null };
+      }
+
+      const data = await res.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        return { latitude: null, longitude: null };
+      }
+
+      return {
+        latitude: Number(data[0].lat),
+        longitude: Number(data[0].lon),
+        displayName: data[0].display_name,
+      };
+    } catch (error) {
+      console.error("Geocoding failed:", error);
+      return { latitude: null, longitude: null };
+    }
+  };
+
+  const reverseGeocode = async (
+    lat: number,
+    lng: number
+  ): Promise<GeocodeResult> => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        return {
+          latitude: lat,
+          longitude: lng,
+        };
+      }
+
+      const data = await res.json();
+
+      const address = data?.address || {};
+      const bestLocation =
+        address.city ||
+        address.town ||
+        address.suburb ||
+        address.village ||
+        address.state ||
+        data?.display_name;
+
+      return {
+        latitude: lat,
+        longitude: lng,
+        displayName: bestLocation || "",
+      };
+    } catch (error) {
+      console.error("Reverse geocoding failed:", error);
+      return {
+        latitude: lat,
+        longitude: lng,
+      };
+    }
+  };
+
+  const handleUseCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported on this device.");
+      return;
+    }
+
+    setGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        setLatitude(lat);
+        setLongitude(lng);
+
+        const result = await reverseGeocode(lat, lng);
+        if (result.displayName) {
+          setLocation(result.displayName);
+        }
+
+        setGettingLocation(false);
+      },
+      (error) => {
+        console.error(error);
+        alert("Unable to get your location.");
+        setGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+      }
+    );
   };
 
   const handleImageUpload = async (
@@ -196,6 +322,15 @@ export default function CreateListingPage() {
       return;
     }
 
+    let finalLatitude = latitude;
+    let finalLongitude = longitude;
+
+    if (finalLatitude === null || finalLongitude === null) {
+      const geocoded = await geocodeLocation(location);
+      finalLatitude = geocoded.latitude;
+      finalLongitude = geocoded.longitude;
+    }
+
     const primaryImage = images.length > 0 ? images[0] : null;
 
     const { error } = await supabase.from("listings").insert([
@@ -209,6 +344,8 @@ export default function CreateListingPage() {
         images,
         attributes,
         user_id: user.id,
+        latitude: finalLatitude,
+        longitude: finalLongitude,
       },
     ]);
 
@@ -281,12 +418,34 @@ export default function CreateListingPage() {
                     <MapPin size={16} />
                     Location
                   </label>
-                  
-                  <LocationAutocomplete
-                    value={location}
-                    onChange={setLocation}
-                    placeholder="Enter Location"
-                  />
+
+                  <div className="space-y-3">
+                    <LocationAutocomplete
+                      value={location}
+                      onChange={(value) => {
+                        setLocation(value);
+                        setLatitude(null);
+                        setLongitude(null);
+                      }}
+                      placeholder="Enter location"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={handleUseCurrentLocation}
+                      disabled={gettingLocation}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition disabled:opacity-50"
+                    >
+                      <Crosshair size={16} />
+                      {gettingLocation ? "Getting location..." : "Use my current location"}
+                    </button>
+
+                    {(latitude !== null && longitude !== null) && (
+                      <p className="text-xs text-green-600">
+                        Coordinates captured for distance-based search.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -424,7 +583,7 @@ export default function CreateListingPage() {
             <div className="mt-10 flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleCreateListing}
-                disabled={submitting || uploading}
+                disabled={submitting || uploading || gettingLocation}
                 className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 text-sm font-semibold transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? "Creating Listing..." : "Create Listing"}

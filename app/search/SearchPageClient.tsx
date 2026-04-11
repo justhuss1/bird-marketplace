@@ -13,6 +13,7 @@ import {
   RotateCcw,
   X,
   ChevronDown,
+  Crosshair,
 } from "lucide-react";
 
 type Listing = {
@@ -26,6 +27,8 @@ type Listing = {
   boost_until?: string | null;
   attributes?: Record<string, string> | null;
   created_at?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 type CategoryField = {
@@ -46,6 +49,8 @@ const PET_CATEGORIES = [
   "Rabbits",
   "Pet Supplies",
 ] as const;
+
+const RADIUS_OPTIONS = ["", "10", "25", "50", "100", "250"] as const;
 
 const getCategoryFields = (category: string): CategoryField[] => {
   switch (category) {
@@ -175,6 +180,29 @@ const getCategoryFields = (category: string): CategoryField[] => {
   }
 };
 
+function haversineDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const R = 6371;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function SearchPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -185,6 +213,17 @@ export default function SearchPageClient() {
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
   const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "newest");
+  const [radiusKm, setRadiusKm] = useState(searchParams.get("radiusKm") || "");
+  const [userLat, setUserLat] = useState<number | null>(
+    searchParams.get("userLat") ? Number(searchParams.get("userLat")) : null
+  );
+  const [userLng, setUserLng] = useState<number | null>(
+    searchParams.get("userLng") ? Number(searchParams.get("userLng")) : null
+  );
+  const [usingCurrentLocation, setUsingCurrentLocation] = useState(
+    searchParams.get("useMyLocation") === "true"
+  );
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   const [attributeFilters, setAttributeFilters] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
@@ -233,6 +272,10 @@ export default function SearchPageClient() {
     if (minPrice.trim()) params.set("minPrice", minPrice.trim());
     if (maxPrice.trim()) params.set("maxPrice", maxPrice.trim());
     if (sortBy.trim()) params.set("sortBy", sortBy.trim());
+    if (radiusKm.trim()) params.set("radiusKm", radiusKm.trim());
+    if (usingCurrentLocation) params.set("useMyLocation", "true");
+    if (userLat !== null) params.set("userLat", String(userLat));
+    if (userLng !== null) params.set("userLng", String(userLng));
 
     Object.entries(attributeFilters).forEach(([key, value]) => {
       if (value.trim()) {
@@ -241,7 +284,20 @@ export default function SearchPageClient() {
     });
 
     router.replace(`/search?${params.toString()}`);
-  }, [q, location, category, minPrice, maxPrice, sortBy, attributeFilters, router]);
+  }, [
+    q,
+    location,
+    category,
+    minPrice,
+    maxPrice,
+    sortBy,
+    radiusKm,
+    usingCurrentLocation,
+    userLat,
+    userLng,
+    attributeFilters,
+    router,
+  ]);
 
   const fetchListings = async () => {
     setLoading(true);
@@ -352,6 +408,10 @@ export default function SearchPageClient() {
     setMinPrice("");
     setMaxPrice("");
     setSortBy("newest");
+    setRadiusKm("");
+    setUserLat(null);
+    setUserLng(null);
+    setUsingCurrentLocation(false);
     setAttributeFilters({});
     setKeywordSuggestions([]);
     setShowKeywordSuggestions(false);
@@ -390,6 +450,47 @@ export default function SearchPageClient() {
     setKeywordSuggestions(matches);
   };
 
+  const handleUseMyLocation = async () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported on this device.");
+      return;
+    }
+
+    setGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        setUserLat(lat);
+        setUserLng(lng);
+        setUsingCurrentLocation(true);
+
+        if (!radiusKm) {
+          setRadiusKm("50");
+        }
+
+        setGettingLocation(false);
+      },
+      () => {
+        alert("Unable to get your location.");
+        setGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+      }
+    );
+  };
+
+  const clearMyLocation = () => {
+    setUserLat(null);
+    setUserLng(null);
+    setUsingCurrentLocation(false);
+    setRadiusKm("");
+  };
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (q.trim()) count++;
@@ -398,9 +499,21 @@ export default function SearchPageClient() {
     if (minPrice.trim()) count++;
     if (maxPrice.trim()) count++;
     if (sortBy !== "newest") count++;
+    if (radiusKm.trim()) count++;
+    if (usingCurrentLocation) count++;
     count += Object.values(attributeFilters).filter((v) => v.trim()).length;
     return count;
-  }, [q, location, category, minPrice, maxPrice, sortBy, attributeFilters]);
+  }, [
+    q,
+    location,
+    category,
+    minPrice,
+    maxPrice,
+    sortBy,
+    radiusKm,
+    usingCurrentLocation,
+    attributeFilters,
+  ]);
 
   const filteredListings = useMemo(() => {
     return listings
@@ -433,16 +546,66 @@ export default function SearchPageClient() {
           }
         );
 
+        let matchesRadius = true;
+
+        if (
+          userLat !== null &&
+          userLng !== null &&
+          radiusKm &&
+          item.latitude !== null &&
+          item.latitude !== undefined &&
+          item.longitude !== null &&
+          item.longitude !== undefined
+        ) {
+          const distance = haversineDistanceKm(
+            userLat,
+            userLng,
+            item.latitude,
+            item.longitude
+          );
+          matchesRadius = distance <= Number(radiusKm);
+        }
+
         return (
           matchesSearch &&
           matchesLocation &&
           matchesCategory &&
           matchesMinPrice &&
           matchesMaxPrice &&
-          matchesAttributes
+          matchesAttributes &&
+          matchesRadius
         );
       })
       .sort((a, b) => {
+        if (
+          userLat !== null &&
+          userLng !== null &&
+          radiusKm &&
+          a.latitude !== null &&
+          a.latitude !== undefined &&
+          a.longitude !== null &&
+          a.longitude !== undefined &&
+          b.latitude !== null &&
+          b.latitude !== undefined &&
+          b.longitude !== null &&
+          b.longitude !== undefined &&
+          sortBy === "nearest"
+        ) {
+          const distanceA = haversineDistanceKm(
+            userLat,
+            userLng,
+            a.latitude,
+            a.longitude
+          );
+          const distanceB = haversineDistanceKm(
+            userLat,
+            userLng,
+            b.latitude,
+            b.longitude
+          );
+          return distanceA - distanceB;
+        }
+
         if (a.is_featured && !b.is_featured) return -1;
         if (!a.is_featured && b.is_featured) return 1;
 
@@ -459,7 +622,45 @@ export default function SearchPageClient() {
           new Date(a.created_at || 0).getTime()
         );
       });
-  }, [listings, q, location, category, minPrice, maxPrice, sortBy, attributeFilters]);
+  }, [
+    listings,
+    q,
+    location,
+    category,
+    minPrice,
+    maxPrice,
+    sortBy,
+    radiusKm,
+    userLat,
+    userLng,
+    attributeFilters,
+  ]);
+
+  const getDistanceLabel = (item: Listing) => {
+    if (
+      userLat === null ||
+      userLng === null ||
+      item.latitude === null ||
+      item.latitude === undefined ||
+      item.longitude === null ||
+      item.longitude === undefined
+    ) {
+      return null;
+    }
+
+    const distance = haversineDistanceKm(
+      userLat,
+      userLng,
+      item.latitude,
+      item.longitude
+    );
+
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)} m away`;
+    }
+
+    return `${distance.toFixed(1)} km away`;
+  };
 
   const FilterPanel = () => (
     <>
@@ -548,7 +749,45 @@ export default function SearchPageClient() {
           <option value="newest">Newest</option>
           <option value="lowest">Price: Low → High</option>
           <option value="highest">Price: High → Low</option>
+          {usingCurrentLocation && <option value="nearest">Nearest</option>}
         </select>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <button
+          type="button"
+          onClick={handleUseMyLocation}
+          disabled={gettingLocation}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-800 transition disabled:opacity-50"
+        >
+          <Crosshair size={16} />
+          {gettingLocation ? "Locating..." : "Use my location"}
+        </button>
+
+        <select
+          value={radiusKm}
+          onChange={(e) => setRadiusKm(e.target.value)}
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+        >
+          <option value="">Any distance</option>
+          {RADIUS_OPTIONS.filter(Boolean).map((option) => (
+            <option key={option} value={option}>
+              Within {option} km
+            </option>
+          ))}
+        </select>
+
+        {usingCurrentLocation ? (
+          <button
+            type="button"
+            onClick={clearMyLocation}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition"
+          >
+            Clear my location
+          </button>
+        ) : (
+          <div />
+        )}
       </div>
 
       {category && getCategoryFields(category).length > 0 && (
@@ -654,6 +893,16 @@ export default function SearchPageClient() {
                 Price: {minPrice || "0"} - {maxPrice || "Any"}
               </span>
             )}
+            {radiusKm && (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                Within {radiusKm} km
+              </span>
+            )}
+            {usingCurrentLocation && (
+              <span className="rounded-full bg-green-50 px-3 py-1 text-xs text-green-700">
+                Using current location
+              </span>
+            )}
             {Object.entries(attributeFilters).map(([key, value]) =>
               value ? (
                 <span
@@ -667,7 +916,6 @@ export default function SearchPageClient() {
           </div>
         </section>
 
-        {/* MOBILE FILTER TOGGLE */}
         <section className="mt-6 md:hidden">
           <div className="flex items-center gap-3">
             <button
@@ -694,6 +942,7 @@ export default function SearchPageClient() {
                 <option value="newest">Newest</option>
                 <option value="lowest">Price: Low → High</option>
                 <option value="highest">Price: High → Low</option>
+                {usingCurrentLocation && <option value="nearest">Nearest</option>}
               </select>
               <ChevronDown
                 size={16}
@@ -721,7 +970,6 @@ export default function SearchPageClient() {
           )}
         </section>
 
-        {/* DESKTOP FILTER PANEL */}
         <section className="hidden md:block mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-4">
             <SlidersHorizontal size={18} className="text-gray-500" />
@@ -756,74 +1004,84 @@ export default function SearchPageClient() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              {filteredListings.map((item) => (
-                <Link key={item.id} href={`/listing/${item.id}`}>
-                  <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={
-                          item.image && item.image !== ""
-                            ? item.image
-                            : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
-                        }
-                        alt={item.title}
-                        className="h-56 w-full object-cover group-hover:scale-105 transition duration-500"
-                      />
+              {filteredListings.map((item) => {
+                const distanceLabel = getDistanceLabel(item);
 
-                      {item.is_featured ? (
-                        <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
-                          ★ Featured
-                        </span>
-                      ) : (
-                        <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
-                          New
-                        </span>
-                      )}
+                return (
+                  <Link key={item.id} href={`/listing/${item.id}`}>
+                    <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
+                      <div className="relative overflow-hidden">
+                        <img
+                          src={
+                            item.image && item.image !== ""
+                              ? item.image
+                              : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
+                          }
+                          alt={item.title}
+                          className="h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                        />
 
-                      <button
-                        onClick={(e) => handleToggleSave(e, item.id)}
-                        className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-medium shadow backdrop-blur transition ${
-                          savedListingIds.includes(item.id)
-                            ? "bg-red-500 text-white"
-                            : "bg-white/90 text-gray-800"
-                        }`}
-                      >
-                        <span className="inline-flex items-center gap-1.5">
-                          <Heart size={14} />
-                          {savedListingIds.includes(item.id) ? "Saved" : "Save"}
-                        </span>
-                      </button>
-                    </div>
+                        {item.is_featured ? (
+                          <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                            ★ Featured
+                          </span>
+                        ) : (
+                          <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
+                            New
+                          </span>
+                        )}
 
-                    <div className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug">
-                          {item.title}
-                        </h3>
-
-                        <span className="text-green-600 font-semibold text-[18px] whitespace-nowrap">
-                          ${item.price}
-                        </span>
+                        <button
+                          onClick={(e) => handleToggleSave(e, item.id)}
+                          className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-medium shadow backdrop-blur transition ${
+                            savedListingIds.includes(item.id)
+                              ? "bg-red-500 text-white"
+                              : "bg-white/90 text-gray-800"
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-1.5">
+                            <Heart size={14} />
+                            {savedListingIds.includes(item.id) ? "Saved" : "Save"}
+                          </span>
+                        </button>
                       </div>
 
-                      <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
-                        <MapPin size={14} />
-                        {item.location}
-                      </p>
+                      <div className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug">
+                            {item.title}
+                          </h3>
 
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                          {item.category || "Pet Listing"}
-                        </span>
+                          <span className="text-green-600 font-semibold text-[18px] whitespace-nowrap">
+                            ${item.price}
+                          </span>
+                        </div>
 
-                        <span className="text-xs text-gray-400">
-                          View details
-                        </span>
+                        <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
+                          <MapPin size={14} />
+                          {item.location}
+                        </p>
+
+                        {distanceLabel && (
+                          <p className="mt-1 text-xs text-gray-400">
+                            {distanceLabel}
+                          </p>
+                        )}
+
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                          <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                            {item.category || "Pet Listing"}
+                          </span>
+
+                          <span className="text-xs text-gray-400">
+                            View details
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-                </Link>
-              ))}
+                    </article>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </section>
