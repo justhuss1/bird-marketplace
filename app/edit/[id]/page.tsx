@@ -592,7 +592,7 @@ export default function EditListingPage() {
                     <div className="flex flex-col sm:flex-row gap-3">
                       <label className="inline-flex items-center justify-center gap-2 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md hover:shadow-lg cursor-pointer">
                         <Upload size={16} />
-                        {uploading ? "Uploading..." : "Upload Images"}
+                        {uploading ? "Uploading..." : "Add Photos"}
                         <input
                           type="file"
                           accept="image/*"
@@ -601,23 +601,11 @@ export default function EditListingPage() {
                           className="hidden"
                         />
                       </label>
-
-                      <label className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition cursor-pointer">
-                        <ImageIcon size={16} />
-                        Take Photo
-                        <input
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                        />
-                      </label>
                     </div>
                   </div>
 
                   <p className="mt-3 text-xs text-gray-500">
-                    On mobile, “Take Photo” can open your camera directly on supported devices.
+                    On supported devices, this can let users choose camera, photo library, or files.
                   </p>
 
                   {images.length > 0 && (

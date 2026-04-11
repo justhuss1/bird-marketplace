@@ -580,7 +580,7 @@ export default function CreateListingPage() {
                 </div>
 
                 <p className="mt-3 text-xs text-gray-500">
-                  On mobile, “Take Photo” can open your camera directly on supported devices.
+                  On supported devices, this can let users choose camera, photo library, or files.
                 </p>
 
                 {images.length > 0 && (
