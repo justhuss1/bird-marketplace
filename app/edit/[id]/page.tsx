@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
+import { Crosshair } from "lucide-react";
 
 import {
   ArrowLeft,
@@ -129,6 +130,9 @@ export default function EditListingPage() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -200,6 +204,8 @@ export default function EditListingPage() {
     setDescription(data.description || "");
     setImages(normalizeImages(data.images, data.image));
     setAttributes(data.attributes || {});
+    setLatitude(data.latitude ?? null);
+    setLongitude(data.longitude ?? null);
   };
 
   const handleAttributeChange = (key: string, value: string) => {
@@ -292,6 +298,16 @@ export default function EditListingPage() {
 
     const primaryImage = images.length > 0 ? images[0] : null;
 
+    let finalLat = latitude;
+    let finalLng = longitude;
+
+    // if user typed location manually → geocode it
+    if (finalLat === null || finalLng === null) {
+      const geo = await geocodeLocation(location);
+      finalLat = geo.lat;
+      finalLng = geo.lng;
+    }
+
     const { error } = await supabase
       .from("listings")
       .update({
@@ -303,6 +319,8 @@ export default function EditListingPage() {
         image: primaryImage,
         images,
         attributes,
+        latitude: finalLat,
+        longitude: finalLng,
       })
       .eq("id", id)
       .eq("user_id", user.id);
@@ -321,6 +339,69 @@ export default function EditListingPage() {
   if (checkingAuth) {
     return <main className="p-4">Checking login...</main>;
   }
+
+  const geocodeLocation = async (query: string) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=au&q=${encodeURIComponent(
+          query
+        )}`
+      );
+
+      const data = await res.json();
+
+      if (!data?.length) return { lat: null, lng: null };
+
+      return {
+        lat: Number(data[0].lat),
+        lng: Number(data[0].lon),
+      };
+    } catch {
+      return { lat: null, lng: null };
+    }
+  };
+
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+      );
+
+      const data = await res.json();
+
+      return data?.display_name || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const handleUseCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported.");
+      return;
+    }
+
+    setGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        setLatitude(lat);
+        setLongitude(lng);
+
+        const name = await reverseGeocode(lat, lng);
+        if (name) setLocation(name);
+
+        setGettingLocation(false);
+      },
+      () => {
+        alert("Failed to get location.");
+        setGettingLocation(false);
+      }
+    );
+  };
 
   return (
     <main className="bg-gray-50 min-h-screen py-6 sm:py-8 px-4 pb-24">
@@ -382,11 +463,33 @@ export default function EditListingPage() {
                       <MapPin size={16} />
                       Location
                     </label>
-                    <LocationAutocomplete
-                      value={location}
-                      onChange={setLocation}
-                      placeholder="Enter Location"
-                    />
+                    <div className="space-y-3">
+                      <LocationAutocomplete
+                        value={location}
+                        onChange={(val) => {
+                          setLocation(val);
+                          setLatitude(null);
+                          setLongitude(null);
+                        }}
+                        placeholder="Enter Location"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={handleUseCurrentLocation}
+                        disabled={gettingLocation}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 px-4 py-3 text-sm font-semibold"
+                      >
+                        <Crosshair size={16} />
+                        {gettingLocation ? "Getting location..." : "Use my location"}
+                      </button>
+
+                      {latitude && longitude && (
+                        <p className="text-xs text-green-600">
+                          Coordinates saved for location filtering
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div>
