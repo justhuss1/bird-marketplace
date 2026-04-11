@@ -567,23 +567,11 @@ export default function CreateListingPage() {
                   <div className="flex flex-col sm:flex-row gap-3">
                     <label className="inline-flex items-center justify-center gap-2 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md hover:shadow-lg cursor-pointer">
                       <Upload size={16} />
-                      {uploading ? "Uploading..." : "Upload Images"}
+                      {uploading ? "Uploading..." : "Add Photos"}
                       <input
                         type="file"
                         accept="image/*"
                         multiple
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
-
-                    <label className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition cursor-pointer">
-                      <ImageIcon size={16} />
-                      Take Photo
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
                         onChange={handleImageUpload}
                         className="hidden"
                       />
@@ -614,13 +602,39 @@ export default function CreateListingPage() {
                           </span>
                         )}
 
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-700 text-xs px-2 py-1 rounded-full shadow"
-                        >
-                          Remove
-                        </button>
+                        <div className="absolute top-2 right-2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => moveImage(index, index - 1)}
+                            disabled={index === 0}
+                            className="bg-white/90 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-xs px-2 py-1 rounded-full shadow"
+                          >
+                            ←
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => moveImage(index, index + 1)}
+                            disabled={index === images.length - 1}
+                            className="bg-white/90 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-xs px-2 py-1 rounded-full shadow"
+                          >
+                            →
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="bg-white/90 hover:bg-white text-gray-700 text-xs px-2 py-1 rounded-full shadow"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div className="px-3 py-2 border-t border-gray-100 bg-white">
+                          <p className="text-xs text-gray-500">
+                            {index === 0 ? "Main cover photo" : `Image ${index + 1}`}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
