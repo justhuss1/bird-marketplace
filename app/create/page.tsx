@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
+import { notifyBreederFollowersOfNewListing } from "@/lib/breederNotifications";
 import {
   ArrowLeft,
   Upload,
@@ -403,28 +404,50 @@ export default function CreateListingPage() {
 
     const primaryImage = images.length > 0 ? images[0] : null;
 
-    const { error } = await supabase.from("listings").insert([
-      {
-        title,
-        price,
-        location,
-        category,
-        description,
-        image: primaryImage,
-        images,
-        attributes,
-        user_id: user.id,
-        latitude: finalLatitude,
-        longitude: finalLongitude,
-      },
-    ]);
+    const { data: newListing, error } = await supabase
+      .from("listings")
+      .insert([
+        {
+          title,
+          price,
+          location,
+          category,
+          description,
+          image: primaryImage,
+          images,
+          attributes,
+          user_id: user.id,
+          latitude: finalLatitude,
+          longitude: finalLongitude,
+        },
+      ])
+      .select()
+      .single();
 
     if (error) {
-      console.error(error);
-      alert("Failed to create listing.");
-      setSubmitting(false);
-      return;
-    }
+  console.error(error);
+  alert("Failed to create listing.");
+  setSubmitting(false);
+  return;
+}
+
+  const { data: breederProfile } = await supabase
+    .from("profiles")
+    .select("is_breeder, breeder_name, username")
+    .eq("id", user.id)
+    .single();
+
+  if (breederProfile?.is_breeder && newListing?.id) {
+    const breederName =
+      breederProfile.breeder_name || breederProfile.username || "A breeder";
+
+    await notifyBreederFollowersOfNewListing({
+      breederId: user.id,
+      breederName,
+      listingId: newListing.id,
+      listingTitle: newListing.title,
+    });
+  }
 
     router.push("/my-listings");
   };
