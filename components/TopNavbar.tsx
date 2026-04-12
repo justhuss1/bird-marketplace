@@ -226,6 +226,13 @@ export default function TopNavbar() {
                       <p className="px-3 pt-2 pb-1 text-[11px] uppercase tracking-[0.14em] text-gray-400">
                         Account
                       </p>
+                      
+                      <Link
+                        href="/account"
+                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        My Account
+                      </Link>
 
                       <Link
                         href="/my-listings"
