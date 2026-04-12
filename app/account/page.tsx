@@ -57,34 +57,40 @@ export default function AccountPage() {
 
   const handleBecomeBreeder = async () => {
     const {
-      data: { user },
+        data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("Please log in first.");
-      return;
+        alert("Please log in first.");
+        return;
     }
 
     setSaving(true);
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        is_breeder: true,
-        breeder_name: breederName || profile?.username || "My Breeder Profile",
-      })
-      .eq("id", user.id);
+    const { data, error } = await supabase
+        .from("profiles")
+        .upsert(
+        {
+            id: user.id,
+            is_breeder: true,
+            breeder_name: breederName || profile?.username || "My Breeder Profile",
+        },
+        { onConflict: "id" }
+        )
+        .select();
+
+    console.log("BECOME BREEDER UPSERT RESULT:", { userId: user.id, data, error });
 
     setSaving(false);
 
     if (error) {
-      console.error(error);
-      alert("Could not activate breeder profile.");
-      return;
+        console.error(error);
+        alert("Could not activate breeder profile.");
+        return;
     }
 
     await fetchProfile();
-  };
+    };
 
   const handleSaveBreederProfile = async () => {
     const {
