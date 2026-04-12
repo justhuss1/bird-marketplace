@@ -846,6 +846,23 @@ export default function CreateListingPage() {
                 )}
               </div>
             </div>
+              <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleCreateListing}
+                  disabled={submitting || uploading || gettingLocation}
+                  className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 text-sm font-semibold transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? "Creating Listing..." : "Create Listing"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3.5 text-sm font-semibold transition"
+                >
+                Cancel
+              </button>
+            </div>
           </div>
         </section>
       </div>
