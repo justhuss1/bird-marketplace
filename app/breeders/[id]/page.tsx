@@ -1,139 +1,402 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import {
+  ArrowLeft,
+  Heart,
+  MapPin,
+  ShieldCheck,
+  Star,
+  UserPlus,
+  UserCheck,
+  BadgeCheck,
+} from "lucide-react";
+
+type Profile = {
+  id: string;
+  username: string | null;
+  breeder_name?: string | null;
+  breeder_bio?: string | null;
+  breeder_verified?: boolean | null;
+  is_breeder?: boolean | null;
+  created_at?: string | null;
+};
+
+type Listing = {
+  id: string;
+  title: string;
+  price: string;
+  location: string;
+  image: string | null;
+  category?: string | null;
+  is_featured?: boolean | null;
+  created_at?: string | null;
+};
 
 export default function BreederProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const breederId = params.id as string;
 
-  const [profile, setProfile] = useState<any>(null);
-  const [listings, setListings] = useState<any[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (breederId) {
+      fetchData();
+    }
+  }, [breederId]);
 
   const fetchData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    setLoading(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     setUserId(user?.id || null);
 
-    const { data: profileData } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", breederId)
       .single();
 
-    setProfile(profileData);
+    if (profileError) {
+      console.error(profileError);
+      setLoading(false);
+      return;
+    }
 
-    const { data: listingsData } = await supabase
+    setProfile(profileData as Profile);
+
+    const { data: listingsData, error: listingsError } = await supabase
       .from("listings")
       .select("*")
-      .eq("user_id", breederId);
+      .eq("user_id", breederId)
+      .order("created_at", { ascending: false });
 
-    setListings(listingsData || []);
+    if (listingsError) {
+      console.error(listingsError);
+    } else {
+      setListings((listingsData || []) as Listing[]);
+    }
+
+    const { count, error: countError } = await supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("breeder_id", breederId);
+
+    if (countError) {
+      console.error(countError);
+    } else {
+      setFollowerCount(count || 0);
+    }
 
     if (user) {
-      const { data: follow } = await supabase
+      const { data: follow, error: followError } = await supabase
         .from("follows")
         .select("*")
         .eq("user_id", user.id)
         .eq("breeder_id", breederId)
-        .single();
+        .maybeSingle();
+
+      if (followError) {
+        console.error(followError);
+      }
 
       setIsFollowing(!!follow);
     }
+
+    setLoading(false);
   };
 
   const toggleFollow = async () => {
-    if (!userId) return alert("Login required");
+    if (!userId) {
+      alert("Please log in to follow this breeder.");
+      router.push("/login");
+      return;
+    }
+
+    if (userId === breederId) {
+      alert("This is your breeder profile.");
+      return;
+    }
+
+    setFollowLoading(true);
 
     if (isFollowing) {
-      await supabase
+      const { error } = await supabase
         .from("follows")
         .delete()
         .eq("user_id", userId)
         .eq("breeder_id", breederId);
 
+      if (error) {
+        console.error(error);
+        alert("Could not unfollow breeder.");
+        setFollowLoading(false);
+        return;
+      }
+
       setIsFollowing(false);
+      setFollowerCount((prev) => Math.max(0, prev - 1));
     } else {
-      await supabase.from("follows").insert([
+      const { error } = await supabase.from("follows").insert([
         {
           user_id: userId,
           breeder_id: breederId,
         },
       ]);
 
+      if (error) {
+        console.error(error);
+        alert("Could not follow breeder.");
+        setFollowLoading(false);
+        return;
+      }
+
       setIsFollowing(true);
+      setFollowerCount((prev) => prev + 1);
     }
+
+    setFollowLoading(false);
   };
 
-  if (!profile) return <div className="p-6">Loading...</div>;
+  const formatJoinedDate = (date?: string | null) => {
+    if (!date) return "Recently joined";
 
-  return (
-    <main className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="max-w-5xl mx-auto">
+    return `Member since ${new Date(date).toLocaleDateString(undefined, {
+      month: "short",
+      year: "numeric",
+    })}`;
+  };
 
-        {/* HEADER */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border">
-          <h1 className="text-2xl font-bold">
-            {profile.breeder_name || "Breeder"}
-          </h1>
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gray-50 px-4 py-8">
+        <div className="max-w-6xl mx-auto">Loading breeder profile...</div>
+      </main>
+    );
+  }
 
-          <p className="text-gray-500 mt-2">
-            {profile.breeder_bio || "No bio yet"}
-          </p>
-
-          {profile.breeder_verified && (
-            <span className="inline-block mt-2 text-green-600 text-sm">
-              ✅ Verified Breeder
-            </span>
-          )}
-
+  if (!profile) {
+    return (
+      <main className="min-h-screen bg-gray-50 px-4 py-8">
+        <div className="max-w-6xl mx-auto">
           <button
-            onClick={toggleFollow}
-            className={`mt-4 px-5 py-2 rounded-xl text-sm font-semibold ${
-              isFollowing
-                ? "bg-gray-200 text-gray-800"
-                : "bg-green-600 text-white"
-            }`}
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
           >
-            {isFollowing ? "Following" : "Follow"}
+            <ArrowLeft size={16} />
+            Back
           </button>
-        </div>
 
-        {/* LISTINGS */}
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold mb-4">
-            Listings
-          </h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {listings.map((item) => (
-              <Link key={item.id} href={`/listing/${item.id}`}>
-                <div className="bg-white rounded-xl overflow-hidden shadow-sm border hover:shadow-md transition">
-                  <img
-                    src={item.image}
-                    className="h-40 w-full object-cover"
-                  />
-                  <div className="p-3">
-                    <p className="font-medium text-sm">
-                      {item.title}
-                    </p>
-                    <p className="text-green-600 font-semibold">
-                      ${item.price}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))}
+          <div className="mt-6 bg-white rounded-3xl border border-gray-100 shadow-sm p-10 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Breeder profile not found
+            </h1>
+            <p className="mt-2 text-gray-500">
+              This breeder profile may not exist yet.
+            </p>
           </div>
         </div>
+      </main>
+    );
+  }
 
+  const breederDisplayName =
+    profile.breeder_name || profile.username || "Breeder";
+
+  return (
+    <main className="min-h-screen bg-gray-50 px-4 py-6 sm:py-8 pb-24">
+      <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
+        >
+          <ArrowLeft size={16} />
+          Back
+        </button>
+
+        <section className="mt-5 overflow-hidden rounded-[32px] border border-gray-100 shadow-sm bg-white">
+          <div className="bg-gradient-to-r from-[#07111f] via-[#102038] to-[#1b2e4a] px-6 sm:px-8 py-10 sm:py-12 text-white">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-white/15 border border-white/10 backdrop-blur flex items-center justify-center text-2xl font-bold">
+                  {breederDisplayName?.charAt(0)?.toUpperCase() || "B"}
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
+                      {breederDisplayName}
+                    </h1>
+
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 border border-green-400/20 px-3 py-1 text-xs font-medium text-green-200">
+                      <Star size={12} />
+                      Breeder
+                    </span>
+
+                    {profile.breeder_verified && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-400/20 px-3 py-1 text-xs font-medium text-blue-200">
+                        <BadgeCheck size={12} />
+                        Verified
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-3 max-w-2xl text-sm sm:text-base text-white/75 leading-7">
+                    {profile.breeder_bio ||
+                      "This breeder has not added a bio yet."}
+                  </p>
+
+                  <p className="mt-3 text-sm text-white/60">
+                    {formatJoinedDate(profile.created_at)}
+                  </p>
+                </div>
+              </div>
+
+              {userId !== breederId && (
+                <button
+                  onClick={toggleFollow}
+                  disabled={followLoading}
+                  className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition shadow-md ${
+                    isFollowing
+                      ? "bg-white text-gray-900 hover:bg-gray-100"
+                      : "bg-green-600 text-white hover:bg-green-700"
+                  } disabled:opacity-50`}
+                >
+                  {isFollowing ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                  {followLoading
+                    ? "Please wait..."
+                    : isFollowing
+                    ? "Following"
+                    : "Follow Breeder"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="px-6 sm:px-8 py-6 bg-white">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-2xl bg-gray-50 px-4 py-4 border border-gray-100">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
+                  Followers
+                </p>
+                <p className="mt-2 text-2xl font-bold text-gray-900">
+                  {followerCount}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-gray-50 px-4 py-4 border border-gray-100">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
+                  Active Listings
+                </p>
+                <p className="mt-2 text-2xl font-bold text-gray-900">
+                  {listings.length}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-gray-50 px-4 py-4 border border-gray-100">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
+                  Profile Type
+                </p>
+                <p className="mt-2 text-lg font-semibold text-gray-900">
+                  {profile.breeder_verified ? "Verified Breeder" : "Breeder"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-8">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                Listings
+              </p>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+                Active Listings
+              </h2>
+              <p className="mt-2 text-sm text-gray-500">
+                Browse pets and listings from this breeder.
+              </p>
+            </div>
+          </div>
+
+          {listings.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 text-center">
+              <h3 className="text-xl font-semibold text-gray-900">
+                No active listings yet
+              </h3>
+              <p className="text-gray-500 mt-2">
+                This breeder has not posted any listings yet.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              {listings.map((item) => (
+                <Link key={item.id} href={`/listing/${item.id}`}>
+                  <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={
+                          item.image && item.image !== ""
+                            ? item.image
+                            : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
+                        }
+                        alt={item.title}
+                        className="h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+
+                      {item.is_featured && (
+                        <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                          ★ Featured
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug">
+                          {item.title}
+                        </h3>
+
+                        <span className="text-green-600 font-semibold text-[18px] whitespace-nowrap">
+                          ${item.price}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
+                        <MapPin size={14} />
+                        {item.location}
+                      </p>
+
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                          {item.category || "Pet Listing"}
+                        </span>
+
+                        <span className="text-xs text-gray-400">
+                          View details
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
