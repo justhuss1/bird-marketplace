@@ -29,66 +29,95 @@ export default function AccountPage() {
     setLoading(true);
 
     const {
-      data: { user },
+        data: { user },
     } = await supabase.auth.getUser();
 
+    console.log("FETCH PROFILE AUTH USER ID:", user?.id);
+
     if (!user) {
-      setLoading(false);
-      return;
+        setLoading(false);
+        return;
     }
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
+    let { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+    if (!data) {
+        const { data: inserted, error: insertError } = await supabase
+        .from("profiles")
+        .insert({
+            id: user.id,
+            username: user.email?.split("@")[0] || "user",
+        })
+        .select()
+        .single();
+
+        if (insertError) {
+        console.error("PROFILE AUTO-CREATE ERROR:", insertError);
+        setLoading(false);
+        return;
+        }
+
+        data = inserted;
+        error = null;
+    }
+
+    console.log("FETCH PROFILE RESULT:", { data, error });
 
     if (error) {
-      console.error(error);
-      setLoading(false);
-      return;
+        console.error(error);
+        setLoading(false);
+        return;
     }
 
     setProfile(data);
     setBreederName(data?.breeder_name || "");
     setBreederBio(data?.breeder_bio || "");
     setLoading(false);
-  };
+    };
 
   const handleBecomeBreeder = async () => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    alert("Please log in first.");
-    return;
-  }
+    if (!user) {
+        alert("Please log in first.");
+        return;
+    }
 
-  setSaving(true);
+    setSaving(true);
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .update({
-      is_breeder: true,
-      breeder_name: breederName || profile?.username || "My Breeder Profile",
-    })
-    .eq("id", user.id)
-    .select()
-    .single();
+    const { data, error } = await supabase
+        .from("profiles")
+        .update({
+        is_breeder: true,
+        breeder_name: breederName || profile?.username || "My Breeder Profile",
+        })
+        .eq("id", user.id)
+        .select()
+        .maybeSingle();
 
-  console.log("BECOME BREEDER RESULT:", { data, error, userId: user.id });
+    console.log("BECOME BREEDER RESULT:", { data, error, userId: user.id });
 
-  setSaving(false);
+    setSaving(false);
 
-  if (error) {
-    console.error(error);
-    alert("Could not activate breeder profile.");
-    return;
-  }
+    if (error) {
+        console.error(error);
+        alert("Could not activate breeder profile.");
+        return;
+    }
 
-  await fetchProfile();
-};
+    if (!data) {
+        alert("No matching profile row found for this user.");
+        return;
+    }
+
+    await fetchProfile();
+    };
 
   const handleSaveBreederProfile = async () => {
     const {

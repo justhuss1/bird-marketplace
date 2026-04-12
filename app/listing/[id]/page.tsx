@@ -42,6 +42,10 @@ type SellerProfile = {
   id: string;
   username: string | null;
   created_at: string;
+  is_breeder?: boolean | null;
+  breeder_name?: string | null;
+  breeder_bio?: string | null;
+  breeder_verified?: boolean | null;
 };
 
 const normalizeImages = (
@@ -127,7 +131,8 @@ export default function ListingPage() {
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [sellerListings, setSellerListings] = useState<any[]>([]);
-  const sellerName = seller?.username || "Seller";
+  const sellerName =
+  seller?.breeder_name || seller?.username || "Seller";
   const sellerListingsCount = sellerListings?.length || 0;
   
 
@@ -589,6 +594,12 @@ export default function ListingPage() {
                       </span>
                     )}
 
+                    {seller?.is_breeder && (
+                      <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
+                        Breeder Listing
+                      </span>
+                    )}
+
                     <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
                       Available now
                     </span>
@@ -779,12 +790,30 @@ export default function ListingPage() {
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-500">Seller</p>
+                    <p className="text-sm text-gray-500">
+                      {seller?.is_breeder ? "Breeder" : "Seller"}
+                    </p>
+
                     <h3 className="text-base font-semibold text-gray-900">
                       {sellerName || "Unknown Seller"}
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Member since recently
+
+                    {seller?.is_breeder && (
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                          Breeder
+                        </span>
+
+                        {seller?.breeder_verified && (
+                          <span className="inline-flex text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full">
+                            Verified Breeder
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-400 mt-2">
+                      Member since {formatJoinedDate(seller?.created_at)}
                     </p>
                   </div>
                 </div>
@@ -827,21 +856,33 @@ export default function ListingPage() {
                   <User size={16} className="text-green-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      Seller profile available
+                      {seller?.is_breeder ? "Breeder profile available" : "Seller profile available"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      View details and all listings
+                      {seller?.is_breeder
+                        ? "View breeder details and active listings"
+                        : "View details and all listings"}
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* CTA */}
-              <Link href={`/seller/${listing.user_id}`}>
-                <button className="w-full mt-5 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 py-3.5 text-sm font-semibold transition">
-                  View Seller Profile
-                </button>
-              </Link>
+              <div className="mt-5 space-y-3">
+                <Link href={`/seller/${listing.user_id}`}>
+                  <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 py-3.5 text-sm font-semibold transition">
+                    View Seller Profile
+                  </button>
+                </Link>
+
+                {seller?.is_breeder && (
+                  <Link href={`/breeders/${listing.user_id}`}>
+                    <button className="w-full rounded-2xl bg-green-600 hover:bg-green-700 text-white py-3.5 text-sm font-semibold transition shadow-md">
+                      View Breeder Profile
+                    </button>
+                  </Link>
+                )}
+              </div>
             </section>
           </div>
         </div>
