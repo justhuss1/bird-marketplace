@@ -56,41 +56,39 @@ export default function AccountPage() {
   };
 
   const handleBecomeBreeder = async () => {
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!user) {
-        alert("Please log in first.");
-        return;
-    }
+  if (!user) {
+    alert("Please log in first.");
+    return;
+  }
 
-    setSaving(true);
+  setSaving(true);
 
-    const { data, error } = await supabase
-        .from("profiles")
-        .upsert(
-        {
-            id: user.id,
-            is_breeder: true,
-            breeder_name: breederName || profile?.username || "My Breeder Profile",
-        },
-        { onConflict: "id" }
-        )
-        .select();
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({
+      is_breeder: true,
+      breeder_name: breederName || profile?.username || "My Breeder Profile",
+    })
+    .eq("id", user.id)
+    .select()
+    .single();
 
-    console.log("BECOME BREEDER UPSERT RESULT:", { userId: user.id, data, error });
+  console.log("BECOME BREEDER RESULT:", { data, error, userId: user.id });
 
-    setSaving(false);
+  setSaving(false);
 
-    if (error) {
-        console.error(error);
-        alert("Could not activate breeder profile.");
-        return;
-    }
+  if (error) {
+    console.error(error);
+    alert("Could not activate breeder profile.");
+    return;
+  }
 
-    await fetchProfile();
-    };
+  await fetchProfile();
+};
 
   const handleSaveBreederProfile = async () => {
     const {
