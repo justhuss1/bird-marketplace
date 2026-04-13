@@ -64,6 +64,7 @@ export default function Home() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showStickySearch, setShowStickySearch] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement | null>(null);
+  const [latestBreederUpdates, setLatestBreederUpdates] = useState<any[]>([]);
 
   const scrollCategoriesLeft = () => {
     categoryScrollRef.current?.scrollBy({ left: -220, behavior: "smooth" });
@@ -77,6 +78,7 @@ export default function Home() {
     fetchListings();
     getCurrentUser();
     fetchSavedListings();
+    fetchLatestBreederUpdates();
 
     const storedRecentSearches = localStorage.getItem("recentSearches");
     if (storedRecentSearches) {
@@ -92,6 +94,29 @@ export default function Home() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const fetchLatestBreederUpdates = async () => {
+    const { data, error } = await supabase
+      .from("breeder_announcements")
+      .select(`
+        *,
+        profiles (
+          id,
+          username,
+          breeder_name,
+          breeder_verified
+        )
+      `)
+      .order("created_at", { ascending: false })
+      .limit(3);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setLatestBreederUpdates(data || []);
+  };
 
   const fetchListings = async () => {
     const { data, error } = await supabase
@@ -185,6 +210,21 @@ export default function Home() {
 
       setSavedListingIds((prev) => [...prev, listingId]);
     }
+  };
+
+  const formatAnnouncementType = (postType: string) => {
+    if (postType === "upcoming_litter") return "Upcoming Litter";
+    if (postType === "available_soon") return "Available Soon";
+    return "Announcement";
+  };
+
+  const formatAnnouncementDate = (date?: string) => {
+    if (!date) return "";
+
+    return new Date(date).toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+    });
   };
 
   const buildSuggestions = (value: string) => {
@@ -689,6 +729,74 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {latestBreederUpdates.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 mt-10 mb-14">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                Breeder Updates
+              </p>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+                Latest Breeder Updates
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Follow breeders to get notified about upcoming litters and new availability.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {latestBreederUpdates.map((post) => {
+              const breederName =
+                post.profiles?.breeder_name ||
+                post.profiles?.username ||
+                "Breeder";
+
+              return (
+                <Link key={post.id} href={`/breeders/${post.breeder_id}`}>
+                  <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 p-5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                        {formatAnnouncementType(post.post_type)}
+                      </span>
+
+                      {post.expected_date && (
+                        <span className="inline-flex text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
+                          {formatAnnouncementDate(post.expected_date)}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="mt-4 text-lg font-semibold text-gray-900 line-clamp-2">
+                      {post.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm text-gray-600 line-clamp-4 leading-7">
+                      {post.content}
+                    </p>
+
+                    <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {breederName}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {post.profiles?.breeder_verified ? "Verified Breeder" : "Breeder"}
+                        </p>
+                      </div>
+
+                      <span className="text-xs text-green-600 font-medium">
+                        View profile
+                      </span>
+                    </div>
+                  </article>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* TRUST - LOWER ON PAGE */}
       <section className="max-w-7xl mx-auto px-4 mb-14">
