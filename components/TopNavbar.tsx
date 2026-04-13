@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import Image from "next/image";
+
 import {
-  Bird,
   ChevronDown,
   Heart,
   Bell,
@@ -136,12 +137,18 @@ export default function TopNavbar() {
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4">
         <div className="h-16 flex items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-green-600 font-semibold text-base sm:text-lg"
-          >
-            <Bird size={18} />
-            <span>Pet Marketplace</span>
+          <Link href="/" className="flex items-center gap-3">
+            <Image
+              src="/branding/logo-navbar.png"
+              alt="Pet Marketplace"
+              width={36}
+              height={36}
+              className="rounded-xl"
+              priority
+            />
+            <span className="text-xl font-bold text-green-600">
+              Pet Marketplace
+            </span>
           </Link>
 
           {!userEmail ? (

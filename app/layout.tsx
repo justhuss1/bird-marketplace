@@ -28,7 +28,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Bird Marketplace",
-  description: "Buy, sell and rehome birds across Australia",
+export const metadata = {
+  title: "Pet Marketplace",
+  description: "Buy, sell and rehome pets safely.",
+  icons: {
+    icon: "/icon.png",
+    apple: "/branding/app-icon.png",
+  },
 };
