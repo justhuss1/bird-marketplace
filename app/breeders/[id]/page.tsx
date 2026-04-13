@@ -48,6 +48,23 @@ export default function BreederProfilePage() {
   const [followerCount, setFollowerCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+
+  const formatPostType = (postType: string) => {
+    if (postType === "upcoming_litter") return "Upcoming Litter";
+    if (postType === "available_soon") return "Available Soon";
+    return "Announcement";
+  };
+
+  const formatDate = (date?: string | null) => {
+    if (!date) return null;
+
+    return new Date(date).toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   useEffect(() => {
     if (breederId) {
@@ -63,6 +80,18 @@ export default function BreederProfilePage() {
     } = await supabase.auth.getUser();
 
     setUserId(user?.id || null);
+
+    const { data: announcementData, error: announcementError } = await supabase
+      .from("breeder_announcements")
+      .select("*")
+      .eq("breeder_id", breederId)
+      .order("created_at", { ascending: false });
+
+    if (announcementError) {
+      console.error(announcementError);
+    } else {
+      setAnnouncements(announcementData || []);
+    }
 
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
@@ -316,6 +345,66 @@ export default function BreederProfilePage() {
               </div>
             </div>
           </div>
+        </section>
+
+        <section className="mt-8">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                Updates
+              </p>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+                Breeder Announcements
+              </h2>
+              <p className="mt-2 text-sm text-gray-500">
+                Follow this breeder for future updates, litters, and availability.
+              </p>
+            </div>
+          </div>
+
+          {announcements.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center">
+              <h3 className="text-lg font-semibold text-gray-900">
+                No announcements yet
+              </h3>
+              <p className="text-gray-500 mt-2">
+                This breeder has not posted any updates yet.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {announcements.map((post) => (
+                <article
+                  key={post.id}
+                  className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6"
+                >
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                      {formatPostType(post.post_type)}
+                    </span>
+
+                    {post.expected_date && (
+                      <span className="inline-flex text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
+                        Expected: {formatDate(post.expected_date)}
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {post.title}
+                  </h3>
+
+                  <p className="mt-3 text-sm text-gray-700 leading-7 whitespace-pre-line">
+                    {post.content}
+                  </p>
+
+                  <p className="mt-4 text-xs text-gray-400">
+                    Posted {formatDate(post.created_at)}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="mt-8">
