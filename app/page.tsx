@@ -6,8 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-
+import Footer from "@/components/Footer";
 import {
   Bird,
   Heart,
@@ -890,6 +889,11 @@ export default function Home() {
               </button>
             </Link>
           </div>
+          <Link href="/upcoming-litters">
+            <button className="rounded-2xl border border-gray-200 bg-white/10 hover:bg-white/20 text-white px-5 py-3 text-sm font-semibold transition">
+              Upcoming Litters
+            </button>
+          </Link>
         </div>
       </section>
       {showStickySearch && (
@@ -925,6 +929,7 @@ export default function Home() {
           </div>
         </div>
       )}
+      <Footer />
     </main>
   );
 }
