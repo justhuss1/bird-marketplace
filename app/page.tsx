@@ -38,6 +38,13 @@ type Listing = {
   is_featured?: boolean | null;
   boost_until?: string | null;
   attributes?: Record<string, string> | null;
+  user_id?: string;
+  profiles?: {
+    username?: string | null;
+    breeder_name?: string | null;
+    breeder_verified?: boolean | null;
+    is_breeder?: boolean | null;
+  } | null;
 };
 
 const PET_CATEGORIES = [
@@ -124,7 +131,15 @@ export default function Home() {
   const fetchListings = async () => {
     const { data, error } = await supabase
       .from("listings")
-      .select("*")
+      .select(`
+        *,
+        profiles (
+          username,
+          breeder_name,
+          breeder_verified,
+          is_breeder
+        )
+      `)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -133,6 +148,14 @@ export default function Home() {
     }
 
     setListings((data || []) as Listing[]);
+  };
+
+  const getSellerLabel = (item: Listing) => {
+    return (
+      item.profiles?.breeder_name ||
+      item.profiles?.username ||
+      "Seller"
+    );
   };
 
   const getCurrentUser = async () => {
@@ -801,45 +824,80 @@ export default function Home() {
                           : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
                       }
                       alt={item.title}
-                      className="h-52 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                      className="h-44 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
                     />
 
-                    <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
-                      ★ Featured
-                    </span>
+                    {/* Top left status badge */}
+                    {item.is_featured ? (
+                      <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                        ★ Featured
+                      </span>
+                    ) : (
+                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
+                        New
+                      </span>
+                    )}
 
+                    {/* Better save button */}
                     <button
                       onClick={(e) => handleToggleSave(e, item.id)}
-                      className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-medium shadow backdrop-blur transition ${
+                      className={`absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold shadow backdrop-blur transition ${
                         savedListingIds.includes(item.id)
                           ? "bg-red-500 text-white"
-                          : "bg-white/90 text-gray-800"
+                          : "bg-white/92 text-gray-800 hover:bg-white"
                       }`}
                     >
-                      <span className="inline-flex items-center gap-1.5">
-                        <Heart size={14} />
-                        {savedListingIds.includes(item.id) ? "Saved" : "Save"}
-                      </span>
+                      <Heart
+                        size={14}
+                        className={savedListingIds.includes(item.id) ? "fill-white" : ""}
+                      />
+                      {savedListingIds.includes(item.id) ? "Saved" : "Save"}
                     </button>
-                  </div>
 
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">
-                        {item.title}
-                      </h3>
-                      <span className="text-green-600 font-semibold text-lg whitespace-nowrap">
+                    {/* Floating price badge */}
+                    <div className="absolute left-3 bottom-3">
+                      <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-sm font-bold shadow">
                         ${item.price}
                       </span>
                     </div>
+                  </div>
 
-                    <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
-                      <MapPin size={14} />
-                      {item.location}
+                  <div className="p-3 sm:p-5">
+                    {/* Breeder / seller row */}
+                    <div className="flex items-center gap-2 mb-2 min-w-0">
+                      {item.profiles?.is_breeder && (
+                        <span className="inline-flex shrink-0 rounded-full bg-green-50 text-green-700 px-2.5 py-1 text-[11px] font-medium">
+                          Breeder
+                        </span>
+                      )}
+
+                      {item.profiles?.breeder_verified && (
+                        <span className="inline-flex shrink-0 rounded-full bg-yellow-50 text-yellow-700 px-2.5 py-1 text-[11px] font-medium">
+                          Verified
+                        </span>
+                      )}
+
+                      {(item.profiles?.is_breeder || item.profiles?.breeder_verified) && (
+                        <span className="truncate text-[11px] text-gray-500">
+                          {getSellerLabel(item)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
+                      {item.title}
+                    </h3>
+
+                    {/* Cleaner location */}
+                    <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
+                      <MapPin size={14} className="shrink-0" />
+                      <span className="truncate">{item.location}</span>
                     </p>
 
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                    {/* Footer meta */}
+                    <div className="mt-3 overflow-hidden">
+                      <span className="inline-flex max-w-full truncate text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
                         {item.category || "Pet Listing"}
                       </span>
                     </div>
@@ -895,44 +953,80 @@ export default function Home() {
                           : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
                       }
                       alt={item.title}
-                      className="h-36 sm:h-48 w-full object-cover group-hover:scale-105 transition duration-500"
+                      className="h-36 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
                     />
 
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
-                      New
-                    </span>
+                    {/* Top left status badge */}
+                    {item.is_featured ? (
+                      <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                        ★ Featured
+                      </span>
+                    ) : (
+                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
+                        New
+                      </span>
+                    )}
 
+                    {/* Better save button */}
                     <button
                       onClick={(e) => handleToggleSave(e, item.id)}
-                      className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-medium shadow backdrop-blur transition ${
+                      className={`absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold shadow backdrop-blur transition ${
                         savedListingIds.includes(item.id)
                           ? "bg-red-500 text-white"
-                          : "bg-white/90 text-gray-800"
+                          : "bg-white/92 text-gray-800 hover:bg-white"
                       }`}
                     >
-                      <span className="inline-flex items-center gap-1.5">
-                        <Heart size={14} />
-                        {savedListingIds.includes(item.id) ? "Saved" : "Save"}
-                      </span>
+                      <Heart
+                        size={14}
+                        className={savedListingIds.includes(item.id) ? "fill-white" : ""}
+                      />
+                      {savedListingIds.includes(item.id) ? "Saved" : "Save"}
                     </button>
+
+                    {/* Floating price badge */}
+                    <div className="absolute left-3 bottom-3">
+                      <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-sm font-bold shadow">
+                        ${item.price}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="p-3">
+                  <div className="p-3 sm:p-5">
+                    {/* Breeder / seller row */}
+                    <div className="flex items-center gap-2 mb-2 min-w-0">
+                      {item.profiles?.is_breeder && (
+                        <span className="inline-flex shrink-0 rounded-full bg-green-50 text-green-700 px-2.5 py-1 text-[11px] font-medium">
+                          Breeder
+                        </span>
+                      )}
+
+                      {item.profiles?.breeder_verified && (
+                        <span className="inline-flex shrink-0 rounded-full bg-yellow-50 text-yellow-700 px-2.5 py-1 text-[11px] font-medium">
+                          Verified
+                        </span>
+                      )}
+
+                      {(item.profiles?.is_breeder || item.profiles?.breeder_verified) && (
+                        <span className="truncate text-[11px] text-gray-500">
+                          {getSellerLabel(item)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title */}
                     <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
                       {item.title}
                     </h3>
 
-                    <p className="mt-2 text-green-600 font-bold text-[18px]">
-                      ${item.price}
+                    {/* Cleaner location */}
+                    <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
+                      <MapPin size={14} className="shrink-0" />
+                      <span className="truncate">{item.location}</span>
                     </p>
 
-                    <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
-                      <MapPin size={14} />
-                      {item.location}
-                    </p>
-
-                    <div className="mt-3">
-                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                    {/* Footer meta */}
+                    <div className="mt-3 overflow-hidden">
+                      <span className="inline-flex max-w-full truncate text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
                         {item.category || "Pet Listing"}
                       </span>
                     </div>
