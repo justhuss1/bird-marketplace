@@ -342,7 +342,7 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/88 to-[#07111f]/70" />
 
-        <div className="relative px-4 pt-4 pb-3">
+        <div className="relative px-4 pt-4 pb-1">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-medium text-white/85">
               <Sparkles size={12} />
