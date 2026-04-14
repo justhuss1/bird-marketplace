@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Footer from "@/components/Footer";
+
 import {
   Bird,
   Heart,
@@ -24,6 +25,7 @@ import {
   Beef,
   X,
   Sparkles,
+  SlidersHorizontal,
 } from "lucide-react";
 
 type Listing = {
@@ -65,6 +67,7 @@ export default function Home() {
   const [showStickySearch, setShowStickySearch] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement | null>(null);
   const [latestBreederUpdates, setLatestBreederUpdates] = useState<any[]>([]);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const scrollCategoriesLeft = () => {
     categoryScrollRef.current?.scrollBy({ left: -220, behavior: "smooth" });
@@ -339,14 +342,14 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/88 to-[#07111f]/70" />
 
-        <div className="relative px-4 pt-5 pb-5">
+        <div className="relative px-4 pt-4 pb-3">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-medium text-white/85">
               <Sparkles size={12} />
               Browse pets fast
             </div>
 
-            <h1 className="mt-3 text-[22px] font-bold leading-tight text-white">
+            <h1 className="mt-3 text-[20px] font-bold leading-tight text-white">
               Find your next pet
             </h1>
 
@@ -355,8 +358,9 @@ export default function Home() {
             </p>
 
             <div className="mt-4 rounded-[28px] border border-white/10 bg-white/95 p-4 shadow-2xl backdrop-blur">
-              <div className="space-y-3">
-                <div className="relative">
+              {/* COMPACT TOP SEARCH BAR */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
                   <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
                     <Search size={18} className="text-gray-400" />
                     <input
@@ -406,13 +410,52 @@ export default function Home() {
                   )}
                 </div>
 
-                <LocationAutocomplete
-                  value={locationFilter}
-                  onChange={setLocationFilter}
-                  placeholder="Location"
-                />
+                <button
+                  type="button"
+                  onClick={() => setMobileFiltersOpen((prev) => !prev)}
+                  className={`shrink-0 rounded-2xl border px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2 ${
+                    mobileFiltersOpen
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                  }`}
+                >
+                  <SlidersHorizontal size={16} />
+                  Filters
+                </button>
+              </div>
 
-                <div className="grid grid-cols-2 gap-3">
+              {/* EXPANDABLE FILTERS */}
+              {mobileFiltersOpen && (
+                <div className="mt-3 space-y-3">
+                  <LocationAutocomplete
+                    value={locationFilter}
+                    onChange={setLocationFilter}
+                    placeholder="Location"
+                  />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => {
+                        setShowSuggestions(false);
+                        runSearch();
+                      }}
+                      className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-3 text-sm font-semibold transition"
+                    >
+                      Search
+                    </button>
+
+                    <Link href="/create">
+                      <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition">
+                        Post Listing
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* QUICK ACTION ROW */}
+              {!mobileFiltersOpen && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
                   <button
                     onClick={() => {
                       setShowSuggestions(false);
@@ -429,7 +472,7 @@ export default function Home() {
                     </button>
                   </Link>
                 </div>
-              </div>
+              )}
 
               {!searchTerm.trim() && recentSearches.length > 0 && (
                 <div className="mt-4">
@@ -721,7 +764,7 @@ export default function Home() {
 
       {/* FEATURED */}
       {featuredListings.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-6 sm:mt-10">
+        <section className="max-w-7xl mx-auto px-4 -mt-1 sm:mt-10 relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
