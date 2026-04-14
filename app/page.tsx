@@ -99,7 +99,7 @@ export default function Home() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowStickySearch(window.scrollY > 280);
+      setShowStickySearch(window.scrollY > 420);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -1020,41 +1020,29 @@ export default function Home() {
                   </div>
 
                   <div className="p-3 sm:p-4">
-                    {/* Breeder / seller row */}
-                    <div className="flex items-center gap-1.5 mb-2 min-w-0 flex-wrap">
-                      {item.profiles?.is_breeder && (
-                        <span className="inline-flex shrink-0 rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
-                          Breeder
-                        </span>
-                      )}
-
-                      {item.profiles?.breeder_verified && (
-                        <span className="inline-flex shrink-0 rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
-                          Verified
-                        </span>
-                      )}
-
-                      {(item.profiles?.is_breeder || item.profiles?.breeder_verified) && (
-                        <span className="truncate text-[10px] text-gray-500">
-                          {getSellerLabel(item)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Title */}
                     <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
                       {item.title}
                     </h3>
 
-                    {/* Cleaner location */}
                     <p className="mt-1.5 text-sm text-gray-500 flex items-center gap-1.5">
                       <MapPin size={14} className="shrink-0" />
                       <span className="truncate">{item.location}</span>
                     </p>
 
-                    {/* Footer meta */}
-                    <div className="mt-3 overflow-hidden">
-                      <span className="inline-flex max-w-full truncate text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {item.profiles?.is_breeder && (
+                        <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
+                          Breeder
+                        </span>
+                      )}
+
+                      {item.profiles?.breeder_verified && (
+                        <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
+                          Verified
+                        </span>
+                      )}
+
+                      <span className="inline-flex max-w-full truncate rounded-full bg-green-50 text-green-700 px-2.5 py-1 text-[11px]">
                         {item.category || "Pet Listing"}
                       </span>
                     </div>
