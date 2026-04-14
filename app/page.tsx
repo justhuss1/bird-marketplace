@@ -342,22 +342,22 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/88 to-[#07111f]/70" />
 
-        <div className="relative px-4 pt-4 pb-1">
+        <div className="relative px-4 pt-3 pb-1">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-medium text-white/85">
               <Sparkles size={12} />
               Browse pets fast
             </div>
 
-            <h1 className="mt-3 text-[20px] font-bold leading-tight text-white">
+            <h1 className="mt-2 text-[20px] font-bold leading-tight text-white">
               Find your next pet
             </h1>
 
-            <p className="mt-2 text-sm text-white/75">
+            <p className="mt-1.5 text-sm text-white/75">
               Search pets and supplies from trusted sellers across Australia.
             </p>
 
-            <div className="mt-4 rounded-[28px] border border-white/10 bg-white/95 p-4 shadow-2xl backdrop-blur">
+            <div className="mt-3 rounded-[26px] border border-white/10 bg-white/95 p-3.5 shadow-2xl backdrop-blur">
               {/* COMPACT TOP SEARCH BAR */}
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
@@ -455,7 +455,7 @@ export default function Home() {
 
               {/* QUICK ACTION ROW */}
               {!mobileFiltersOpen && (
-                <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="mt-2.5 grid grid-cols-2 gap-2.5">
                   <button
                     onClick={() => {
                       setShowSuggestions(false);
@@ -717,7 +717,7 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="mt-4">
+              <div className="mt-3">
                 <div className="relative">
                   <button
                     type="button"
@@ -764,7 +764,7 @@ export default function Home() {
 
       {/* FEATURED */}
       {featuredListings.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-4 sm:mt-10 relative z-10">
+        <section className="max-w-7xl mx-auto px-4 mt-3 sm:mt-10 relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
