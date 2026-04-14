@@ -1012,30 +1012,30 @@ export default function Home() {
                     </button>
 
                     {/* Floating price badge */}
-                    <div className="absolute left-3 bottom-3">
-                      <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-sm font-bold shadow">
+                    <div className="absolute left-3 bottom-4">
+                      <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
                         ${item.price}
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-3 sm:p-5">
+                  <div className="p-3 sm:p-4">
                     {/* Breeder / seller row */}
-                    <div className="flex items-center gap-2 mb-2 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-2 min-w-0 flex-wrap">
                       {item.profiles?.is_breeder && (
-                        <span className="inline-flex shrink-0 rounded-full bg-green-50 text-green-700 px-2.5 py-1 text-[11px] font-medium">
+                        <span className="inline-flex shrink-0 rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
                           Breeder
                         </span>
                       )}
 
                       {item.profiles?.breeder_verified && (
-                        <span className="inline-flex shrink-0 rounded-full bg-yellow-50 text-yellow-700 px-2.5 py-1 text-[11px] font-medium">
+                        <span className="inline-flex shrink-0 rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
                           Verified
                         </span>
                       )}
 
                       {(item.profiles?.is_breeder || item.profiles?.breeder_verified) && (
-                        <span className="truncate text-[11px] text-gray-500">
+                        <span className="truncate text-[10px] text-gray-500">
                           {getSellerLabel(item)}
                         </span>
                       )}
@@ -1047,7 +1047,7 @@ export default function Home() {
                     </h3>
 
                     {/* Cleaner location */}
-                    <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
+                    <p className="mt-1.5 text-sm text-gray-500 flex items-center gap-1.5">
                       <MapPin size={14} className="shrink-0" />
                       <span className="truncate">{item.location}</span>
                     </p>
