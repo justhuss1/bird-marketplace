@@ -37,7 +37,8 @@ type Listing = {
   category?: string | null;
   is_featured?: boolean | null;
   boost_until?: string | null;
-  attributes?: Record<string, string> | null;
+  attributes?: Record<string, string> | 
+  null;
   user_id?: string;
   profiles?: {
     username?: string | null;
@@ -131,23 +132,50 @@ export default function Home() {
   const fetchListings = async () => {
     const { data, error } = await supabase
       .from("listings")
-      .select(`
-        *,
-        profiles (
-          username,
-          breeder_name,
-          breeder_verified,
-          is_breeder
-        )
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(error);
+      console.error("Listings fetch error:", error);
       return;
     }
 
-    setListings((data || []) as Listing[]);
+    const listingsData = (data || []) as Listing[];
+
+    const userIds = Array.from(
+      new Set(
+        listingsData
+          .map((item) => item.user_id)
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+
+    if (userIds.length === 0) {
+      setListings(listingsData);
+      return;
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, username, breeder_name, breeder_verified, is_breeder")
+      .in("id", userIds);
+
+    if (profileError) {
+      console.error("Profiles fetch error:", profileError);
+      setListings(listingsData);
+      return;
+    }
+
+    const profileMap = new Map(
+      (profileData || []).map((profile) => [profile.id, profile])
+    );
+
+    const mergedListings = listingsData.map((item) => ({
+      ...item,
+      profiles: item.user_id ? profileMap.get(item.user_id) || null : null,
+    }));
+
+    setListings(mergedListings);
   };
 
   const getSellerLabel = (item: Listing) => {
