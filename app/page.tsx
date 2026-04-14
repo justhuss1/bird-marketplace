@@ -883,7 +883,7 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {latestListings.slice(0, 6).map((item) => (
               <Link key={item.id} href={`/listing/${item.id}`}>
                 <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
@@ -895,7 +895,7 @@ export default function Home() {
                           : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
                       }
                       alt={item.title}
-                      className="h-52 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                      className="h-36 sm:h-48 w-full object-cover group-hover:scale-105 transition duration-500"
                     />
 
                     <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
@@ -917,7 +917,7 @@ export default function Home() {
                     </button>
                   </div>
 
-                  <div className="p-5">
+                  <div className="p-3">
                     <div className="flex items-start justify-between gap-3">
                       <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug">
                         {item.title}
