@@ -852,7 +852,7 @@ export default function Home() {
                           : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
                       }
                       alt={item.title}
-                      className="h-36 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                      className="h-40 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
                     />
 
                     {item.is_featured ? (
