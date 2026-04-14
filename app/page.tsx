@@ -764,7 +764,7 @@ export default function Home() {
 
       {/* FEATURED */}
       {featuredListings.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 -mt-1 sm:mt-10 relative z-10">
+        <section className="max-w-7xl mx-auto px-4 mt-4 sm:mt-10 relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
