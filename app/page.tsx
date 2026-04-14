@@ -918,14 +918,14 @@ export default function Home() {
                   </div>
 
                   <div className="p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
                         {item.title}
                       </h3>
 
-                      <span className="text-green-600 font-semibold text-[18px] whitespace-nowrap">
+                      <div className="inline-flex rounded-full bg-green-50 text-green-700 px-3 py-1 text-sm font-bold">
                         ${item.price}
-                      </span>
+                      </div>
                     </div>
 
                     <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
@@ -938,7 +938,7 @@ export default function Home() {
                         {item.category || "Pet Listing"}
                       </span>
 
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-400 hidden sm:inline">
                         View details
                       </span>
                     </div>
