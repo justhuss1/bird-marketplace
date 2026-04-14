@@ -349,7 +349,7 @@ export default function Home() {
               Browse pets fast
             </div>
 
-            <h1 className="mt-2 text-[20px] font-bold leading-tight text-white">
+            <h1 className="mt-2 text-[18px] font-bold leading-tight text-white">
               Find your next pet
             </h1>
 
@@ -361,7 +361,7 @@ export default function Home() {
               {/* COMPACT TOP SEARCH BAR */}
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
-                  <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                  <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2.5">
                     <Search size={18} className="text-gray-400" />
                     <input
                       type="text"
