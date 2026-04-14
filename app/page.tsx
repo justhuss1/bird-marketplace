@@ -918,28 +918,22 @@ export default function Home() {
                   </div>
 
                   <div className="p-3">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
-                        {item.title}
-                      </h3>
+                    <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
+                      {item.title}
+                    </h3>
 
-                      <div className="inline-flex rounded-full bg-green-50 text-green-700 px-3 py-1 text-sm font-bold">
-                        ${item.price}
-                      </div>
-                    </div>
+                    <p className="mt-2 text-green-600 font-bold text-[18px]">
+                      ${item.price}
+                    </p>
 
                     <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
                       <MapPin size={14} />
                       {item.location}
                     </p>
 
-                    <div className="mt-4 flex items-center justify-between gap-3">
+                    <div className="mt-3">
                       <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
                         {item.category || "Pet Listing"}
-                      </span>
-
-                      <span className="text-xs text-gray-400 hidden sm:inline">
-                        View details
                       </span>
                     </div>
                   </div>
