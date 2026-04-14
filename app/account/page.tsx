@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { notifyBreederFollowersOfAnnouncement } from "@/lib/breederAnnouncementNotifications";
-import Footer from "@/components/Footer";
 import {
   BadgeCheck,
   Pencil,
@@ -906,7 +905,6 @@ export default function AccountPage() {
           </section>
         </>
       )}
-      <Footer />
     </main>
   );
 }

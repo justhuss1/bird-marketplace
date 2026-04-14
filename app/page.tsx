@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -23,6 +23,7 @@ import {
   Turtle,
   Beef,
   X,
+  Sparkles,
 } from "lucide-react";
 
 type Listing = {
@@ -304,7 +305,7 @@ export default function Home() {
     router.push(`/search?${params.toString()}`);
   };
 
-  const filteredListings = listings.sort((a, b) => {
+  const filteredListings = [...listings].sort((a, b) => {
     if (a.is_featured && !b.is_featured) return -1;
     if (!a.is_featured && b.is_featured) return 1;
     return 0;
@@ -327,8 +328,190 @@ export default function Home() {
 
   return (
     <main className="bg-gray-50 min-h-screen pb-24">
-      {/* MOBILE-FIRST HERO */}
-      <section className="relative overflow-hidden bg-[#07111f]">
+      {/* MOBILE COMPACT MARKETPLACE HEADER */}
+      <section className="sm:hidden relative overflow-hidden bg-[#07111f]">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-20"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1800&q=80')",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/88 to-[#07111f]/70" />
+
+        <div className="relative px-4 pt-5 pb-5">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-medium text-white/85">
+              <Sparkles size={12} />
+              Browse pets fast
+            </div>
+
+            <h1 className="mt-3 text-[22px] font-bold leading-tight text-white">
+              Find your next pet
+            </h1>
+
+            <p className="mt-2 text-sm text-white/75">
+              Search pets and supplies from trusted sellers across Australia.
+            </p>
+
+            <div className="mt-4 rounded-[28px] border border-white/10 bg-white/95 p-4 shadow-2xl backdrop-blur">
+              <div className="space-y-3">
+                <div className="relative">
+                  <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                    <Search size={18} className="text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search pets, breeds or keywords"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        buildSuggestions(e.target.value);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => {
+                        buildSuggestions(searchTerm);
+                        if (searchTerm.trim()) setShowSuggestions(true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setShowSuggestions(false);
+                          runSearch();
+                        }
+                        if (e.key === "Escape") {
+                          setShowSuggestions(false);
+                        }
+                      }}
+                      className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
+                      {suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => {
+                            setSearchTerm(suggestion);
+                            setShowSuggestions(false);
+                            runSearch(suggestion);
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <LocationAutocomplete
+                  value={locationFilter}
+                  onChange={setLocationFilter}
+                  placeholder="Location"
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      setShowSuggestions(false);
+                      runSearch();
+                    }}
+                    className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-3 text-sm font-semibold transition"
+                  >
+                    Search
+                  </button>
+
+                  <Link href="/create">
+                    <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition">
+                      Post Listing
+                    </button>
+                  </Link>
+                </div>
+              </div>
+
+              {!searchTerm.trim() && recentSearches.length > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className="text-xs font-medium text-gray-500">
+                      Recent searches
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={clearAllRecentSearches}
+                      className="text-xs font-medium text-gray-500 hover:text-gray-800 transition"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((item) => (
+                      <div
+                        key={item}
+                        className="inline-flex items-center rounded-full border border-gray-200 bg-white shadow-sm overflow-hidden"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchTerm(item);
+                            setShowSuggestions(false);
+                            runSearch(item);
+                          }}
+                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          {item}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => removeRecentSearch(item)}
+                          className="pr-3 pl-1 py-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition"
+                          aria-label={`Remove ${item} from recent searches`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4">
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+                  <Link href="/upcoming-litters">
+                    <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 px-4 py-2 text-sm font-medium hover:bg-green-100 transition">
+                      <Sparkles size={14} />
+                      Upcoming Litters
+                    </button>
+                  </Link>
+
+                  {categoryItems.map((cat) => (
+                    <button
+                      key={cat.name}
+                      onClick={() => {
+                        const params = new URLSearchParams();
+                        params.set("category", cat.name);
+                        params.set("sortBy", "newest");
+                        router.push(`/search?${params.toString()}`);
+                      }}
+                      className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      <cat.icon size={15} />
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* DESKTOP HERO */}
+      <section className="hidden sm:block relative overflow-hidden bg-[#07111f]">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-25"
           style={{
@@ -338,23 +521,22 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#07111f]/95 via-[#07111f]/80 to-[#07111f]/35" />
 
-        <div className="relative max-w-7xl mx-auto px-4 pt-6 pb-8 sm:pt-8 sm:pb-10 lg:pt-14 lg:pb-14">
+        <div className="relative max-w-7xl mx-auto px-4 pt-8 pb-10 lg:pt-14 lg:pb-14">
           <div className="max-w-3xl">
-            <div className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur mb-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur mb-4">
               <ShieldCheck size={14} />
               Trusted pet marketplace across Australia
             </div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight text-white">
+            <h1 className="text-5xl lg:text-6xl font-bold leading-tight tracking-tight text-white">
               Find your next pet
             </h1>
 
-            <p className="mt-3 text-sm sm:text-lg text-white/80 max-w-2xl">
+            <p className="mt-3 text-lg text-white/80 max-w-2xl">
               Browse pets and supplies from verified sellers across Australia.
             </p>
 
-            {/* DESKTOP BUTTONS */}
-            <div className="hidden sm:flex mt-6 gap-3">
+            <div className="mt-6 flex gap-3">
               <button
                 onClick={() => runSearch()}
                 className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md"
@@ -367,10 +549,15 @@ export default function Home() {
                   Post a Listing
                 </button>
               </Link>
+
+              <Link href="/upcoming-litters">
+                <button className="rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white px-5 py-3 text-sm font-semibold transition">
+                  Upcoming Litters
+                </button>
+              </Link>
             </div>
 
-            <div className="mt-6 sm:mt-8 rounded-[28px] border border-white/10 bg-white/95 p-4 sm:p-5 shadow-2xl backdrop-blur max-w-4xl">
-              {/* TOP SEARCH ROW */}
+            <div className="mt-8 rounded-[28px] border border-white/10 bg-white/95 p-5 shadow-2xl backdrop-blur max-w-4xl">
               <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr_auto] gap-3 items-start">
                 <div className="relative">
                   <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
@@ -439,11 +626,12 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* RECENT SEARCHES */}
               {!searchTerm.trim() && recentSearches.length > 0 && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between gap-3 mb-2">
-                    <p className="text-xs font-medium text-gray-500">Recent searches</p>
+                    <p className="text-xs font-medium text-gray-500">
+                      Recent searches
+                    </p>
 
                     <button
                       type="button"
@@ -486,16 +674,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* MOBILE QUICK ACTION */}
-              <div className="mt-3 sm:hidden">
-                <Link href="/create">
-                  <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition">
-                    Post a Listing
-                  </button>
-                </Link>
-              </div>
-
-              {/* CATEGORY CHIPS */}
               <div className="mt-4">
                 <div className="relative">
                   <button
@@ -543,7 +721,7 @@ export default function Home() {
 
       {/* FEATURED */}
       {featuredListings.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-8 sm:mt-10">
+        <section className="max-w-7xl mx-auto px-4 mt-6 sm:mt-10">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
@@ -743,6 +921,12 @@ export default function Home() {
                 Follow breeders to get notified about upcoming litters and new availability.
               </p>
             </div>
+
+            <Link href="/upcoming-litters">
+              <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition self-start sm:self-auto">
+                View all →
+              </button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -882,20 +1066,22 @@ export default function Home() {
             across Australia.
           </p>
 
-          <div className="mt-6">
+          <div className="mt-6 flex flex-col sm:flex-row gap-3">
             <Link href="/create">
               <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md">
                 Post Your Listing
               </button>
             </Link>
+
+            <Link href="/upcoming-litters">
+              <button className="rounded-2xl border border-gray-200 bg-white/10 hover:bg-white/20 text-white px-5 py-3 text-sm font-semibold transition">
+                Upcoming Litters
+              </button>
+            </Link>
           </div>
-          <Link href="/upcoming-litters">
-            <button className="rounded-2xl border border-gray-200 bg-white/10 hover:bg-white/20 text-white px-5 py-3 text-sm font-semibold transition">
-              Upcoming Litters
-            </button>
-          </Link>
         </div>
       </section>
+
       {showStickySearch && (
         <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
           <div className="max-w-7xl mx-auto">
@@ -929,6 +1115,7 @@ export default function Home() {
           </div>
         </div>
       )}
+
       <Footer />
     </main>
   );
