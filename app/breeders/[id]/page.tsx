@@ -13,6 +13,7 @@ import {
   UserPlus,
   UserCheck,
   BadgeCheck,
+  CalendarDays,
 } from "lucide-react";
 
 type Profile = {
@@ -36,6 +37,15 @@ type Listing = {
   created_at?: string | null;
 };
 
+type Announcement = {
+  id: string;
+  title: string;
+  content: string;
+  post_type: string;
+  expected_date?: string | null;
+  created_at?: string | null;
+};
+
 export default function BreederProfilePage() {
   const params = useParams();
   const router = useRouter();
@@ -43,12 +53,19 @@ export default function BreederProfilePage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [followerCount, setFollowerCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
-  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (breederId) {
+      fetchData();
+    }
+  }, [breederId]);
 
   const formatPostType = (postType: string) => {
     if (postType === "upcoming_litter") return "Upcoming Litter";
@@ -66,11 +83,85 @@ export default function BreederProfilePage() {
     });
   };
 
-  useEffect(() => {
-    if (breederId) {
-      fetchData();
+  const formatJoinedDate = (date?: string | null) => {
+    if (!date) return "Recently joined";
+
+    return `Member since ${new Date(date).toLocaleDateString(undefined, {
+      month: "short",
+      year: "numeric",
+    })}`;
+  };
+
+  const fetchSavedListings = async (currentUserId?: string | null) => {
+    const resolvedUserId = currentUserId ?? userId;
+
+    if (!resolvedUserId) {
+      setSavedListingIds([]);
+      return;
     }
-  }, [breederId]);
+
+    const { data, error } = await supabase
+      .from("saved_listings")
+      .select("listing_id")
+      .eq("user_id", resolvedUserId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setSavedListingIds((data || []).map((item) => item.listing_id));
+  };
+
+  const handleToggleSave = async (
+    e: React.MouseEvent,
+    listingId: string
+  ) => {
+    e.preventDefault();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("Please log in to save listings.");
+      router.push("/login");
+      return;
+    }
+
+    const isSaved = savedListingIds.includes(listingId);
+
+    if (isSaved) {
+      const { error } = await supabase
+        .from("saved_listings")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("listing_id", listingId);
+
+      if (error) {
+        console.error(error);
+        alert("Failed to remove saved listing");
+        return;
+      }
+
+      setSavedListingIds((prev) => prev.filter((id) => id !== listingId));
+    } else {
+      const { error } = await supabase.from("saved_listings").insert([
+        {
+          user_id: user.id,
+          listing_id: listingId,
+        },
+      ]);
+
+      if (error) {
+        console.error(error);
+        alert("Failed to save listing");
+        return;
+      }
+
+      setSavedListingIds((prev) => [...prev, listingId]);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -79,7 +170,8 @@ export default function BreederProfilePage() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    setUserId(user?.id || null);
+    const currentUserId = user?.id || null;
+    setUserId(currentUserId);
 
     const { data: announcementData, error: announcementError } = await supabase
       .from("breeder_announcements")
@@ -90,7 +182,7 @@ export default function BreederProfilePage() {
     if (announcementError) {
       console.error(announcementError);
     } else {
-      setAnnouncements(announcementData || []);
+      setAnnouncements((announcementData || []) as Announcement[]);
     }
 
     const { data: profileData, error: profileError } = await supabase
@@ -130,11 +222,11 @@ export default function BreederProfilePage() {
       setFollowerCount(count || 0);
     }
 
-    if (user) {
+    if (currentUserId) {
       const { data: follow, error: followError } = await supabase
         .from("follows")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", currentUserId)
         .eq("breeder_id", breederId)
         .maybeSingle();
 
@@ -143,6 +235,10 @@ export default function BreederProfilePage() {
       }
 
       setIsFollowing(!!follow);
+      await fetchSavedListings(currentUserId);
+    } else {
+      setIsFollowing(false);
+      setSavedListingIds([]);
     }
 
     setLoading(false);
@@ -198,15 +294,6 @@ export default function BreederProfilePage() {
     }
 
     setFollowLoading(false);
-  };
-
-  const formatJoinedDate = (date?: string | null) => {
-    if (!date) return "Recently joined";
-
-    return `Member since ${new Date(date).toLocaleDateString(undefined, {
-      month: "short",
-      year: "numeric",
-    })}`;
   };
 
   if (loading) {
@@ -398,7 +485,8 @@ export default function BreederProfilePage() {
                     {post.content}
                   </p>
 
-                  <p className="mt-4 text-xs text-gray-400">
+                  <p className="mt-4 text-xs text-gray-400 inline-flex items-center gap-1">
+                    <CalendarDays size={12} />
                     Posted {formatDate(post.created_at)}
                   </p>
                 </article>
@@ -444,39 +532,70 @@ export default function BreederProfilePage() {
                             : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
                         }
                         alt={item.title}
-                        className="h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                        className="h-52 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
                       />
 
-                      {item.is_featured && (
+                      {item.is_featured ? (
                         <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
                           ★ Featured
                         </span>
+                      ) : (
+                        <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
+                          New
+                        </span>
                       )}
-                    </div>
 
-                    <div className="p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug">
-                          {item.title}
-                        </h3>
+                      <button
+                        onClick={(e) => handleToggleSave(e, item.id)}
+                        className={`absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold shadow backdrop-blur transition ${
+                          savedListingIds.includes(item.id)
+                            ? "bg-red-500 text-white"
+                            : "bg-white/92 text-gray-800 hover:bg-white"
+                        }`}
+                      >
+                        <Heart
+                          size={14}
+                          className={savedListingIds.includes(item.id) ? "fill-white" : ""}
+                        />
+                        {savedListingIds.includes(item.id) ? "Saved" : "Save"}
+                      </button>
 
-                        <span className="text-green-600 font-semibold text-[18px] whitespace-nowrap">
+                      <div className="absolute left-3 bottom-4">
+                        <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
                           ${item.price}
                         </span>
                       </div>
+                    </div>
 
-                      <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
-                        <MapPin size={14} />
-                        {item.location}
-                      </p>
-
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                          {item.category || "Pet Listing"}
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
+                          Breeder
                         </span>
 
-                        <span className="text-xs text-gray-400">
-                          View details
+                        {profile.breeder_verified && (
+                          <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
+                            Verified
+                          </span>
+                        )}
+
+                        <span className="truncate text-[10px] text-gray-500">
+                          {breederDisplayName}
+                        </span>
+                      </div>
+
+                      <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-2 leading-snug min-h-[46px]">
+                        {item.title}
+                      </h3>
+
+                      <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
+                        <MapPin size={14} className="shrink-0" />
+                        <span className="truncate">{item.location}</span>
+                      </p>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex max-w-full truncate text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                          {item.category || "Pet Listing"}
                         </span>
                       </div>
                     </div>
