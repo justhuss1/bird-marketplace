@@ -36,6 +36,12 @@ type Listing = {
   created_at?: string;
   attributes?: Record<string, string> | null;
   view_count?: number | null;
+  profiles?: {
+    username?: string | null;
+    breeder_name?: string | null;
+    breeder_verified?: boolean | null;
+    is_breeder?: boolean | null;
+  } | null;
 };
 
 type SellerProfile = {
@@ -215,7 +221,42 @@ export default function ListingPage() {
       return;
     }
 
-    setSimilarListings((data || []) as Listing[]);
+    const listingsData = (data || []) as Listing[];
+
+    const userIds = Array.from(
+      new Set(
+        listingsData
+          .map((item) => item.user_id)
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+
+    if (userIds.length === 0) {
+      setSimilarListings(listingsData);
+      return;
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, username, breeder_name, breeder_verified, is_breeder")
+      .in("id", userIds);
+
+    if (profileError) {
+      console.error(profileError);
+      setSimilarListings(listingsData);
+      return;
+    }
+
+    const profileMap = new Map(
+      (profileData || []).map((profile) => [profile.id, profile])
+    );
+
+    const mergedListings = listingsData.map((item) => ({
+      ...item,
+      profiles: item.user_id ? profileMap.get(item.user_id) || null : null,
+    }));
+
+    setSimilarListings(mergedListings);
   };
 
   const fetchListing = async () => {
@@ -319,6 +360,14 @@ export default function ListingPage() {
 
       setIsSaved(true);
     }
+  };
+
+  const getSellerLabel = (item: Listing) => {
+    return (
+      item.profiles?.breeder_name ||
+      item.profiles?.username ||
+      "Seller"
+    );
   };
 
   const handleShareListing = async () => {
@@ -918,30 +967,55 @@ export default function ListingPage() {
                         className="h-52 w-full object-cover group-hover:scale-105 transition duration-500"
                       />
 
-                      {item.is_featured && (
+                      {item.is_featured ? (
                         <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
                           ★ Featured
                         </span>
+                      ) : (
+                        <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
+                          New
+                        </span>
                       )}
-                    </div>
 
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-1">
-                          {item.title}
-                        </h3>
-                        <span className="text-green-600 font-semibold whitespace-nowrap">
+                      <div className="absolute left-3 bottom-4">
+                        <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
                           ${item.price}
                         </span>
                       </div>
+                    </div>
 
-                      <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
-                        <MapPin size={14} />
-                        {item.location}
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-2 min-w-0 flex-wrap">
+                        {item.profiles?.is_breeder && (
+                          <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
+                            Breeder
+                          </span>
+                        )}
+
+                        {item.profiles?.breeder_verified && (
+                          <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
+                            Verified
+                          </span>
+                        )}
+
+                        {(item.profiles?.is_breeder || item.profiles?.breeder_verified) && (
+                          <span className="truncate text-[10px] text-gray-500">
+                            {getSellerLabel(item)}
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-2 leading-snug min-h-[46px]">
+                        {item.title}
+                      </h3>
+
+                      <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
+                        <MapPin size={14} className="shrink-0" />
+                        <span className="truncate">{item.location}</span>
                       </p>
 
-                      <div className="mt-3">
-                        <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex max-w-full truncate text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
                           {item.category || "Pet Listing"}
                         </span>
                       </div>
