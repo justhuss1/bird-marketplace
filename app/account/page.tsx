@@ -14,6 +14,10 @@ import {
   X,
   Sparkles,
   ArrowRight,
+  LayoutDashboard,
+  Heart,
+  MessageCircle,
+  Bell,
 } from "lucide-react";
 
 type Profile = {
@@ -52,7 +56,7 @@ export default function AccountPage() {
   const [myAnnouncements, setMyAnnouncements] = useState<Announcement[]>([]);
   const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
 
-  const [profileEditOpen, setProfileEditOpen] = useState(false);
+  const [profileEditOpen, setProfileEditOpen] = useState(true);
   const [breederEditOpen, setBreederEditOpen] = useState(false);
 
   useEffect(() => {
@@ -124,8 +128,10 @@ export default function AccountPage() {
     setBreederBio(data?.breeder_bio || "");
 
     if (data?.is_breeder) {
+      setProfileEditOpen(false);
       await fetchMyAnnouncements(data.id);
     } else {
+      setProfileEditOpen(true);
       setMyAnnouncements([]);
     }
 
@@ -407,7 +413,7 @@ export default function AccountPage() {
 
                   <span className="inline-flex items-center gap-1 rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-medium text-white/80">
                     <UserCircle2 size={12} />
-                    Standard Profile
+                    {profile.is_breeder ? "Marketplace Account" : "Standard Profile"}
                   </span>
 
                   {profile.is_breeder && (
@@ -491,6 +497,78 @@ export default function AccountPage() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="mt-8 bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+            Marketplace
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-gray-900">
+            Quick Access
+          </h2>
+          <p className="mt-3 text-sm text-gray-500">
+            Jump straight to the parts of the marketplace you use most.
+          </p>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <Link href="/my-listings">
+            <div className="rounded-3xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-md transition p-5">
+              <div className="w-11 h-11 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-green-600">
+                <LayoutDashboard size={18} />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-gray-900">
+                My Listings
+              </h3>
+              <p className="mt-2 text-sm text-gray-500 leading-6">
+                Manage your active ads and drafts.
+              </p>
+            </div>
+          </Link>
+
+          <Link href="/saved-listings">
+            <div className="rounded-3xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-md transition p-5">
+              <div className="w-11 h-11 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-green-600">
+                <Heart size={18} />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-gray-900">
+                Saved Listings
+              </h3>
+              <p className="mt-2 text-sm text-gray-500 leading-6">
+                Revisit listings you want to keep an eye on.
+              </p>
+            </div>
+          </Link>
+
+          <Link href="/messages">
+            <div className="rounded-3xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-md transition p-5">
+              <div className="w-11 h-11 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-green-600">
+                <MessageCircle size={18} />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-gray-900">
+                Messages
+              </h3>
+              <p className="mt-2 text-sm text-gray-500 leading-6">
+                Continue chats with buyers and sellers.
+              </p>
+            </div>
+          </Link>
+
+          <Link href="/notifications">
+            <div className="rounded-3xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-md transition p-5">
+              <div className="w-11 h-11 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-green-600">
+                <Bell size={18} />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-gray-900">
+                Notifications
+              </h3>
+              <p className="mt-2 text-sm text-gray-500 leading-6">
+                Keep up with updates, follows, and activity.
+              </p>
+            </div>
+          </Link>
         </div>
       </section>
 
