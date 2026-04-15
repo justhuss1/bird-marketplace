@@ -13,6 +13,7 @@ import {
   PlusSquare,
   LayoutDashboard,
   LogOut,
+  UserCircle2
 } from "lucide-react";
 
 type Profile = {
@@ -236,8 +237,10 @@ export default function TopNavbar() {
                       
                       <Link
                         href="/account"
-                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
                       >
+                        <UserCircle2 size={16} />
                         My Account
                       </Link>
 
