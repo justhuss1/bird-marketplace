@@ -145,6 +145,8 @@ export default function ListingPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
   const touchEndXRef = useRef<number | null>(null);
+  const mainTouchStartXRef = useRef<number | null>(null);
+  const mainTouchEndXRef = useRef<number | null>(null);
   
 
   useEffect(() => {
@@ -520,6 +522,34 @@ export default function ListingPage() {
     setSelectedImage(galleryImages[nextIndex]);
   };
 
+  const handleMainGalleryTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    mainTouchStartXRef.current = e.changedTouches[0].clientX;
+    mainTouchEndXRef.current = null;
+  };
+
+  const handleMainGalleryTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    mainTouchEndXRef.current = e.changedTouches[0].clientX;
+  };
+
+  const handleMainGalleryTouchEnd = () => {
+    const startX = mainTouchStartXRef.current;
+    const endX = mainTouchEndXRef.current;
+
+    if (startX === null || endX === null) return;
+
+    const distance = startX - endX;
+    const swipeThreshold = 50;
+
+    if (distance > swipeThreshold) {
+      goToNextImage();
+    } else if (distance < -swipeThreshold) {
+      goToPrevImage();
+    }
+
+    mainTouchStartXRef.current = null;
+    mainTouchEndXRef.current = null;
+  };
+
   const openLightbox = () => {
     if (!selectedImage) return;
     setLightboxOpen(true);
@@ -639,7 +669,12 @@ export default function ListingPage() {
         <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1.35fr_0.9fr] gap-6">
           <div className="space-y-5">
             <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
-              <div className="relative overflow-hidden">
+              <div
+                className="relative overflow-hidden"
+                onTouchStart={handleMainGalleryTouchStart}
+                onTouchMove={handleMainGalleryTouchMove}
+                onTouchEnd={handleMainGalleryTouchEnd}
+              >
                 <button
                   type="button"
                   onClick={openLightbox}
@@ -673,14 +708,14 @@ export default function ListingPage() {
                   <>
                     <button
                       onClick={goToPrevImage}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow flex items-center justify-center hover:bg-white transition"
+                      className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow items-center justify-center hover:bg-white transition"
                     >
                       <ChevronLeft size={18} />
                     </button>
 
                     <button
                       onClick={goToNextImage}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow flex items-center justify-center hover:bg-white transition"
+                      className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow items-center justify-center hover:bg-white transition"
                     >
                       <ChevronRight size={18} />
                     </button>
