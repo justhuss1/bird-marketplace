@@ -27,9 +27,18 @@ type Listing = {
   boost_until?: string | null;
   attributes?: Record<string, string> | null;
   created_at?: string;
+  user_id?: string;
   latitude?: number | null;
   longitude?: number | null;
+  profiles?: {
+    username?: string | null;
+    breeder_name?: string | null;
+    breeder_verified?: boolean | null;
+    is_breeder?: boolean | null;
+  } | null;
 };
+
+
 
 type CategoryField = {
   key: string;
@@ -308,12 +317,49 @@ export default function SearchPageClient() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(error);
+      console.error("Listings fetch error:", error);
       setLoading(false);
       return;
     }
 
-    setListings((data || []) as Listing[]);
+    const listingsData = (data || []) as Listing[];
+
+    const userIds = Array.from(
+      new Set(
+        listingsData
+          .map((item) => item.user_id)
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+
+    if (userIds.length === 0) {
+      setListings(listingsData);
+      setLoading(false);
+      return;
+    }
+
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, username, breeder_name, breeder_verified, is_breeder")
+      .in("id", userIds);
+
+    if (profileError) {
+      console.error("Profiles fetch error:", profileError);
+      setListings(listingsData);
+      setLoading(false);
+      return;
+    }
+
+    const profileMap = new Map(
+      (profileData || []).map((profile) => [profile.id, profile])
+    );
+
+    const mergedListings = listingsData.map((item) => ({
+      ...item,
+      profiles: item.user_id ? profileMap.get(item.user_id) || null : null,
+    }));
+
+    setListings(mergedListings);
     setLoading(false);
   };
 
@@ -387,6 +433,14 @@ export default function SearchPageClient() {
 
       setSavedListingIds((prev) => [...prev, listingId]);
     }
+  };
+
+  const getSellerLabel = (item: Listing) => {
+    return (
+      item.profiles?.breeder_name ||
+      item.profiles?.username ||
+      "Seller"
+    );
   };
 
   const handleAttributeFilterChange = (key: string, value: string) => {
@@ -1018,7 +1072,7 @@ export default function SearchPageClient() {
                               : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
                           }
                           alt={item.title}
-                          className="h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                          className="h-52 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
                         />
 
                         {item.is_featured ? (
@@ -1033,48 +1087,53 @@ export default function SearchPageClient() {
 
                         <button
                           onClick={(e) => handleToggleSave(e, item.id)}
-                          className={`absolute top-3 right-3 text-xs px-3 py-1 rounded-full font-medium shadow backdrop-blur transition ${
+                          className={`absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold shadow backdrop-blur transition ${
                             savedListingIds.includes(item.id)
                               ? "bg-red-500 text-white"
-                              : "bg-white/90 text-gray-800"
+                              : "bg-white/92 text-gray-800 hover:bg-white"
                           }`}
                         >
-                          <span className="inline-flex items-center gap-1.5">
-                            <Heart size={14} />
-                            {savedListingIds.includes(item.id) ? "Saved" : "Save"}
-                          </span>
+                          <Heart
+                            size={14}
+                            className={savedListingIds.includes(item.id) ? "fill-white" : ""}
+                          />
+                          {savedListingIds.includes(item.id) ? "Saved" : "Save"}
                         </button>
-                      </div>
 
-                      <div className="p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-1 leading-snug">
-                            {item.title}
-                          </h3>
-
-                          <span className="text-green-600 font-semibold text-[18px] whitespace-nowrap">
+                        <div className="absolute left-3 bottom-4">
+                          <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
                             ${item.price}
                           </span>
                         </div>
+                      </div>
 
-                        <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
-                          <MapPin size={14} />
-                          {item.location}
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-2 min-w-0 flex-wrap">
+                          {item.profiles?.is_breeder && (
+                            <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
+                              Breeder
+                            </span>
+                          )}
+
+                          {item.profiles?.breeder_verified && (
+                            <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
+                              Verified
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-2 leading-snug min-h-[46px]">
+                          {item.title}
+                        </h3>
+
+                        <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
+                          <MapPin size={14} className="shrink-0" />
+                          <span className="truncate">{item.location}</span>
                         </p>
 
-                        {distanceLabel && (
-                          <p className="mt-1 text-xs text-gray-400">
-                            {distanceLabel}
-                          </p>
-                        )}
-
-                        <div className="mt-4 flex items-center justify-between gap-3">
-                          <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className="inline-flex max-w-full truncate text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
                             {item.category || "Pet Listing"}
-                          </span>
-
-                          <span className="text-xs text-gray-400">
-                            View details
                           </span>
                         </div>
                       </div>
