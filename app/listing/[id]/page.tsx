@@ -758,76 +758,82 @@ export default function ListingPage() {
             </section>
           </div>
 
-          <div className="space-y-5">
-            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Contact Seller
-                  </h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Start a conversation about this listing
-                  </p>
-                </div>
-
-                <div className="bg-green-50 text-green-700 text-xs font-medium px-3 py-1 rounded-full">
-                  Secure chat
-                </div>
-              </div>
-
-              <div className="mt-5 rounded-3xl border border-green-100 bg-gradient-to-br from-green-50 to-white p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-white border border-green-100 flex items-center justify-center shrink-0">
-                    <MessageCircle size={18} className="text-green-600" />
+          <div className="space-y-5 xl:sticky xl:top-24 self-start">
+            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Contact Seller
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Start a conversation about this listing
+                    </p>
                   </div>
 
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      Message the seller directly
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1 leading-6">
-                      Ask about availability, pickup, health details, inclusions, or negotiate before committing.
-                    </p>
+                  <div className="bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-full">
+                    Secure chat
                   </div>
                 </div>
               </div>
 
-              <button
-                onClick={handleMessageSeller}
-                className="w-full mt-5 rounded-2xl bg-green-600 hover:bg-green-700 text-white py-3.5 text-sm font-semibold transition shadow-md hover:shadow-lg"
-              >
-                Message Seller
-              </button>
+              <div className="p-6">
+                <div className="rounded-3xl border border-green-100 bg-gradient-to-br from-green-50 to-white p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-white border border-green-100 flex items-center justify-center shrink-0">
+                      <MessageCircle size={18} className="text-green-600" />
+                    </div>
 
-              <button
-                onClick={handleShareListing}
-                className="w-full mt-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 py-3.5 text-sm font-semibold transition"
-              >
-                Share Listing
-              </button>
-
-              <div className="mt-5 grid grid-cols-1 gap-3">
-                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
-                  <ShieldCheck size={16} className="text-green-600 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      Safe in-app messaging
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Keep conversations secure inside the platform
-                    </p>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        Message the seller directly
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1 leading-6">
+                        Ask about availability, health details, inclusions, pickup, or negotiate before committing.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
-                  <MessageCircle size={16} className="text-green-600 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      Direct buyer and seller chat
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Ask questions before arranging pickup or payment
-                    </p>
+                <div className="mt-5 space-y-3">
+                  <button
+                    onClick={handleMessageSeller}
+                    className="w-full rounded-2xl bg-green-600 hover:bg-green-700 text-white py-3.5 text-sm font-semibold transition shadow-md hover:shadow-lg"
+                  >
+                    Message Seller
+                  </button>
+
+                  <button
+                    onClick={handleShareListing}
+                    className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 py-3.5 text-sm font-semibold transition"
+                  >
+                    Share Listing
+                  </button>
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-3">
+                  <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
+                    <ShieldCheck size={16} className="text-green-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Safe in-app messaging
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Keep conversations secure inside the platform
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-gray-50 px-4 py-3 flex items-center gap-3">
+                    <MessageCircle size={16} className="text-green-600 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        Fast direct contact
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Reach the seller without leaving the platform
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
