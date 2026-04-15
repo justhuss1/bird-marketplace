@@ -727,80 +727,97 @@ export default function ListingPage() {
             </section>
 
             <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    {listing.category && (
-                      <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-                        🐾 {listing.category}
-                      </span>
-                    )}
-
-                    {seller?.is_breeder && (
-                      <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-                        Breeder Listing
-                      </span>
-                    )}
-
-                    <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
-                      Available now
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {listing.category && (
+                    <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
+                      🐾 {listing.category}
                     </span>
+                  )}
 
-                    {listing.boost_until &&
-                      new Date(listing.boost_until) > new Date() && (
-                        <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">
-                          Boosted
-                        </span>
-                      )}
+                  {seller?.is_breeder && (
+                    <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
+                      Breeder Listing
+                    </span>
+                  )}
+
+                  <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                    Available now
+                  </span>
+
+                  {listing.boost_until &&
+                    new Date(listing.boost_until) > new Date() && (
+                      <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">
+                        Boosted
+                      </span>
+                    )}
+                </div>
+
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+                  <div className="min-w-0">
+                    <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-gray-900">
+                      {listing.title}
+                    </h1>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin size={15} />
+                        {listing.location}
+                      </span>
+
+                      <span className="inline-flex items-center gap-1.5">
+                        <CalendarDays size={15} />
+                        {formatPostedDate(listing.created_at)}
+                      </span>
+
+                      <span className="inline-flex items-center gap-1.5">
+                        <Eye size={15} />
+                        {listing.view_count || 0} views
+                      </span>
+                    </div>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-gray-900">
-                    {listing.title}
-                  </h1>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
-                    <span className="inline-flex items-center gap-1.5">
-                      <MapPin size={15} />
-                      {listing.location}
-                    </span>
-
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarDays size={15} />
-                      {formatPostedDate(listing.created_at)}
-                    </span>
-
-                    <span className="inline-flex items-center gap-1.5">
-                      <Eye size={15} />
-                      {listing.view_count || 0} views
-                    </span>
+                  <div className="shrink-0">
+                    <div className="rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4">
+                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
+                        Price
+                      </p>
+                      <p className="mt-2 text-3xl font-bold text-gray-900">
+                        ${listing.price}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-5 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-3xl font-bold text-gray-900">
-                      ${listing.price}
-                    </p>
-                  </div>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={handleToggleSave}
+                    className={`rounded-2xl px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2 ${
+                      isSaved
+                        ? "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                        : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Heart size={16} className={isSaved ? "fill-current" : ""} />
+                    {isSaved ? "Saved" : "Save listing"}
+                  </button>
+
+                  <button
+                    onClick={handleShareListing}
+                    className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
+                  >
+                    <Share2 size={16} />
+                    Share
+                  </button>
+
+                  <button
+                    onClick={handleReportListing}
+                    className="rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
+                  >
+                    <Flag size={16} />
+                    Report
+                  </button>
                 </div>
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                <button
-                  onClick={handleShareListing}
-                  className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-medium transition inline-flex items-center gap-2"
-                >
-                  <Share2 size={16} />
-                  Share listing
-                </button>
-
-                <button
-                  onClick={handleReportListing}
-                  className="rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 text-sm font-medium transition inline-flex items-center gap-2"
-                >
-                  <Flag size={16} />
-                  Report listing
-                </button>
               </div>
 
               {listing.attributes && Object.keys(listing.attributes).length > 0 && (
