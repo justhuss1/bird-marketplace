@@ -865,8 +865,8 @@ export default function ListingPage() {
             </section>
           </div>
 
-          <div className="space-y-5 xl:sticky xl:top-24 self-start">
-            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex flex-col space-y-5 xl:sticky xl:top-24 self-start">
+            <section className="order-2 xl:order-1 bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -946,7 +946,7 @@ export default function ListingPage() {
               </div>
             </section>
 
-            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
+            <section className="order-1 xl:order-2 bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
 
               {/* HEADER */}
               <div className="bg-gradient-to-r from-[#07111f] via-[#102038] to-[#1b2e4a] px-5 py-5 text-white">
