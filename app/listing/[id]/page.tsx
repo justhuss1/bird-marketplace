@@ -789,7 +789,7 @@ export default function ListingPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
                   <button
                     onClick={handleToggleSave}
                     className={`rounded-2xl px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2 ${
@@ -1167,25 +1167,37 @@ export default function ListingPage() {
       {/* STICKY MOBILE CTA */}
       <div className="fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur md:hidden">
         <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-gray-500">
+                Price
+              </p>
+              <p className="text-lg font-bold text-gray-900">
+                ${listing.price}
+              </p>
+            </div>
+
             <button
               onClick={handleToggleSave}
-              className={`flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition min-w-[110px] ${
+              className={`flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                 isSaved
                   ? "bg-red-50 text-red-600 border border-red-200"
                   : "bg-gray-100 text-gray-800 border border-gray-200"
               }`}
             >
-              {isSaved ? "Saved" : "Save"}
-            </button>
-
-            <button
-              onClick={handleMessageSeller}
-              className="flex-1 rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md"
-            >
-              Message Seller
+              <span className="inline-flex items-center gap-2">
+                <Heart size={15} className={isSaved ? "fill-current" : ""} />
+                {isSaved ? "Saved" : "Save"}
+              </span>
             </button>
           </div>
+
+          <button
+            onClick={handleMessageSeller}
+            className="w-full rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3.5 text-sm font-semibold transition shadow-md"
+          >
+            Message Seller
+          </button>
         </div>
       </div>
       {lightboxOpen && (
