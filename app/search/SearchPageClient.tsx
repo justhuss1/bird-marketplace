@@ -1085,21 +1085,6 @@ export default function SearchPageClient() {
                           </span>
                         )}
 
-                        <button
-                          onClick={(e) => handleToggleSave(e, item.id)}
-                          className={`absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold shadow backdrop-blur transition ${
-                            savedListingIds.includes(item.id)
-                              ? "bg-red-500 text-white"
-                              : "bg-white/92 text-gray-800 hover:bg-white"
-                          }`}
-                        >
-                          <Heart
-                            size={14}
-                            className={savedListingIds.includes(item.id) ? "fill-white" : ""}
-                          />
-                          {savedListingIds.includes(item.id) ? "Saved" : "Save"}
-                        </button>
-
                         <div className="absolute left-3 bottom-4">
                           <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
                             ${item.price}
