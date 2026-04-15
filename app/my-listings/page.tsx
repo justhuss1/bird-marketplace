@@ -28,6 +28,8 @@ type Listing = {
   is_featured?: boolean | null;
   boost_until?: string | null;
   created_at?: string;
+  expires_at?: string | null;
+  is_expired?: boolean | null;
 };
 
 export default function MyListingsPage() {
@@ -91,6 +93,27 @@ export default function MyListingsPage() {
     setListings((prev) => prev.filter((listing) => listing.id !== listingId));
   };
 
+  const handleRenewListing = async (listingId: string) => {
+  const { error } = await supabase
+    .from("listings")
+    .update({
+      expires_at: new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      is_expired: false,
+    })
+    .eq("id", listingId);
+
+  if (error) {
+    console.error(error);
+    alert("Could not renew listing.");
+    return;
+  }
+
+  alert("Listing renewed for 30 days.");
+  fetchMyListings();
+};
+
   const handleCheckout = async (type: "feature" | "boost", listingId: string) => {
     try {
       const res = await fetch("/api/checkout", {
@@ -130,6 +153,21 @@ export default function MyListingsPage() {
       month: "short",
       day: "numeric",
     })}`;
+  };
+
+  const isListingExpired = (listing: Listing) => {
+    if (!listing.expires_at) return false;
+    return new Date(listing.expires_at).getTime() <= Date.now();
+  };
+
+  const formatExpiryDate = (date?: string | null) => {
+    if (!date) return "No expiry date";
+
+    return new Date(date).toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   if (loading) {
@@ -249,11 +287,10 @@ export default function MyListingsPage() {
                 Seller Inventory
               </p>
               <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
-                Your active listings
+                Your listings
               </h2>
               <p className="mt-2 text-sm text-gray-500 max-w-2xl">
-                Edit, review, promote, or remove your current marketplace
-                listings.
+                Edit, review, promote, renew, or remove your marketplace listings.
               </p>
             </div>
           </div>
@@ -285,6 +322,7 @@ export default function MyListingsPage() {
                 const isBoosted =
                   !!listing.boost_until &&
                   new Date(listing.boost_until) > new Date();
+                const isExpired = isListingExpired(listing);
 
                 return (
                   <article
@@ -314,6 +352,16 @@ export default function MyListingsPage() {
                             Boosted
                           </span>
                         )}
+
+                        <span
+                          className={`absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full shadow font-medium ${
+                            isExpired
+                              ? "bg-red-50 text-red-600"
+                              : "bg-green-50 text-green-700"
+                          }`}
+                        >
+                          {isExpired ? "Expired" : "Active"}
+                        </span>
                       </div>
                     </Link>
 
@@ -341,8 +389,10 @@ export default function MyListingsPage() {
                           {listing.category || "Pet Listing"}
                         </span>
 
-                        <span className="text-xs text-gray-400">
-                          {formatPostedDate(listing.created_at)}
+                        <span className={`text-xs ${isExpired ? "text-red-500" : "text-gray-400"}`}>
+                          {isExpired
+                            ? `Expired ${formatExpiryDate(listing.expires_at)}`
+                            : `Expires ${formatExpiryDate(listing.expires_at)}`}
                         </span>
                       </div>
 
@@ -363,29 +413,35 @@ export default function MyListingsPage() {
                         </button>
 
                         <button
-                          onClick={() => handleCheckout("feature", listing.id)}
-                          disabled={isFeatured}
+                          onClick={() =>
+                            isExpired
+                              ? handleRenewListing(listing.id)
+                              : handleCheckout("feature", listing.id)
+                          }
+                          disabled={!isExpired && isFeatured}
                           className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2 ${
-                            isFeatured
+                            isExpired
+                              ? "border-green-200 bg-green-50 hover:bg-green-100 text-green-700"
+                              : isFeatured
                               ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                               : "border-yellow-200 bg-yellow-50 hover:bg-yellow-100 text-yellow-700"
                           }`}
                         >
                           <Star size={16} />
-                          {isFeatured ? "Featured" : "Feature"}
+                          {isExpired ? "Renew" : isFeatured ? "Featured" : "Feature"}
                         </button>
 
                         <button
                           onClick={() => handleCheckout("boost", listing.id)}
-                          disabled={isBoosted}
+                          disabled={isExpired || isBoosted}
                           className={`w-full rounded-2xl border px-4 py-3 text-sm font-medium transition inline-flex items-center justify-center gap-2 ${
-                            isBoosted
+                            isExpired || isBoosted
                               ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                               : "border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700"
                           }`}
                         >
                           <Star size={16} />
-                          {isBoosted ? "Boosted" : "Boost"}
+                          {isExpired ? "Expired" : isBoosted ? "Boosted" : "Boost"}
                         </button>
                       </div>
                     </div>

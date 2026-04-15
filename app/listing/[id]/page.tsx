@@ -229,6 +229,7 @@ export default function ListingPage() {
       .from("listings")
       .select("*")
       .neq("id", listingId)
+      .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(4);
 

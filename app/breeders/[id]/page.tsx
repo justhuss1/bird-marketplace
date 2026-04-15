@@ -203,6 +203,7 @@ export default function BreederProfilePage() {
       .from("listings")
       .select("*")
       .eq("user_id", breederId)
+      .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false });
 
     if (listingsError) {
