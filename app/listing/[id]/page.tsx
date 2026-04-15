@@ -687,6 +687,13 @@ export default function ListingPage() {
                   />
                 </button>
 
+                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/35 to-transparent pointer-events-none" />
+                  {galleryImages.length > 1 && (
+                  <div className="absolute bottom-4 left-4 rounded-full bg-black/45 backdrop-blur text-white text-xs font-medium px-3 py-1.5">
+                    {galleryImages.indexOf(selectedImage) + 1} / {galleryImages.length}
+                  </div>
+                )}
+                
                 <button
                   type="button"
                   onClick={openLightbox}
@@ -696,7 +703,7 @@ export default function ListingPage() {
                   Tap to zoom
                 </button>
 
-                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/35 to-transparent pointer-events-none" />
+                
 
                 {listing.is_featured && (
                   <span className="absolute top-4 left-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
@@ -1260,6 +1267,12 @@ export default function ListingPage() {
                 onTouchMove={handleLightboxTouchMove}
                 onTouchEnd={handleLightboxTouchEnd}
               >
+              <img
+                src={selectedImage}
+                alt={listing.title}
+                className="max-h-[75vh] sm:max-h-[78vh] max-w-full object-contain rounded-2xl select-none pointer-events-none"
+                draggable={false}
+              />
               {galleryImages.length > 1 && (
                 <button
                   type="button"
@@ -1269,13 +1282,6 @@ export default function ListingPage() {
                   <ChevronLeft size={22} />
                 </button>
               )}
-
-              <img
-                src={selectedImage}
-                alt={listing.title}
-                className="max-h-[75vh] sm:max-h-[78vh] max-w-full object-contain rounded-2xl select-none pointer-events-none"
-                draggable={false}
-              />
 
               {galleryImages.length > 1 && (
                 <button
