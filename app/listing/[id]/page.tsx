@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -19,6 +19,8 @@ import {
   Flag,
   Share2,
   Star,
+  X,
+  ZoomIn,
 } from "lucide-react";
 
 type Listing = {
@@ -140,6 +142,9 @@ export default function ListingPage() {
   const sellerName =
   seller?.breeder_name || seller?.username || "Seller";
   const sellerListingsCount = sellerListings?.length || 0;
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchEndXRef = useRef<number | null>(null);
   
 
   useEffect(() => {
@@ -150,10 +155,27 @@ export default function ListingPage() {
   }, [id]);
 
   useEffect(() => {
-  if (listing?.user_id) {
-    fetchSellerListings(listing.user_id);
-  }
-  }, [listing]);
+    if (listing?.user_id) {
+      fetchSellerListings(listing.user_id);
+    }
+    }, [listing]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeLightbox();
+      } else if (e.key === "ArrowLeft") {
+        goToPrevLightboxImage();
+      } else if (e.key === "ArrowRight") {
+        goToNextLightboxImage();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxOpen, selectedImage, galleryImages]);
 
   const fetchSellerListings = async (userId: string) => {
     const { data, error } = await supabase
@@ -498,6 +520,59 @@ export default function ListingPage() {
     setSelectedImage(galleryImages[nextIndex]);
   };
 
+  const openLightbox = () => {
+    if (!selectedImage) return;
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
+
+  const goToPrevLightboxImage = () => {
+    if (galleryImages.length <= 1) return;
+    const currentIndex = galleryImages.indexOf(selectedImage);
+    const prevIndex =
+      currentIndex <= 0 ? galleryImages.length - 1 : currentIndex - 1;
+    setSelectedImage(galleryImages[prevIndex]);
+  };
+
+  const goToNextLightboxImage = () => {
+    if (galleryImages.length <= 1) return;
+    const currentIndex = galleryImages.indexOf(selectedImage);
+    const nextIndex =
+      currentIndex >= galleryImages.length - 1 ? 0 : currentIndex + 1;
+    setSelectedImage(galleryImages[nextIndex]);
+  };
+
+  const handleLightboxTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartXRef.current = e.changedTouches[0].clientX;
+    touchEndXRef.current = null;
+  };
+
+  const handleLightboxTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchEndXRef.current = e.changedTouches[0].clientX;
+  };
+
+  const handleLightboxTouchEnd = () => {
+    const startX = touchStartXRef.current;
+    const endX = touchEndXRef.current;
+
+    if (startX === null || endX === null) return;
+
+    const distance = startX - endX;
+    const swipeThreshold = 50;
+
+    if (distance > swipeThreshold) {
+      goToNextLightboxImage();
+    } else if (distance < -swipeThreshold) {
+      goToPrevLightboxImage();
+    }
+
+    touchStartXRef.current = null;
+    touchEndXRef.current = null;
+  };
+
   const formatJoinedDate = (date?: string) => {
     if (!date) return "recently";
     return new Date(date).toLocaleDateString(undefined, {
@@ -565,11 +640,26 @@ export default function ListingPage() {
           <div className="space-y-5">
             <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
               <div className="relative overflow-hidden">
-                <img
-                  src={selectedImage}
-                  alt={listing.title}
-                  className="w-full h-[320px] sm:h-[460px] object-cover transition duration-500 hover:scale-[1.02]"
-                />
+                <button
+                  type="button"
+                  onClick={openLightbox}
+                  className="block w-full text-left"
+                >
+                  <img
+                    src={selectedImage}
+                    alt={listing.title}
+                    className="w-full h-[320px] sm:h-[460px] object-cover transition duration-500 hover:scale-[1.02]"
+                  />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={openLightbox}
+                  className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded-full bg-white/90 backdrop-blur text-gray-800 px-3 py-2 text-xs font-medium shadow hover:bg-white transition"
+                >
+                  <ZoomIn size={14} />
+                  Tap to zoom
+                </button>
 
                 <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/35 to-transparent pointer-events-none" />
 
@@ -1055,6 +1145,8 @@ export default function ListingPage() {
           </section>
         )}
       </div>
+
+      
       {/* STICKY MOBILE CTA */}
       <div className="fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur md:hidden">
         <div className="max-w-6xl mx-auto px-4 py-3">
@@ -1079,6 +1171,98 @@ export default function ListingPage() {
           </div>
         </div>
       </div>
+      {lightboxOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm">
+          <div className="absolute inset-0 flex flex-col">
+            {/* Top bar */}
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+              <div className="text-white text-sm">
+                {galleryImages.indexOf(selectedImage) + 1} / {galleryImages.length}
+              </div>
+
+              <button
+                type="button"
+                onClick={closeLightbox}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Main image area */}
+            <div
+                className="relative flex-1 flex items-center justify-center px-4 sm:px-8"
+                onTouchStart={handleLightboxTouchStart}
+                onTouchMove={handleLightboxTouchMove}
+                onTouchEnd={handleLightboxTouchEnd}
+              >
+              {galleryImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={goToPrevLightboxImage}
+                  className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+              )}
+
+              <img
+                src={selectedImage}
+                alt={listing.title}
+                className="max-h-[75vh] sm:max-h-[78vh] max-w-full object-contain rounded-2xl select-none pointer-events-none"
+                draggable={false}
+              />
+
+              {galleryImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={goToNextLightboxImage}
+                  className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              )}
+            </div>
+
+            {/* Thumbnails */}
+            {galleryImages.length > 1 && (
+              <div className="px-4 sm:px-6 pb-5 pt-3">
+                <div className="flex gap-3 overflow-x-auto scrollbar-hide justify-start sm:justify-center">
+                  {galleryImages.map((img, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        setSelectedImage(img);
+                        setLightboxOpen(true);
+                      }}
+                      className={`shrink-0 rounded-2xl overflow-hidden border-2 transition ${
+                        selectedImage === img
+                          ? "border-green-500"
+                          : "border-white/20 hover:border-white/40"
+                      }`}
+                    >
+                      <img
+                        src={img}
+                        alt={`Lightbox thumbnail ${index + 1}`}
+                        className="w-20 h-20 object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Click outside to close */}
+          <button
+            type="button"
+            onClick={closeLightbox}
+            className="absolute inset-0 -z-10"
+            aria-label="Close lightbox"
+          />
+        </div>
+      )}
     </main>
     );
 }
