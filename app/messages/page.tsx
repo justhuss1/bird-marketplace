@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { MapPin, MessageCircle, ChevronRight, Search } from "lucide-react";
+import {
+  MapPin,
+  MessageCircle,
+  ChevronRight,
+  Search,
+  Image as ImageIcon,
+  FileText,
+} from "lucide-react";
 
 type Conversation = {
   id: string;
@@ -19,8 +26,15 @@ type Conversation = {
   };
 };
 
+type LatestMessagePreview = {
+  text: string;
+  type?: string | null;
+  attachment_name?: string | null;
+  attachment_mime_type?: string | null;
+};
+
 type LatestMessageMap = {
-  [conversationId: string]: string;
+  [conversationId: string]: LatestMessagePreview;
 };
 
 export default function MessagesInboxPage() {
@@ -75,23 +89,71 @@ export default function MessagesInboxPage() {
     for (const convo of inboxData) {
       const { data: messageData } = await supabase
         .from("messages")
-        .select("text")
+        .select("text, message_type, attachment_name, attachment_mime_type")
         .eq("conversation_id", convo.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      previews[convo.id] = messageData?.text || "No messages yet";
+      previews[convo.id] = {
+        text: messageData?.text || "",
+        type: messageData?.message_type || "text",
+        attachment_name: messageData?.attachment_name || null,
+        attachment_mime_type: messageData?.attachment_mime_type || null,
+      };
     }
 
     setLatestMessages(previews);
     setLoading(false);
   };
 
+  const getPreviewText = (conversationId: string) => {
+    const preview = latestMessages[conversationId];
+
+    if (!preview) return "No messages yet";
+
+    const hasText = !!preview.text?.trim();
+    const isImage =
+      preview.type === "image" ||
+      (!!preview.attachment_mime_type &&
+        preview.attachment_mime_type.startsWith("image/"));
+    const isFile =
+      preview.type === "file" ||
+      (!!preview.attachment_name && !isImage);
+
+    if (hasText) return preview.text;
+
+    if (isImage) return "Photo";
+    if (isFile) return preview.attachment_name || "File";
+
+    return "No messages yet";
+  };
+
+  const getPreviewIcon = (conversationId: string) => {
+    const preview = latestMessages[conversationId];
+
+    if (!preview) return null;
+
+    const hasText = !!preview.text?.trim();
+    const isImage =
+      preview.type === "image" ||
+      (!!preview.attachment_mime_type &&
+        preview.attachment_mime_type.startsWith("image/"));
+    const isFile =
+      preview.type === "file" ||
+      (!!preview.attachment_name && !isImage);
+
+    if (hasText) return null;
+    if (isImage) return <ImageIcon size={14} className="shrink-0" />;
+    if (isFile) return <FileText size={14} className="shrink-0" />;
+
+    return null;
+  };
+
   const filteredConversations = conversations.filter((conversation) => {
     const title = conversation.listings?.title?.toLowerCase() || "";
     const location = conversation.listings?.location?.toLowerCase() || "";
-    const preview = latestMessages[conversation.id]?.toLowerCase() || "";
+    const preview = getPreviewText(conversation.id).toLowerCase();
     const query = searchTerm.toLowerCase();
 
     return (
@@ -192,9 +254,12 @@ export default function MessagesInboxPage() {
                         {conversation.listings?.location || "Unknown location"}
                       </p>
 
-                      <p className="text-sm text-gray-600 mt-3 line-clamp-2">
-                        {latestMessages[conversation.id]}
-                      </p>
+                      <div className="mt-3 flex items-center gap-2 text-sm text-gray-600 line-clamp-2">
+                        {getPreviewIcon(conversation.id)}
+                        <span className="line-clamp-2">
+                          {getPreviewText(conversation.id)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </article>
