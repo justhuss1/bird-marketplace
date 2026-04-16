@@ -385,8 +385,8 @@ export default function Home() {
 
   return (
     <main className="bg-gray-50 min-h-screen pb-24">
-      {/* MOBILE COMPACT MARKETPLACE HEADER */}
-      <section className="sm:hidden relative overflow-hidden bg-[#07111f]">
+      {/* REFRESHED HERO */}
+      <section className="relative overflow-hidden bg-[#07111f]">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-20"
           style={{
@@ -396,144 +396,145 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/88 to-[#07111f]/70" />
 
-        <div className="relative px-4 pt-3 pb-1">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-medium text-white/85">
-              <Sparkles size={12} />
-              Browse pets fast
+        <div className="relative max-w-7xl mx-auto px-4 pt-5 sm:pt-7 lg:pt-10 pb-5 sm:pb-7">
+          <div className="max-w-4xl">
+            {/* Eyebrow */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85 backdrop-blur mb-4">
+              <Sparkles size={14} />
+              Australia-wide pet marketplace
             </div>
 
-            <h1 className="mt-2 text-[18px] font-bold leading-tight text-white">
-              Find your next pet
+            {/* Heading */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight text-white max-w-3xl">
+              Find pets, breeders and supplies fast
             </h1>
 
-            <p className="mt-1.5 text-sm text-white/75">
-              Search pets and supplies from trusted sellers across Australia.
+            <p className="mt-3 text-sm sm:text-lg text-white/78 max-w-2xl leading-7">
+              Browse trusted listings, follow breeders, discover upcoming litters,
+              and connect safely through in-app messaging.
             </p>
 
-            <div className="mt-3 rounded-[26px] border border-white/10 bg-white/95 p-3.5 shadow-2xl backdrop-blur">
-              {/* COMPACT TOP SEARCH BAR */}
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-2.5">
-                    <Search size={18} className="text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search pets, breeds or keywords"
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        buildSuggestions(e.target.value);
-                        setShowSuggestions(true);
-                      }}
-                      onFocus={() => {
-                        buildSuggestions(searchTerm);
-                        if (searchTerm.trim()) setShowSuggestions(true);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          setShowSuggestions(false);
-                          runSearch();
-                        }
-                        if (e.key === "Escape") {
-                          setShowSuggestions(false);
-                        }
-                      }}
-                      className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                    />
-                  </div>
-
-                  {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
-                      {suggestions.map((suggestion) => (
-                        <button
-                          key={suggestion}
-                          type="button"
-                          onClick={() => {
-                            setSearchTerm(suggestion);
-                            setShowSuggestions(false);
-                            runSearch(suggestion);
-                          }}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+            {/* Compact search strip */}
+            <div className="mt-5 sm:mt-6 rounded-[28px] border border-white/10 bg-white/95 p-3 sm:p-4 shadow-2xl backdrop-blur max-w-4xl">
+              <div className="grid grid-cols-[1fr_auto] gap-3">
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                  <Search size={18} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search pets, breeds or keywords"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      buildSuggestions(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => {
+                      buildSuggestions(searchTerm);
+                      if (searchTerm.trim()) setShowSuggestions(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        setShowSuggestions(false);
+                        runSearch();
+                      }
+                      if (e.key === "Escape") {
+                        setShowSuggestions(false);
+                      }
+                    }}
+                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                  />
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setMobileFiltersOpen((prev) => !prev)}
-                  className={`shrink-0 rounded-2xl border px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2 ${
-                    mobileFiltersOpen
-                      ? "border-green-200 bg-green-50 text-green-700"
-                      : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
-                  }`}
+                  onClick={() => {
+                    setShowSuggestions(false);
+                    const params = new URLSearchParams();
+                    if (searchTerm.trim()) params.set("q", searchTerm.trim());
+                    if (locationFilter.trim()) params.set("location", locationFilter.trim());
+                    if (categoryFilter.trim()) params.set("category", categoryFilter.trim());
+                    params.set("sortBy", "newest");
+                    router.push(`/search?${params.toString()}`);
+                  }}
+                  className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 sm:px-5 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
                 >
                   <SlidersHorizontal size={16} />
                   Filters
                 </button>
               </div>
 
-              {/* EXPANDABLE FILTERS */}
-              {mobileFiltersOpen && (
-                <div className="mt-3 space-y-3">
-                  <LocationAutocomplete
-                    value={locationFilter}
-                    onChange={setLocationFilter}
-                    placeholder="Location"
-                  />
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => {
-                        setShowSuggestions(false);
-                        runSearch();
-                      }}
-                      className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-3 text-sm font-semibold transition"
-                    >
-                      Search
-                    </button>
-
-                    <Link href="/create">
-                      <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition">
-                        Post Listing
+              {/* Suggestions */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="relative">
+                  <div className="absolute top-2 left-0 right-0 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
+                    {suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => {
+                          setSearchTerm(suggestion);
+                          setShowSuggestions(false);
+                          runSearch(suggestion);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        {suggestion}
                       </button>
-                    </Link>
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* QUICK ACTION ROW */}
-              {!mobileFiltersOpen && (
-                <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-                  <button
-                    onClick={() => {
-                      setShowSuggestions(false);
-                      runSearch();
-                    }}
-                    className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-3 text-sm font-semibold transition"
-                  >
-                    Search
+              {/* Mobile action row */}
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:hidden">
+                <button
+                  onClick={() => {
+                    setShowSuggestions(false);
+                    runSearch();
+                  }}
+                  className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-3 text-sm font-semibold transition"
+                >
+                  Search
+                </button>
+
+                <Link href="/create">
+                  <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition">
+                    Post Listing
                   </button>
+                </Link>
+              </div>
 
-                  <Link href="/create">
-                    <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition">
-                      Post Listing
-                    </button>
-                  </Link>
-                </div>
-              )}
+              {/* Desktop row */}
+              <div className="hidden sm:flex mt-3 gap-3">
+                <LocationAutocomplete
+                  value={locationFilter}
+                  onChange={setLocationFilter}
+                  placeholder="Location"
+                />
 
+                <button
+                  onClick={() => {
+                    setShowSuggestions(false);
+                    runSearch();
+                  }}
+                  className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-5 py-3 text-sm font-semibold transition h-[50px]"
+                >
+                  Search
+                </button>
+
+                <Link href="/create">
+                  <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition h-[50px]">
+                    Post Listing
+                  </button>
+                </Link>
+              </div>
+
+              {/* Recent searches */}
               {!searchTerm.trim() && recentSearches.length > 0 && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between gap-3 mb-2">
-                    <p className="text-xs font-medium text-gray-500">
-                      Recent searches
-                    </p>
+                    <p className="text-xs font-medium text-gray-500">Recent searches</p>
 
                     <button
                       type="button"
@@ -576,16 +577,17 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Key chips */}
               <div className="mt-4">
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                   <Link href="/upcoming-litters">
-                    <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 px-4 py-2 text-sm font-medium hover:bg-green-100 transition">
-                      <Sparkles size={14} />
+                    <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 px-4 py-2.5 text-sm font-semibold hover:bg-green-100 transition">
+                      <Sparkles size={15} />
                       Upcoming Litters
                     </button>
                   </Link>
 
-                  {categoryItems.map((cat) => (
+                  {categoryItems.slice(0, 5).map((cat) => (
                     <button
                       key={cat.name}
                       onClick={() => {
@@ -594,7 +596,7 @@ export default function Home() {
                         params.set("sortBy", "newest");
                         router.push(`/search?${params.toString()}`);
                       }}
-                      className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                      className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
                     >
                       <cat.icon size={15} />
                       {cat.name}
@@ -603,6 +605,31 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SCROLLING FEATURE RIBBON */}
+      <section className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 py-3 overflow-hidden">
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+            {[
+              "Follow Breeders",
+              "Upcoming Litters",
+              "Verified Sellers",
+              "Safe In-App Chat",
+              "Featured Listings",
+              "Australia-Wide Search",
+              "Fast Photo Uploads",
+              "Pet Supplies Included",
+            ].map((item) => (
+              <div
+                key={item}
+                className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700"
+              >
+                {item}
+              </div>
+            ))}
           </div>
         </div>
       </section>
