@@ -56,7 +56,6 @@ export default function MessagesThreadPage() {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -177,10 +176,6 @@ export default function MessagesThreadPage() {
     fileInputRef.current?.click();
   };
 
-  const openCamera = () => {
-    cameraInputRef.current?.click();
-  };
-
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
@@ -204,6 +199,7 @@ export default function MessagesThreadPage() {
       });
 
     if (uploadError) {
+      console.error("SUPABASE STORAGE UPLOAD ERROR:", uploadError);
       throw uploadError;
     }
 
@@ -306,7 +302,7 @@ export default function MessagesThreadPage() {
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to upload attachment.");
+      alert("Failed to upload attachment. Check console for the exact Supabase error.");
     }
 
     setSending(false);
@@ -567,29 +563,10 @@ export default function MessagesThreadPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*,application/pdf"
+                accept="image/*,application/pdf,.doc,.docx,.txt"
                 onChange={handleFileSelected}
                 className="hidden"
               />
-
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileSelected}
-                className="hidden"
-              />
-
-              {/* Camera (mobile-first) */}
-              <button
-                type="button"
-                onClick={openCamera}
-                className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-4 py-3 transition"
-              >
-                📷
-              </button>
-
               {/* File upload */}
               <button
                 type="button"
