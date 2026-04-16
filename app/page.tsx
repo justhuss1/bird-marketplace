@@ -27,6 +27,9 @@ import {
   Sparkles,
   SlidersHorizontal,
   ArrowRight,
+  Award,
+  BadgeCheck,
+  Users,
 } from "lucide-react";
 
 type Listing = {
@@ -79,6 +82,11 @@ export default function Home() {
   const categoryScrollRef = useRef<HTMLDivElement | null>(null);
   const [latestBreederUpdates, setLatestBreederUpdates] = useState<any[]>([]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [breederOfTheMonth, setBreederOfTheMonth] = useState<any | null>(null);
+  const [searchSheetOpen, setSearchSheetOpen] = useState(false);
+  const [draftSearchTerm, setDraftSearchTerm] = useState("");
+  const [draftLocationFilter, setDraftLocationFilter] = useState("");
+  const [draftCategoryFilter, setDraftCategoryFilter] = useState("");
 
   const scrollCategoriesLeft = () => {
     categoryScrollRef.current?.scrollBy({ left: -220, behavior: "smooth" });
@@ -93,6 +101,7 @@ export default function Home() {
     getCurrentUser();
     fetchSavedListings();
     fetchLatestBreederUpdates();
+    fetchBreederOfTheMonth();
 
     const storedRecentSearches = localStorage.getItem("recentSearches");
     if (storedRecentSearches) {
@@ -130,6 +139,74 @@ export default function Home() {
     }
 
     setLatestBreederUpdates(data || []);
+  };
+
+  const fetchBreederOfTheMonth = async () => {
+    const { data: breeders, error } = await supabase
+      .from("profiles")
+      .select("id, username, breeder_name, breeder_bio, breeder_verified, is_breeder")
+      .eq("is_breeder", true);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    if (!breeders || breeders.length === 0) {
+      setBreederOfTheMonth(null);
+      return;
+    }
+
+    const evaluatedBreeders = await Promise.all(
+      breeders.map(async (breeder) => {
+        const nowIso = new Date().toISOString();
+
+        const [{ count: listingsCount }, { count: followersCount }, { count: announcementsCount }, { data: latestAnnouncement }] =
+          await Promise.all([
+            supabase
+              .from("listings")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", breeder.id)
+              .gt("expires_at", nowIso),
+
+            supabase
+              .from("follows")
+              .select("*", { count: "exact", head: true })
+              .eq("breeder_id", breeder.id),
+
+            supabase
+              .from("breeder_announcements")
+              .select("*", { count: "exact", head: true })
+              .eq("breeder_id", breeder.id),
+
+            supabase
+              .from("breeder_announcements")
+              .select("title, post_type, expected_date, created_at")
+              .eq("breeder_id", breeder.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
+          ]);
+
+        const score =
+          (listingsCount || 0) * 3 +
+          (followersCount || 0) * 2 +
+          (announcementsCount || 0) * 2 +
+          (breeder.breeder_verified ? 5 : 0);
+
+        return {
+          ...breeder,
+          listingsCount: listingsCount || 0,
+          followersCount: followersCount || 0,
+          announcementsCount: announcementsCount || 0,
+          latestAnnouncement: latestAnnouncement || null,
+          score,
+        };
+      })
+    );
+
+    const sorted = evaluatedBreeders.sort((a, b) => b.score - a.score);
+    setBreederOfTheMonth(sorted[0] || null);
   };
 
   const fetchListings = async () => {
@@ -285,6 +362,21 @@ export default function Home() {
     });
   };
 
+  const formatBreederPostType = (postType?: string) => {
+    if (!postType) return "Announcement";
+    if (postType === "upcoming_litter") return "Upcoming Litter";
+    if (postType === "available_soon") return "Available Soon";
+    return "Announcement";
+  };
+
+  const formatShortDate = (date?: string) => {
+    if (!date) return "";
+    return new Date(date).toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+    });
+  };
+
   const buildSuggestions = (value: string) => {
     const query = value.toLowerCase().trim();
 
@@ -363,6 +455,38 @@ export default function Home() {
     router.push(`/search?${params.toString()}`);
   };
 
+  const openSearchSheet = () => {
+    setDraftSearchTerm(searchTerm);
+    setDraftLocationFilter(locationFilter);
+    setDraftCategoryFilter(categoryFilter);
+    setSearchSheetOpen(true);
+  };
+
+  const applySearchSheet = () => {
+    setSearchTerm(draftSearchTerm);
+    setLocationFilter(draftLocationFilter);
+    setCategoryFilter(draftCategoryFilter);
+    setSearchSheetOpen(false);
+
+    const params = new URLSearchParams();
+
+    if (draftSearchTerm.trim()) {
+      params.set("q", draftSearchTerm.trim());
+      saveRecentSearch(draftSearchTerm);
+    }
+
+    if (draftLocationFilter.trim()) {
+      params.set("location", draftLocationFilter.trim());
+    }
+
+    if (draftCategoryFilter.trim()) {
+      params.set("category", draftCategoryFilter.trim());
+    }
+
+    params.set("sortBy", "newest");
+    router.push(`/search?${params.toString()}`);
+  };
+
   const filteredListings = [...listings].sort((a, b) => {
     if (a.is_featured && !b.is_featured) return -1;
     if (!a.is_featured && b.is_featured) return 1;
@@ -386,225 +510,89 @@ export default function Home() {
 
   return (
     <main className="bg-gray-50 min-h-screen pb-24">
-      {/* REFRESHED HERO */}
-      <section className="relative overflow-hidden bg-[#07111f]">
+      {/* COMPACT TOP SEARCH */}
+      <section className="bg-[#07111f] relative overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-20"
+          className="absolute inset-0 bg-cover bg-center opacity-15"
           style={{
             backgroundImage:
               "url('https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1800&q=80')",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/88 to-[#07111f]/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/90 to-[#07111f]/75" />
 
-        <div className="relative max-w-7xl mx-auto px-4 pt-5 sm:pt-7 lg:pt-10 pb-5 sm:pb-7">
+        <div className="relative max-w-7xl mx-auto px-4 pt-4 sm:pt-6 pb-4 sm:pb-5">
           <div className="max-w-4xl">
-            {/* Eyebrow */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85 backdrop-blur mb-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85 backdrop-blur">
               <Sparkles size={14} />
               Australia-wide pet marketplace
             </div>
 
-            {/* Heading */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight text-white max-w-3xl">
+            <h1 className="mt-4 text-2xl sm:text-4xl font-bold leading-tight text-white max-w-3xl">
               Find pets, breeders and supplies fast
             </h1>
 
-            <p className="mt-3 text-sm sm:text-lg text-white/78 max-w-2xl leading-7">
-              Browse trusted listings, follow breeders, discover upcoming litters,
-              and connect safely through in-app messaging.
+            <p className="mt-2 text-sm sm:text-base text-white/75 max-w-2xl leading-7">
+              Browse trusted listings, follow breeders, and discover upcoming litters.
             </p>
 
-            {/* Compact search strip */}
-            <div className="mt-5 sm:mt-6 rounded-[28px] border border-white/10 bg-white/95 p-3 sm:p-4 shadow-2xl backdrop-blur max-w-4xl">
-              <div className="grid grid-cols-[1fr_auto] gap-3">
-                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                  <Search size={18} className="text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search pets, breeds or keywords"
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      buildSuggestions(e.target.value);
-                      setShowSuggestions(true);
-                    }}
-                    onFocus={() => {
-                      buildSuggestions(searchTerm);
-                      if (searchTerm.trim()) setShowSuggestions(true);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        setShowSuggestions(false);
-                        runSearch();
-                      }
-                      if (e.key === "Escape") {
-                        setShowSuggestions(false);
-                      }
-                    }}
-                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                  />
+            {/* Single compact search bar */}
+            <div className="mt-4 sm:mt-5">
+              <button
+                type="button"
+                onClick={openSearchSheet}
+                className="w-full rounded-[26px] border border-white/10 bg-white/95 shadow-xl backdrop-blur px-4 py-3.5 sm:py-4 flex items-center justify-between gap-3 hover:bg-white transition"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
+                    <Search size={18} className="text-gray-500" />
+                  </div>
+
+                  <div className="min-w-0 text-left">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {searchTerm.trim() ? searchTerm : "Search pets, breeds or keywords"}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {locationFilter.trim()
+                        ? locationFilter
+                        : categoryFilter.trim()
+                        ? categoryFilter
+                        : "Anywhere in Australia"}
+                    </p>
+                  </div>
                 </div>
 
+                <div className="rounded-2xl bg-[#07111f] text-white px-4 py-2.5 text-sm font-semibold shrink-0 inline-flex items-center gap-2">
+                  <SlidersHorizontal size={16} />
+                  Search
+                </div>
+              </button>
+            </div>
+
+            {/* Quick chips */}
+            <div className="mt-4 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              <Link href="/upcoming-litters">
+                <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 px-4 py-2.5 text-sm font-semibold hover:bg-green-100 transition">
+                  <Sparkles size={15} />
+                  Upcoming Litters
+                </button>
+              </Link>
+
+              {categoryItems.slice(0, 5).map((cat) => (
                 <button
-                  type="button"
+                  key={cat.name}
                   onClick={() => {
-                    setShowSuggestions(false);
                     const params = new URLSearchParams();
-                    if (searchTerm.trim()) params.set("q", searchTerm.trim());
-                    if (locationFilter.trim()) params.set("location", locationFilter.trim());
-                    if (categoryFilter.trim()) params.set("category", categoryFilter.trim());
+                    params.set("category", cat.name);
                     params.set("sortBy", "newest");
                     router.push(`/search?${params.toString()}`);
                   }}
-                  className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 sm:px-5 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
+                  className="shrink-0 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/95 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-white transition"
                 >
-                  <SlidersHorizontal size={16} />
-                  Filters
+                  <cat.icon size={15} />
+                  {cat.name}
                 </button>
-              </div>
-
-              {/* Suggestions */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="relative">
-                  <div className="absolute top-2 left-0 right-0 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
-                    {suggestions.map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        type="button"
-                        onClick={() => {
-                          setSearchTerm(suggestion);
-                          setShowSuggestions(false);
-                          runSearch(suggestion);
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Mobile action row */}
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:hidden">
-                <button
-                  onClick={() => {
-                    setShowSuggestions(false);
-                    runSearch();
-                  }}
-                  className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-3 text-sm font-semibold transition"
-                >
-                  Search
-                </button>
-
-                <Link href="/create">
-                  <button className="w-full rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition">
-                    Post Listing
-                  </button>
-                </Link>
-              </div>
-
-              {/* Desktop row */}
-              <div className="hidden sm:flex mt-3 gap-3">
-                <LocationAutocomplete
-                  value={locationFilter}
-                  onChange={setLocationFilter}
-                  placeholder="Location"
-                />
-
-                <button
-                  onClick={() => {
-                    setShowSuggestions(false);
-                    runSearch();
-                  }}
-                  className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-5 py-3 text-sm font-semibold transition h-[50px]"
-                >
-                  Search
-                </button>
-
-                <Link href="/create">
-                  <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition h-[50px]">
-                    Post Listing
-                  </button>
-                </Link>
-              </div>
-
-              {/* Recent searches */}
-              {!searchTerm.trim() && recentSearches.length > 0 && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <p className="text-xs font-medium text-gray-500">Recent searches</p>
-
-                    <button
-                      type="button"
-                      onClick={clearAllRecentSearches}
-                      className="text-xs font-medium text-gray-500 hover:text-gray-800 transition"
-                    >
-                      Clear all
-                    </button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {recentSearches.map((item) => (
-                      <div
-                        key={item}
-                        className="inline-flex items-center rounded-full border border-gray-200 bg-white shadow-sm overflow-hidden"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSearchTerm(item);
-                            setShowSuggestions(false);
-                            runSearch(item);
-                          }}
-                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                        >
-                          {item}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => removeRecentSearch(item)}
-                          className="pr-3 pl-1 py-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition"
-                          aria-label={`Remove ${item} from recent searches`}
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Key chips */}
-              <div className="mt-4">
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                  <Link href="/upcoming-litters">
-                    <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 px-4 py-2.5 text-sm font-semibold hover:bg-green-100 transition">
-                      <Sparkles size={15} />
-                      Upcoming Litters
-                    </button>
-                  </Link>
-
-                  {categoryItems.slice(0, 5).map((cat) => (
-                    <button
-                      key={cat.name}
-                      onClick={() => {
-                        const params = new URLSearchParams();
-                        params.set("category", cat.name);
-                        params.set("sortBy", "newest");
-                        router.push(`/search?${params.toString()}`);
-                      }}
-                      className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      <cat.icon size={15} />
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -724,215 +712,148 @@ export default function Home() {
         </div>
       </section>
 
-      {/* DESKTOP HERO */}
-      <section className="hidden sm:block relative overflow-hidden bg-[#07111f]">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-25"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1800&q=80')",
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#07111f]/95 via-[#07111f]/80 to-[#07111f]/35" />
+      {breederOfTheMonth && (
+      <section className="bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 pt-6 sm:pt-8">
+          <div className="rounded-[32px] overflow-hidden border border-yellow-100 bg-gradient-to-br from-[#fff8e8] via-white to-[#f7fbf4] shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-0">
+              <div className="p-6 sm:p-8 lg:p-10">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white border border-yellow-200 px-3 py-1.5 text-xs font-semibold text-yellow-700 shadow-sm">
+                  <Award size={14} />
+                  Breeder of the Month
+                </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 pt-8 pb-10 lg:pt-14 lg:pb-14">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur mb-4">
-              <ShieldCheck size={14} />
-              Trusted pet marketplace across Australia
-            </div>
+                <h2 className="mt-4 text-2xl sm:text-4xl font-bold text-gray-900 leading-tight">
+                  {breederOfTheMonth.breeder_name ||
+                    breederOfTheMonth.username ||
+                    "Featured Breeder"}
+                </h2>
 
-            <h1 className="text-5xl lg:text-6xl font-bold leading-tight tracking-tight text-white">
-              Find your next pet
-            </h1>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-3 py-1 text-xs font-medium">
+                    <Star size={12} />
+                    Top breeder pick
+                  </span>
 
-            <p className="mt-3 text-lg text-white/80 max-w-2xl">
-              Browse pets and supplies from verified sellers across Australia.
-            </p>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={() => runSearch()}
-                className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md"
-              >
-                Browse Listings
-              </button>
-
-              <Link href="/create">
-                <button className="rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white px-5 py-3 text-sm font-semibold transition">
-                  Post a Listing
-                </button>
-              </Link>
-
-              <Link href="/upcoming-litters">
-                <button className="rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white px-5 py-3 text-sm font-semibold transition">
-                  Upcoming Litters
-                </button>
-              </Link>
-            </div>
-
-            <div className="mt-8 rounded-[28px] border border-white/10 bg-white/95 p-5 shadow-2xl backdrop-blur max-w-4xl">
-              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr_auto] gap-3 items-start">
-                <div className="relative">
-                  <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
-                    <Search size={18} className="text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search pets, breeds or keywords"
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        buildSuggestions(e.target.value);
-                        setShowSuggestions(true);
-                      }}
-                      onFocus={() => {
-                        buildSuggestions(searchTerm);
-                        if (searchTerm.trim()) setShowSuggestions(true);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          setShowSuggestions(false);
-                          runSearch();
-                        }
-                        if (e.key === "Escape") {
-                          setShowSuggestions(false);
-                        }
-                      }}
-                      className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                    />
-                  </div>
-
-                  {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
-                      {suggestions.map((suggestion) => (
-                        <button
-                          key={suggestion}
-                          type="button"
-                          onClick={() => {
-                            setSearchTerm(suggestion);
-                            setShowSuggestions(false);
-                            runSearch(suggestion);
-                          }}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
+                  {breederOfTheMonth.breeder_verified && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs font-medium">
+                      <BadgeCheck size={12} />
+                      Verified
+                    </span>
                   )}
                 </div>
 
-                <LocationAutocomplete
-                  value={locationFilter}
-                  onChange={setLocationFilter}
-                  placeholder="Location"
-                />
+                <p className="mt-4 text-sm sm:text-base text-gray-600 leading-7 max-w-2xl">
+                  {breederOfTheMonth.breeder_bio ||
+                    "A standout breeder this month based on activity, listings, updates, and community engagement."}
+                </p>
 
-                <button
-                  onClick={() => {
-                    setShowSuggestions(false);
-                    runSearch();
-                  }}
-                  className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-5 py-3 text-sm font-semibold transition h-[50px]"
-                >
-                  Search
-                </button>
+                <div className="mt-6 grid grid-cols-3 gap-3 max-w-xl">
+                  <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
+                      Active Listings
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-gray-900">
+                      {breederOfTheMonth.listingsCount}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
+                      Followers
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-gray-900">
+                      {breederOfTheMonth.followersCount}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
+                      Updates
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-gray-900">
+                      {breederOfTheMonth.announcementsCount}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href={`/breeders/${breederOfTheMonth.id}`}>
+                    <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md inline-flex items-center gap-2">
+                      View Breeder Profile
+                      <ArrowRight size={16} />
+                    </button>
+                  </Link>
+
+                  <Link href="/upcoming-litters">
+                    <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
+                      Browse Upcoming Litters
+                    </button>
+                  </Link>
+                </div>
               </div>
 
-              {!searchTerm.trim() && recentSearches.length > 0 && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <p className="text-xs font-medium text-gray-500">
-                      Recent searches
+              <div className="p-6 sm:p-8 lg:p-10 bg-white/60 border-t lg:border-t-0 lg:border-l border-gray-100">
+                <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                  Latest breeder update
+                </p>
+
+                {breederOfTheMonth.latestAnnouncement ? (
+                  <div className="mt-4 rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                        {formatBreederPostType(
+                          breederOfTheMonth.latestAnnouncement.post_type
+                        )}
+                      </span>
+
+                      {breederOfTheMonth.latestAnnouncement.expected_date && (
+                        <span className="inline-flex text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
+                          {formatShortDate(
+                            breederOfTheMonth.latestAnnouncement.expected_date
+                          )}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                      {breederOfTheMonth.latestAnnouncement.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm text-gray-500 leading-7">
+                      Stay connected with breeder updates, expected litters, and fresh availability announcements.
                     </p>
 
-                    <button
-                      type="button"
-                      onClick={clearAllRecentSearches}
-                      className="text-xs font-medium text-gray-500 hover:text-gray-800 transition"
-                    >
-                      Clear all
-                    </button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {recentSearches.map((item) => (
-                      <div
-                        key={item}
-                        className="inline-flex items-center rounded-full border border-gray-200 bg-white shadow-sm overflow-hidden"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSearchTerm(item);
-                            setShowSuggestions(false);
-                            runSearch(item);
-                          }}
-                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                        >
-                          {item}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => removeRecentSearch(item)}
-                          className="pr-3 pl-1 py-2 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition"
-                          aria-label={`Remove ${item} from recent searches`}
-                        >
-                          <X size={14} />
-                        </button>
+                    <Link href={`/breeders/${breederOfTheMonth.id}`}>
+                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-green-700">
+                        View full breeder profile
+                        <ArrowRight size={15} />
                       </div>
-                    ))}
+                    </Link>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="mt-4 rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      No announcements yet
+                    </h3>
+                    <p className="mt-3 text-sm text-gray-500 leading-7">
+                      This breeder has not posted an update yet, but they are currently one of the most active breeders on the platform.
+                    </p>
 
-              <div className="mt-3">
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={scrollCategoriesLeft}
-                    className="hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
-                  >
-                    <ChevronLeft size={15} />
-                  </button>
-
-                  <div
-                    ref={categoryScrollRef}
-                    className="flex gap-2 overflow-x-auto scrollbar-hide px-0 lg:px-12 py-1"
-                  >
-                    {categoryItems.map((cat) => (
-                      <button
-                        key={cat.name}
-                        onClick={() => {
-                          const params = new URLSearchParams();
-                          params.set("category", cat.name);
-                          params.set("sortBy", "newest");
-                          router.push(`/search?${params.toString()}`);
-                        }}
-                        className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                      >
-                        <cat.icon size={15} />
-                        {cat.name}
-                      </button>
-                    ))}
+                    <Link href={`/breeders/${breederOfTheMonth.id}`}>
+                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-green-700">
+                        Explore breeder profile
+                        <ArrowRight size={15} />
+                      </div>
+                    </Link>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={scrollCategoriesRight}
-                    className="hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50"
-                  >
-                    <ChevronRight size={15} />
-                  </button>
-                </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </section>
-
+    )}
       {/* FEATURED */}
       {featuredListings.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 mt-3 sm:mt-10 relative z-10">
@@ -1335,6 +1256,133 @@ export default function Home() {
         </div>
       )}
 
+      {searchSheetOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-[90]"
+            onClick={() => setSearchSheetOpen(false)}
+          />
+
+          <div className="fixed inset-x-0 bottom-0 z-[100] bg-white rounded-t-[32px] border-t border-gray-200 shadow-2xl p-5 sm:max-w-2xl sm:left-1/2 sm:-translate-x-1/2 sm:bottom-8 sm:rounded-[32px]">
+            <div className="w-12 h-1.5 rounded-full bg-gray-200 mx-auto mb-5 sm:hidden" />
+
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Search marketplace</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Find pets, breeders, supplies and upcoming litters.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSearchSheetOpen(false)}
+                className="rounded-full p-2 hover:bg-gray-100 transition"
+              >
+                <X size={18} className="text-gray-500" />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Search
+                </label>
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                  <Search size={18} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search pets, breeds or keywords"
+                    value={draftSearchTerm}
+                    onChange={(e) => setDraftSearchTerm(e.target.value)}
+                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Location
+                </label>
+                <LocationAutocomplete
+                  value={draftLocationFilter}
+                  onChange={setDraftLocationFilter}
+                  placeholder="Enter location"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Category
+                </label>
+                <select
+                  value={draftCategoryFilter}
+                  onChange={(e) => setDraftCategoryFilter(e.target.value)}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                >
+                  <option value="">All categories</option>
+                  {PET_CATEGORIES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {!draftSearchTerm.trim() && recentSearches.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className="text-xs font-medium text-gray-500">Recent searches</p>
+
+                    <button
+                      type="button"
+                      onClick={clearAllRecentSearches}
+                      className="text-xs font-medium text-gray-500 hover:text-gray-800 transition"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setDraftSearchTerm(item)}
+                        className="rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-sm text-gray-700 transition"
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setDraftSearchTerm("");
+                  setDraftLocationFilter("");
+                  setDraftCategoryFilter("");
+                }}
+                className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition"
+              >
+                Clear
+              </button>
+
+              <button
+                type="button"
+                onClick={applySearchSheet}
+                className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-4 py-3 text-sm font-semibold transition shadow-md"
+              >
+                Search
+              </button>
+            </div>
+          </div>
+        </>
+      )}
       <Footer />
     </main>
   );
