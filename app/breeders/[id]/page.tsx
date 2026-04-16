@@ -35,6 +35,8 @@ type Listing = {
   category?: string | null;
   is_featured?: boolean | null;
   created_at?: string | null;
+  expires_at?: string | null;
+  is_expired?: boolean | null;
 };
 
 type Announcement = {

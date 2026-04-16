@@ -36,6 +36,8 @@ type Listing = {
   is_featured?: boolean | null;
   boost_until?: string | null;
   created_at?: string;
+  expires_at?: string | null;
+  is_expired?: boolean | null;
   attributes?: Record<string, string> | null;
   view_count?: number | null;
   profiles?: {
@@ -301,6 +303,15 @@ export default function ListingPage() {
 
     const listingData = data as Listing;
     setListing(listingData);
+
+    if (
+      listingData.expires_at &&
+      new Date(listingData.expires_at).getTime() <= Date.now()
+    ) {
+      setLoading(false);
+      setListing(null);
+      return;
+    }
 
     const normalized = normalizeImages(data.images, data.image);
     setGalleryImages(normalized);

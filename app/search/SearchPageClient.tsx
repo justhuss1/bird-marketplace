@@ -30,6 +30,8 @@ type Listing = {
   user_id?: string;
   latitude?: number | null;
   longitude?: number | null;
+  expires_at?: string | null;
+  is_expired?: boolean | null;
   profiles?: {
     username?: string | null;
     breeder_name?: string | null;

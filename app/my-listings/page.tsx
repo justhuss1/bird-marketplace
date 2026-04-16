@@ -170,14 +170,64 @@ export default function MyListingsPage() {
     });
   };
 
-  if (loading) {
-    return <main className="p-4">Loading your listings...</main>;
-  }
+  const getDaysUntilExpiry = (date?: string | null) => {
+    if (!date) return null;
+
+    const now = new Date().getTime();
+    const expiry = new Date(date).getTime();
+    const diffMs = expiry - now;
+
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  };
+
+    if (loading) {
+      return <main className="p-4">Loading your listings...</main>;
+    }
 
   const featuredCount = listings.filter((item) => item.is_featured).length;
   const boostedCount = listings.filter(
     (item) => item.boost_until && new Date(item.boost_until) > new Date()
   ).length;
+
+  const expiringSoonListings = listings.filter((item) => {
+    if (isListingExpired(item)) return false;
+
+    const daysLeft = getDaysUntilExpiry(item.expires_at);
+    return daysLeft !== null && daysLeft <= 5;
+  });
+
+  const sortedListings = [...listings].sort((a, b) => {
+    const aExpired = isListingExpired(a);
+    const bExpired = isListingExpired(b);
+
+    const aDaysLeft = getDaysUntilExpiry(a.expires_at);
+    const bDaysLeft = getDaysUntilExpiry(b.expires_at);
+
+    const aExpiringSoon = !aExpired && aDaysLeft !== null && aDaysLeft <= 5;
+    const bExpiringSoon = !bExpired && bDaysLeft !== null && bDaysLeft <= 5;
+
+    if (aExpiringSoon && !bExpiringSoon) return -1;
+    if (!aExpiringSoon && bExpiringSoon) return 1;
+
+    if (!aExpired && bExpired) return -1;
+    if (aExpired && !bExpired) return 1;
+
+    if (aExpiringSoon && bExpiringSoon) {
+      return (aDaysLeft ?? 999) - (bDaysLeft ?? 999);
+    }
+
+    if (!aExpired && !bExpired) {
+      return (
+        new Date(b.created_at || 0).getTime() -
+        new Date(a.created_at || 0).getTime()
+      );
+    }
+
+    return (
+      new Date(b.created_at || 0).getTime() -
+      new Date(a.created_at || 0).getTime()
+    );
+  });
 
   return (
     <main className="bg-gray-50 min-h-screen py-6 sm:py-8 px-4 pb-24">
@@ -279,6 +329,69 @@ export default function MyListingsPage() {
           </div>
         </section>
 
+        {expiringSoonListings.length > 0 && (
+          <section className="mt-8 bg-white rounded-[28px] border border-amber-200 shadow-sm p-6 sm:p-7">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold tracking-[0.18em] uppercase text-amber-600">
+                  Expiring Soon
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-gray-900">
+                  Some of your listings need attention
+                </h2>
+                <p className="mt-3 text-sm text-gray-600 leading-7">
+                  You have {expiringSoonListings.length} listing
+                  {expiringSoonListings.length === 1 ? "" : "s"} expiring within the next 5 days.
+                  Renew them to keep them visible in the marketplace.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {expiringSoonListings.slice(0, 4).map((item) => {
+                const daysLeft = getDaysUntilExpiry(item.expires_at);
+
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {item.title}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Expires {formatExpiryDate(item.expires_at)}
+                        </p>
+                      </div>
+
+                      <span className="shrink-0 inline-flex rounded-full bg-white text-amber-700 px-2.5 py-1 text-xs font-semibold border border-amber-200">
+                        {daysLeft === 0 ? "Today" : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <button
+                        onClick={() => handleRenewListing(item.id)}
+                        className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 text-sm font-semibold transition"
+                      >
+                        Renew Listing
+                      </button>
+
+                      <Link href={`/edit/${item.id}`}>
+                        <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-2.5 text-sm font-semibold transition">
+                          Edit
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* LISTINGS */}
         <section className="mt-12">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5">
@@ -287,7 +400,7 @@ export default function MyListingsPage() {
                 Seller Inventory
               </p>
               <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
-                Your listings
+                Your listings, ordered by priority
               </h2>
               <p className="mt-2 text-sm text-gray-500 max-w-2xl">
                 Edit, review, promote, renew, or remove your marketplace listings.
@@ -317,7 +430,7 @@ export default function MyListingsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {listings.map((listing) => {
+              {sortedListings.map((listing) => {
                 const isFeatured = !!listing.is_featured;
                 const isBoosted =
                   !!listing.boost_until &&

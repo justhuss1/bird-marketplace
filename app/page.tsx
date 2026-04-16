@@ -37,6 +37,8 @@ type Listing = {
   category?: string | null;
   is_featured?: boolean | null;
   boost_until?: string | null;
+  expires_at?: string | null;
+  is_expired?: boolean | null;
   attributes?: Record<string, string> | 
   null;
   user_id?: string;
