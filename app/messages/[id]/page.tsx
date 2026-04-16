@@ -4,7 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, MapPin, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  Send,
+  Paperclip,
+  Image as ImageIcon,
+  FileText,
+  X,
+} from "lucide-react";
 
 type Message = {
   id: string;
@@ -12,6 +20,10 @@ type Message = {
   sender_id: string;
   text: string;
   created_at: string;
+  message_type?: string | null;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
+  attachment_mime_type?: string | null;
 };
 
 type Listing = {
@@ -35,12 +47,15 @@ export default function MessagesThreadPage() {
 
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [userId, setUserId] = useState("");
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -157,8 +172,49 @@ export default function MessagesThreadPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
+  };
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadAttachment = async (file: File, currentUserId: string) => {
+    const safeName = `${Date.now()}-${file.name.replace(/\s+/g, "-")}`;
+    const filePath = `${currentUserId}/${conversationId}/${safeName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("message-attachments")
+      .upload(filePath, file, {
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data: publicData } = supabase.storage
+      .from("message-attachments")
+      .getPublicUrl(filePath);
+
+    return {
+      url: publicData.publicUrl,
+      name: file.name,
+      mimeType: file.type || "application/octet-stream",
+    };
+  };
+
   const handleSend = async () => {
-    if (!newMessage.trim() || !conversation || sending) return;
+    if ((!newMessage.trim() && !selectedFile) || !conversation || sending) return;
 
     const {
       data: { user },
@@ -169,53 +225,87 @@ export default function MessagesThreadPage() {
       return;
     }
 
-    const messageText = newMessage.trim();
     setSending(true);
 
-    const { error: messageError } = await supabase.from("messages").insert([
-      {
-        conversation_id: conversation.id,
-        sender_id: user.id,
-        text: messageText,
-      },
-    ]);
+    try {
+      let attachmentUrl: string | null = null;
+      let attachmentName: string | null = null;
+      let attachmentMimeType: string | null = null;
+      let messageType = "text";
 
-    if (messageError) {
-      console.error(messageError);
-      alert("Failed to send message");
-      setSending(false);
-      return;
-    }
+      if (selectedFile) {
+        setUploadingAttachment(true);
 
-    setNewMessage("");
+        const uploaded = await uploadAttachment(selectedFile, user.id);
 
-    const recipientId =
-      conversation.buyer_id === user.id
-        ? conversation.seller_id
-        : conversation.buyer_id;
+        attachmentUrl = uploaded.url;
+        attachmentName = uploaded.name;
+        attachmentMimeType = uploaded.mimeType;
 
-    const notificationMessage = `You have a new message about ${
-      conversation.listings?.title || "a listing"
-    }.`;
+        if (attachmentMimeType.startsWith("image/")) {
+          messageType = "image";
+        } else {
+          messageType = "file";
+        }
+      }
 
-    const { error: notificationError } = await supabase
-      .from("notifications")
-      .insert([
+      const messageText = newMessage.trim();
+
+      const { error: messageError } = await supabase.from("messages").insert([
         {
-          user_id: recipientId,
-          type: "message",
-          title: "New message",
-          message: notificationMessage,
-          link: `/messages/${conversation.id}`,
-          is_read: false,
+          conversation_id: conversation.id,
+          sender_id: user.id,
+          text: messageText,
+          message_type: messageType,
+          attachment_url: attachmentUrl,
+          attachment_name: attachmentName,
+          attachment_mime_type: attachmentMimeType,
         },
       ]);
 
-    if (notificationError) {
-      console.error("Notification insert error:", notificationError);
+      if (messageError) {
+        console.error(messageError);
+        alert("Failed to send message");
+        setSending(false);
+        setUploadingAttachment(false);
+        return;
+      }
+
+      setNewMessage("");
+      clearSelectedFile();
+
+      const recipientId =
+        conversation.buyer_id === user.id
+          ? conversation.seller_id
+          : conversation.buyer_id;
+
+      const notificationMessage = `You have a new message about ${
+        conversation.listings?.title || "a listing"
+      }.`;
+
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert([
+          {
+            user_id: recipientId,
+            type: "message",
+            title: "New message",
+            message: notificationMessage,
+            link: `/messages/${conversation.id}`,
+            is_read: false,
+          },
+        ]);
+
+      if (notificationError) {
+        console.error("Notification insert error:", notificationError);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Failed to upload attachment.");
     }
 
     setSending(false);
+    setUploadingAttachment(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -230,6 +320,14 @@ export default function MessagesThreadPage() {
       hour: "numeric",
       minute: "2-digit",
     });
+  };
+
+  const isImageMessage = (message: Message) => {
+    return (
+      message.message_type === "image" ||
+      (!!message.attachment_mime_type &&
+        message.attachment_mime_type.startsWith("image/"))
+    );
   };
 
   if (loading) {
@@ -275,7 +373,6 @@ export default function MessagesThreadPage() {
         </div>
 
         <div className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden">
-          {/* Header */}
           <div className="border-b border-gray-100 p-4 sm:p-5 bg-white">
             <div className="flex items-center gap-4">
               <div className="shrink-0">
@@ -307,7 +404,6 @@ export default function MessagesThreadPage() {
             </div>
           </div>
 
-          {/* Messages */}
           <div className="bg-gray-50 px-4 sm:px-5 py-5 h-[60vh] overflow-y-auto">
             {messages.length === 0 ? (
               <div className="h-full flex items-center justify-center">
@@ -343,9 +439,71 @@ export default function MessagesThreadPage() {
                             : "bg-white text-gray-900 border border-gray-100 rounded-bl-md"
                         }`}
                       >
-                        <p className="text-sm leading-6 break-words">
-                          {message.text}
-                        </p>
+                        {!!message.text && (
+                          <p className="text-sm leading-6 break-words">
+                            {message.text}
+                          </p>
+                        )}
+
+                        {message.attachment_url && isImageMessage(message) && (
+                          <div className={message.text ? "mt-3" : ""}>
+                            <a
+                              href={message.attachment_url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <img
+                                src={message.attachment_url}
+                                alt={message.attachment_name || "Attachment"}
+                                className="max-w-full w-[220px] sm:w-[260px] rounded-2xl object-cover border border-white/10"
+                              />
+                            </a>
+                          </div>
+                        )}
+
+                        {message.attachment_url && !isImageMessage(message) && (
+                          <div
+                            className={`rounded-2xl px-3 py-3 ${
+                              message.text ? "mt-3" : ""
+                            } ${
+                              isOwnMessage
+                                ? "bg-white/10"
+                                : "bg-gray-50 border border-gray-100"
+                            }`}
+                          >
+                            <a
+                              href={message.attachment_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-3"
+                            >
+                              <div
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                  isOwnMessage
+                                    ? "bg-white/10 text-white"
+                                    : "bg-white text-gray-700 border border-gray-200"
+                                }`}
+                              >
+                                <FileText size={18} />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">
+                                  {message.attachment_name || "Attachment"}
+                                </p>
+                                <p
+                                  className={`text-xs ${
+                                    isOwnMessage
+                                      ? "text-white/70"
+                                      : "text-gray-500"
+                                  }`}
+                                >
+                                  Open file
+                                </p>
+                              </div>
+                            </a>
+                          </div>
+                        )}
+
                         <p
                           className={`mt-2 text-[11px] ${
                             isOwnMessage ? "text-white/70" : "text-gray-400"
@@ -362,9 +520,53 @@ export default function MessagesThreadPage() {
             )}
           </div>
 
-          {/* Input */}
           <div className="border-t border-gray-100 p-4 bg-white">
+            {selectedFile && (
+              <div className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-700">
+                    {selectedFile.type.startsWith("image/") ? (
+                      <ImageIcon size={18} />
+                    ) : (
+                      <FileText size={18} />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {selectedFile.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={clearSelectedFile}
+                  className="rounded-full p-2 hover:bg-gray-100 transition"
+                >
+                  <X size={16} className="text-gray-500" />
+                </button>
+              </div>
+            )}
+
             <div className="flex items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
+
+              <button
+                type="button"
+                onClick={openFilePicker}
+                className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-4 py-3 transition"
+              >
+                <Paperclip size={18} />
+              </button>
+
               <input
                 type="text"
                 placeholder="Type a message..."
@@ -376,7 +578,11 @@ export default function MessagesThreadPage() {
 
               <button
                 onClick={handleSend}
-                disabled={sending || !newMessage.trim()}
+                disabled={
+                  sending ||
+                  uploadingAttachment ||
+                  (!newMessage.trim() && !selectedFile)
+                }
                 className="rounded-2xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 transition shadow-md"
               >
                 <Send size={18} />
