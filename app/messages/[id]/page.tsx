@@ -56,6 +56,7 @@ export default function MessagesThreadPage() {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -174,6 +175,10 @@ export default function MessagesThreadPage() {
 
   const openFilePicker = () => {
     fileInputRef.current?.click();
+  };
+
+  const openCamera = () => {
+    cameraInputRef.current?.click();
   };
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -521,44 +526,71 @@ export default function MessagesThreadPage() {
           </div>
 
           <div className="border-t border-gray-100 p-4 bg-white">
-            {selectedFile && (
-              <div className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-between gap-3">
-                <div className="min-w-0 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-700">
-                    {selectedFile.type.startsWith("image/") ? (
-                      <ImageIcon size={18} />
-                    ) : (
-                      <FileText size={18} />
-                    )}
+           {selectedFile && (
+            <div className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-between gap-3">
+              
+              <div className="flex items-center gap-3 min-w-0">
+                
+                {selectedFile.type.startsWith("image/") ? (
+                  <img
+                    src={URL.createObjectURL(selectedFile)}
+                    alt="Preview"
+                    className="w-14 h-14 rounded-xl object-cover border"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-white border flex items-center justify-center">
+                    <FileText size={18} />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {selectedFile.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                </div>
+                )}
 
-                <button
-                  type="button"
-                  onClick={clearSelectedFile}
-                  className="rounded-full p-2 hover:bg-gray-100 transition"
-                >
-                  <X size={16} className="text-gray-500" />
-                </button>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
               </div>
-            )}
+
+              <button
+                type="button"
+                onClick={clearSelectedFile}
+                className="rounded-full p-2 hover:bg-gray-100 transition"
+              >
+                <X size={16} className="text-gray-500" />
+              </button>
+            </div>
+          )}
 
             <div className="flex items-center gap-3">
               <input
                 ref={fileInputRef}
                 type="file"
+                accept="image/*,application/pdf"
                 onChange={handleFileSelected}
                 className="hidden"
               />
 
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
+
+              {/* Camera (mobile-first) */}
+              <button
+                type="button"
+                onClick={openCamera}
+                className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-4 py-3 transition"
+              >
+                📷
+              </button>
+
+              {/* File upload */}
               <button
                 type="button"
                 onClick={openFilePicker}
