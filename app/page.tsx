@@ -26,6 +26,7 @@ import {
   X,
   Sparkles,
   SlidersHorizontal,
+  ArrowRight,
 } from "lucide-react";
 
 type Listing = {
@@ -630,6 +631,95 @@ export default function Home() {
                 {item}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURE PROMO STRIP */}
+      <section className="bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 pt-5 sm:pt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-4">
+            <Link href="/upcoming-litters">
+              <article className="group relative overflow-hidden rounded-[30px] border border-green-100 bg-gradient-to-br from-green-50 via-white to-emerald-50 p-6 sm:p-7 shadow-sm hover:shadow-xl transition duration-300">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-green-100/50 rounded-full blur-3xl pointer-events-none" />
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/90 border border-green-100 px-3 py-1.5 text-xs font-semibold text-green-700 shadow-sm">
+                    <Sparkles size={14} />
+                    New feature
+                  </div>
+
+                  <h2 className="mt-4 text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+                    Discover upcoming litters before they are listed
+                  </h2>
+
+                  <p className="mt-3 text-sm sm:text-base text-gray-600 leading-7 max-w-2xl">
+                    Follow breeders, keep track of expected dates, and get ahead of new arrivals before standard listings go live.
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <span className="inline-flex rounded-full bg-white border border-green-100 px-3 py-1.5 text-xs font-medium text-gray-700">
+                      Follow breeders
+                    </span>
+                    <span className="inline-flex rounded-full bg-white border border-green-100 px-3 py-1.5 text-xs font-medium text-gray-700">
+                      Expected dates
+                    </span>
+                    <span className="inline-flex rounded-full bg-white border border-green-100 px-3 py-1.5 text-xs font-medium text-gray-700">
+                      Early discovery
+                    </span>
+                  </div>
+
+                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-green-700 group-hover:gap-3 transition-all">
+                    Browse Upcoming Litters
+                    <ArrowRight size={16} />
+                  </div>
+                </div>
+              </article>
+            </Link>
+
+            <Link href="/search?sortBy=newest">
+              <article className="group relative overflow-hidden rounded-[30px] border border-gray-100 bg-white p-6 sm:p-7 shadow-sm hover:shadow-xl transition duration-300">
+                <div className="absolute bottom-0 left-0 w-36 h-36 bg-blue-50 rounded-full blur-3xl pointer-events-none" />
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700">
+                    <ShieldCheck size={14} />
+                    Built for trust
+                  </div>
+
+                  <h3 className="mt-4 text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                    Breeder profiles make the marketplace feel more trusted
+                  </h3>
+
+                  <p className="mt-3 text-sm text-gray-600 leading-7">
+                    Buyers can explore breeder pages, see updates, follow programs, and browse active listings in one place.
+                  </p>
+
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
+                        Profiles
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-gray-900">
+                        Public breeder pages
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
+                        Updates
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-gray-900">
+                        Litters & announcements
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-900 group-hover:gap-3 transition-all">
+                    Explore Listings
+                    <ArrowRight size={16} />
+                  </div>
+                </div>
+              </article>
+            </Link>
           </div>
         </div>
       </section>
