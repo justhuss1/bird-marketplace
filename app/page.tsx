@@ -546,23 +546,23 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/90 to-[#07111f]/75" />
 
-        <div className="relative max-w-7xl mx-auto px-4 pt-4 sm:pt-5 pb-3 sm:pb-4">
+        <div className="relative max-w-7xl mx-auto px-4 pt-3 sm:pt-6 pb-3 sm:pb-5">
           <div className="max-w-5xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85 backdrop-blur">
               <Sparkles size={14} />
               Australia-wide pet marketplace
             </div>
 
-            <h1 className="mt-4 text-2xl sm:text-[42px] font-bold leading-tight text-white max-w-3xl">
+            <h1 className="hidden md:block mt-4 text-2xl sm:text-4xl font-bold leading-tight text-white max-w-3xl">
               Find pets, breeders and supplies fast
             </h1>
 
-            <p className="mt-2 text-sm sm:text-[15px] text-white/75 max-w-2xl leading-7">
+            <p className="hidden md:block mt-2 text-sm sm:text-base text-white/75 max-w-2xl leading-7">
               Browse trusted listings, follow breeders, and discover upcoming litters.
             </p>
 
             {/* MOBILE SEARCH BAR */}
-            <div className="mt-4 block md:hidden">
+            <div className="mt-3 block md:hidden">
               <button
                 type="button"
                 onClick={openSearchSheet}
@@ -700,7 +700,7 @@ export default function Home() {
             </div>
 
             {/* QUICK CHIPS */}
-            <div className="mt-4 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            <div className="mt-3 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               <Link href="/upcoming-litters">
                 <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 px-4 py-2.5 text-sm font-semibold hover:bg-green-100 transition">
                   <Sparkles size={15} />
@@ -731,20 +731,26 @@ export default function Home() {
       {/* SCROLLING FEATURE RIBBON */}
       <section className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 py-3 overflow-hidden">
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {[
-              "Follow Breeders",
-              "Upcoming Litters",
-              "Verified Sellers",
-              "Safe In-App Chat",
-              "Featured Listings",
-              "Australia-Wide Search",
-              "Fast Photo Uploads",
-              "Pet Supplies Included",
-            ].map((item) => (
+              "Follow breeders",
+              "Upcoming litters",
+              "Verified sellers",
+              "Safe in-app chat",
+              "Featured listings",
+              "Australia-wide search",
+              "Fast photo uploads",
+              "Pet supplies included",
+            ].map((item, index) => (
               <div
                 key={item}
-                className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700"
+                className={`shrink-0 inline-flex items-center rounded-2xl px-4 py-2 text-[12px] font-semibold tracking-[0.02em] ${
+                  index % 3 === 0
+                    ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-100"
+                    : index % 3 === 1
+                    ? "bg-gradient-to-r from-blue-50 to-slate-50 text-slate-700 border border-slate-100"
+                    : "bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border border-amber-100"
+                }`}
               >
                 {item}
               </div>
