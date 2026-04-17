@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
+import ListingCard from "@/components/ListingCard";
 import {
   Heart,
   MapPin,
@@ -1060,75 +1061,10 @@ export default function SearchPageClient() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              {filteredListings.map((item) => {
-                const distanceLabel = getDistanceLabel(item);
-
-                return (
-                  <Link key={item.id} href={`/listing/${item.id}`}>
-                    <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
-                      <div className="relative overflow-hidden">
-                        <img
-                          src={
-                            item.image && item.image !== ""
-                              ? item.image
-                              : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
-                          }
-                          alt={item.title}
-                          className="h-52 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
-                        />
-
-                        {item.is_featured ? (
-                          <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
-                            ★ Featured
-                          </span>
-                        ) : (
-                          <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
-                            New
-                          </span>
-                        )}
-
-                        <div className="absolute left-3 bottom-4">
-                          <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
-                            ${item.price}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="p-4">
-                        <div className="flex items-center gap-2 mb-2 min-w-0 flex-wrap">
-                          {item.profiles?.is_breeder && (
-                            <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
-                              Breeder
-                            </span>
-                          )}
-
-                          {item.profiles?.breeder_verified && (
-                            <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
-                              Verified
-                            </span>
-                          )}
-                        </div>
-
-                        <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-2 leading-snug min-h-[46px]">
-                          {item.title}
-                        </h3>
-
-                        <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
-                          <MapPin size={14} className="shrink-0" />
-                          <span className="truncate">{item.location}</span>
-                        </p>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          <span className="inline-flex max-w-full truncate text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                            {item.category || "Pet Listing"}
-                          </span>
-                        </div>
-                      </div>
-                    </article>
-                  </Link>
-                );
-              })}
+            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5">
+              {filteredListings.map((item) => (
+                <ListingCard key={item.id} item={item} compact />
+              ))}
             </div>
           )}
         </section>
