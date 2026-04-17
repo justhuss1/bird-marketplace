@@ -970,59 +970,46 @@ export default function Home() {
 
               <div className="p-6 sm:p-8 lg:p-10 bg-white/60 border-t lg:border-t-0 lg:border-l border-gray-100">
                 <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
-                  Latest breeder update
+                  Why this breeder stands out
                 </p>
 
-                {breederOfTheMonth.latestAnnouncement ? (
-                  <div className="mt-4 rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                        {formatBreederPostType(
-                          breederOfTheMonth.latestAnnouncement.post_type
-                        )}
-                      </span>
-
-                      {breederOfTheMonth.latestAnnouncement.expected_date && (
-                        <span className="inline-flex text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
-                          {formatShortDate(
-                            breederOfTheMonth.latestAnnouncement.expected_date
-                          )}
-                        </span>
-                      )}
+                <div className="mt-4 rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
+                  <div className="space-y-4">
+                    <div className="rounded-2xl bg-green-50 border border-green-100 px-4 py-4">
+                      <p className="text-sm font-semibold text-gray-900">
+                        Strong marketplace activity
+                      </p>
+                      <p className="mt-1 text-sm text-gray-500 leading-6">
+                        This breeder has remained active through listings, profile presence, and consistent participation on the platform.
+                      </p>
                     </div>
 
-                    <h3 className="mt-4 text-lg font-semibold text-gray-900">
-                      {breederOfTheMonth.latestAnnouncement.title}
-                    </h3>
+                    <div className="rounded-2xl bg-blue-50 border border-blue-100 px-4 py-4">
+                      <p className="text-sm font-semibold text-gray-900">
+                        Trusted breeder profile
+                      </p>
+                      <p className="mt-1 text-sm text-gray-500 leading-6">
+                        Buyers can explore breeder details, browse active listings, and follow their updates in one place.
+                      </p>
+                    </div>
 
-                    <p className="mt-3 text-sm text-gray-500 leading-7">
-                      Stay connected with breeder updates, expected litters, and fresh availability announcements.
-                    </p>
-
-                    <Link href={`/breeders/${breederOfTheMonth.id}`}>
-                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-green-700">
-                        View full breeder profile
-                        <ArrowRight size={15} />
-                      </div>
-                    </Link>
+                    <div className="rounded-2xl bg-amber-50 border border-amber-100 px-4 py-4">
+                      <p className="text-sm font-semibold text-gray-900">
+                        Community visibility
+                      </p>
+                      <p className="mt-1 text-sm text-gray-500 leading-6">
+                        Featured this month based on marketplace momentum, follower interest, and overall breeder engagement.
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="mt-4 rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      No announcements yet
-                    </h3>
-                    <p className="mt-3 text-sm text-gray-500 leading-7">
-                      This breeder has not posted an update yet, but they are currently one of the most active breeders on the platform.
-                    </p>
 
-                    <Link href={`/breeders/${breederOfTheMonth.id}`}>
-                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-green-700">
-                        Explore breeder profile
-                        <ArrowRight size={15} />
-                      </div>
-                    </Link>
-                  </div>
-                )}
+                  <Link href={`/breeders/${breederOfTheMonth.id}`}>
+                    <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-green-700">
+                      Explore breeder profile
+                      <ArrowRight size={15} />
+                    </div>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
