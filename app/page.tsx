@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import Footer from "@/components/Footer";
 
 import {
@@ -29,7 +28,6 @@ import {
   ArrowRight,
   Award,
   BadgeCheck,
-  Users,
 } from "lucide-react";
 
 type Listing = {
@@ -79,22 +77,13 @@ export default function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showStickySearch, setShowStickySearch] = useState(false);
-  const categoryScrollRef = useRef<HTMLDivElement | null>(null);
   const [latestBreederUpdates, setLatestBreederUpdates] = useState<any[]>([]);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [breederOfTheMonth, setBreederOfTheMonth] = useState<any | null>(null);
   const [searchSheetOpen, setSearchSheetOpen] = useState(false);
   const [draftSearchTerm, setDraftSearchTerm] = useState("");
   const [draftLocationFilter, setDraftLocationFilter] = useState("");
   const [draftCategoryFilter, setDraftCategoryFilter] = useState("");
-
-  const scrollCategoriesLeft = () => {
-    categoryScrollRef.current?.scrollBy({ left: -220, behavior: "smooth" });
-  };
-
-  const scrollCategoriesRight = () => {
-    categoryScrollRef.current?.scrollBy({ left: 220, behavior: "smooth" });
-  };
+  const [showDraftSuggestions, setShowDraftSuggestions] = useState(false);
 
   useEffect(() => {
     fetchListings();
@@ -410,6 +399,39 @@ export default function Home() {
     setSuggestions(matches);
   };
 
+  const buildDraftSuggestions = (value: string) => {
+    const query = value.toLowerCase().trim();
+
+    if (!query) {
+      setSuggestions([]);
+      return;
+    }
+
+    const pool = new Set<string>();
+
+    listings.forEach((item) => {
+      if (item.title?.trim()) pool.add(item.title.trim());
+      if (item.category?.trim()) pool.add(item.category.trim());
+
+      Object.values(item.attributes || {}).forEach((attrValue) => {
+        if (typeof attrValue === "string" && attrValue.trim()) {
+          pool.add(attrValue.trim());
+        }
+      });
+    });
+
+    const matches = Array.from(pool)
+      .filter((entry) => entry.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aStarts = a.toLowerCase().startsWith(query) ? 0 : 1;
+        const bStarts = b.toLowerCase().startsWith(query) ? 0 : 1;
+        return aStarts - bStarts || a.localeCompare(b);
+      })
+      .slice(0, 6);
+
+    setSuggestions(matches);
+  };
+
   const saveRecentSearch = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
@@ -459,6 +481,7 @@ export default function Home() {
     setDraftSearchTerm(searchTerm);
     setDraftLocationFilter(locationFilter);
     setDraftCategoryFilter(categoryFilter);
+    setShowDraftSuggestions(false);
     setSearchSheetOpen(true);
   };
 
@@ -466,6 +489,7 @@ export default function Home() {
     setSearchTerm(draftSearchTerm);
     setLocationFilter(draftLocationFilter);
     setCategoryFilter(draftCategoryFilter);
+    setShowDraftSuggestions(false);
     setSearchSheetOpen(false);
 
     const params = new URLSearchParams();
@@ -522,26 +546,26 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/90 to-[#07111f]/75" />
 
         <div className="relative max-w-7xl mx-auto px-4 pt-4 sm:pt-6 pb-4 sm:pb-5">
-          <div className="max-w-4xl">
+          <div className="max-w-5xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85 backdrop-blur">
               <Sparkles size={14} />
               Australia-wide pet marketplace
             </div>
 
-            <h1 className="mt-4 text-2xl sm:text-4xl font-bold leading-tight text-white max-w-3xl">
+            <h1 className="mt-4 text-2xl sm:text-[42px] font-bold leading-tight text-white max-w-3xl">
               Find pets, breeders and supplies fast
             </h1>
 
-            <p className="mt-2 text-sm sm:text-base text-white/75 max-w-2xl leading-7">
+            <p className="mt-2 text-sm sm:text-[15px] text-white/75 max-w-2xl leading-7">
               Browse trusted listings, follow breeders, and discover upcoming litters.
             </p>
 
-            {/* Single compact search bar */}
-            <div className="mt-4 sm:mt-5">
+            {/* MOBILE SEARCH BAR */}
+            <div className="mt-4 block md:hidden">
               <button
                 type="button"
                 onClick={openSearchSheet}
-                className="w-full rounded-[26px] border border-white/10 bg-white/95 shadow-xl backdrop-blur px-4 py-3.5 sm:py-4 flex items-center justify-between gap-3 hover:bg-white transition"
+                className="w-full rounded-[26px] border border-white/10 bg-white/95 shadow-xl backdrop-blur px-4 py-3.5 flex items-center justify-between gap-3 hover:bg-white transition"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
@@ -569,7 +593,112 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Quick chips */}
+            {/* DESKTOP INLINE SEARCH */}
+            <div className="hidden md:block mt-5">
+              <div className="rounded-[28px] border border-white/10 bg-white/95 p-3 shadow-2xl backdrop-blur">
+                <div className="grid grid-cols-[1.2fr_0.95fr_0.8fr_auto] gap-3 items-start">
+                  <div className="relative">
+                    <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                      <Search size={18} className="text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search pets, breeds or keywords"
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          buildSuggestions(e.target.value);
+                          setShowSuggestions(true);
+                        }}
+                        onFocus={() => {
+                          buildSuggestions(searchTerm);
+                          if (searchTerm.trim()) setShowSuggestions(true);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            setShowSuggestions(false);
+                            runSearch();
+                          }
+                          if (e.key === "Escape") {
+                            setShowSuggestions(false);
+                          }
+                        }}
+                        className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                      />
+                    </div>
+
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
+                        {suggestions.map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            type="button"
+                            onClick={() => {
+                              setSearchTerm(suggestion);
+                              setShowSuggestions(false);
+                              runSearch(suggestion);
+                            }}
+                            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <LocationAutocomplete
+                    value={locationFilter}
+                    onChange={setLocationFilter}
+                    placeholder="Location"
+                  />
+
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                  >
+                    <option value="">All categories</option>
+                    {PET_CATEGORIES.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={() => {
+                      setShowSuggestions(false);
+                      runSearch();
+                    }}
+                    className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-5 py-3 text-sm font-semibold transition h-[50px]"
+                  >
+                    Search
+                  </button>
+                </div>
+
+                {!searchTerm.trim() && recentSearches.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {recentSearches.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => {
+                          setSearchTerm(item);
+                          setShowSuggestions(false);
+                          runSearch(item);
+                        }}
+                        className="rounded-full border border-gray-200 bg-white hover:bg-gray-50 px-4 py-2 text-sm text-gray-700 transition"
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* QUICK CHIPS */}
             <div className="mt-4 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               <Link href="/upcoming-litters">
                 <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 px-4 py-2.5 text-sm font-semibold hover:bg-green-100 transition">
@@ -623,7 +752,101 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURE PROMO STRIP */}
+      {/* FEATURED LISTINGS */}
+      {featuredListings.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 mt-3 sm:mt-10 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                Featured
+              </p>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+                Featured Pets
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Highlighted listings from sellers across Australia.
+              </p>
+            </div>
+
+            <Link href="/search?sortBy=newest">
+              <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition self-start sm:self-auto">
+                View all →
+              </button>
+            </Link>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+            {featuredListings.map((item) => (
+              <Link
+                key={item.id}
+                href={`/listing/${item.id}`}
+                className="snap-start min-w-[280px] sm:min-w-[340px] max-w-[340px]"
+              >
+                <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={
+                        item.image && item.image !== ""
+                          ? item.image
+                          : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
+                      }
+                      alt={item.title}
+                      className="h-40 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+
+                    {item.is_featured ? (
+                      <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+                        ★ Featured
+                      </span>
+                    ) : (
+                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
+                        New
+                      </span>
+                    )}
+
+                    <div className="absolute left-3 bottom-4">
+                      <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
+                        ${item.price}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 sm:p-4">
+                    <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
+                      {item.title}
+                    </h3>
+
+                    <p className="mt-1.5 text-sm text-gray-500 flex items-center gap-1.5">
+                      <MapPin size={14} className="shrink-0" />
+                      <span className="truncate">{item.location}</span>
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {item.profiles?.is_breeder && (
+                        <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
+                          Breeder
+                        </span>
+                      )}
+
+                      {item.profiles?.breeder_verified && (
+                        <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
+                          Verified
+                        </span>
+                      )}
+
+                      <span className="inline-flex max-w-full truncate rounded-full bg-green-50 text-green-700 px-2.5 py-1 text-[11px]">
+                        {item.category || "Pet Listing"}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* PROMO STRIP */}
       <section className="bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 pt-5 sm:pt-6">
           <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-4">
@@ -712,6 +935,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* BREEDER OF THE MONTH */}
       {breederOfTheMonth && (
       <section className="bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 pt-6 sm:pt-8">
@@ -854,101 +1078,82 @@ export default function Home() {
         </div>
       </section>
     )}
-      {/* FEATURED */}
-      {featuredListings.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-3 sm:mt-10 relative z-10">
+
+    {latestBreederUpdates.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 mt-10 mb-14">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
-                Featured
+                Breeder Updates
               </p>
               <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
-                Featured Pets
+                Latest Breeder Updates
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                Highlighted listings from sellers across Australia.
+                Follow breeders to get notified about upcoming litters and new availability.
               </p>
             </div>
 
-            <Link href="/search?sortBy=newest">
+            <Link href="/upcoming-litters">
               <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition self-start sm:self-auto">
                 View all →
               </button>
             </Link>
           </div>
 
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
-            {featuredListings.map((item) => (
-              <Link
-                key={item.id}
-                href={`/listing/${item.id}`}
-                className="snap-start min-w-[280px] sm:min-w-[340px] max-w-[340px]"
-              >
-                <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={
-                        item.image && item.image !== ""
-                          ? item.image
-                          : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
-                      }
-                      alt={item.title}
-                      className="h-40 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
-                    />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {latestBreederUpdates.map((post) => {
+              const breederName =
+                post.profiles?.breeder_name ||
+                post.profiles?.username ||
+                "Breeder";
 
-                    {item.is_featured ? (
-                      <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
-                        ★ Featured
+              return (
+                <Link key={post.id} href={`/breeders/${post.breeder_id}`}>
+                  <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 p-5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                        {formatAnnouncementType(post.post_type)}
                       </span>
-                    ) : (
-                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
-                        New
-                      </span>
-                    )}
 
-                    <div className="absolute left-3 bottom-4">
-                      <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
-                        ${item.price}
-                      </span>
+                      {post.expected_date && (
+                        <span className="inline-flex text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
+                          {formatAnnouncementDate(post.expected_date)}
+                        </span>
+                      )}
                     </div>
-                  </div>
 
-                  <div className="p-3 sm:p-4">
-                    <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
-                      {item.title}
+                    <h3 className="mt-4 text-lg font-semibold text-gray-900 line-clamp-2">
+                      {post.title}
                     </h3>
 
-                    <p className="mt-1.5 text-sm text-gray-500 flex items-center gap-1.5">
-                      <MapPin size={14} className="shrink-0" />
-                      <span className="truncate">{item.location}</span>
+                    <p className="mt-3 text-sm text-gray-600 line-clamp-4 leading-7">
+                      {post.content}
                     </p>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {item.profiles?.is_breeder && (
-                        <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
-                          Breeder
-                        </span>
-                      )}
+                    <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {breederName}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {post.profiles?.breeder_verified ? "Verified Breeder" : "Breeder"}
+                        </p>
+                      </div>
 
-                      {item.profiles?.breeder_verified && (
-                        <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
-                          Verified
-                        </span>
-                      )}
-
-                      <span className="inline-flex max-w-full truncate rounded-full bg-green-50 text-green-700 px-2.5 py-1 text-[11px]">
-                        {item.category || "Pet Listing"}
+                      <span className="text-xs text-green-600 font-medium">
+                        View profile
                       </span>
                     </div>
-                  </div>
-                </article>
-              </Link>
-            ))}
+                  </article>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
-
-      {/* LATEST */}
+      
+      {/* LATEST LISTINGS */}
       <section className="max-w-7xl mx-auto px-4 mt-10 mb-14">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div>
@@ -1046,80 +1251,6 @@ export default function Home() {
           </div>
         )}
       </section>
-
-      {latestBreederUpdates.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-10 mb-14">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
-                Breeder Updates
-              </p>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
-                Latest Breeder Updates
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Follow breeders to get notified about upcoming litters and new availability.
-              </p>
-            </div>
-
-            <Link href="/upcoming-litters">
-              <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition self-start sm:self-auto">
-                View all →
-              </button>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {latestBreederUpdates.map((post) => {
-              const breederName =
-                post.profiles?.breeder_name ||
-                post.profiles?.username ||
-                "Breeder";
-
-              return (
-                <Link key={post.id} href={`/breeders/${post.breeder_id}`}>
-                  <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 p-5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                        {formatAnnouncementType(post.post_type)}
-                      </span>
-
-                      {post.expected_date && (
-                        <span className="inline-flex text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
-                          {formatAnnouncementDate(post.expected_date)}
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="mt-4 text-lg font-semibold text-gray-900 line-clamp-2">
-                      {post.title}
-                    </h3>
-
-                    <p className="mt-3 text-sm text-gray-600 line-clamp-4 leading-7">
-                      {post.content}
-                    </p>
-
-                    <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {breederName}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {post.profiles?.breeder_verified ? "Verified Breeder" : "Breeder"}
-                        </p>
-                      </div>
-
-                      <span className="text-xs text-green-600 font-medium">
-                        View profile
-                      </span>
-                    </div>
-                  </article>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
 
       {/* TRUST - LOWER ON PAGE */}
       <section className="max-w-7xl mx-auto px-4 mb-14">
@@ -1222,6 +1353,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* STICKY SEARCH */}
       {showStickySearch && (
         <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
           <div className="max-w-7xl mx-auto">
@@ -1256,6 +1388,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* SEARCH SHEET */}
       {searchSheetOpen && (
         <>
           <div
@@ -1288,15 +1421,54 @@ export default function Home() {
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   Search
                 </label>
-                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
-                  <Search size={18} className="text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search pets, breeds or keywords"
-                    value={draftSearchTerm}
-                    onChange={(e) => setDraftSearchTerm(e.target.value)}
-                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                  />
+
+                <div className="relative">
+                  <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <Search size={18} className="text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search pets, breeds or keywords"
+                      value={draftSearchTerm}
+                      onChange={(e) => {
+                        setDraftSearchTerm(e.target.value);
+                        buildDraftSuggestions(e.target.value);
+                        setShowDraftSuggestions(true);
+                      }}
+                      onFocus={() => {
+                        buildDraftSuggestions(draftSearchTerm);
+                        if (draftSearchTerm.trim()) setShowDraftSuggestions(true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setShowDraftSuggestions(false);
+                          applySearchSheet();
+                        }
+                        if (e.key === "Escape") {
+                          setShowDraftSuggestions(false);
+                        }
+                      }}
+                      className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  {showDraftSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
+                      {suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => {
+                            setDraftSearchTerm(suggestion);
+                            setShowDraftSuggestions(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
