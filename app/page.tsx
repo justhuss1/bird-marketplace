@@ -29,6 +29,7 @@ import {
   ArrowRight,
   Award,
   BadgeCheck,
+  Users,
 } from "lucide-react";
 
 type Listing = {
@@ -970,35 +971,70 @@ export default function Home() {
 
               <div className="p-6 sm:p-8 lg:p-10 bg-white/60 border-t lg:border-t-0 lg:border-l border-gray-100">
                 <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
-                  Why this breeder stands out
+                  Spotlight
                 </p>
 
                 <div className="mt-4 rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
-                  <div className="space-y-4">
-                    <div className="rounded-2xl bg-green-50 border border-green-100 px-4 py-4">
-                      <p className="text-sm font-semibold text-gray-900">
-                        Strong marketplace activity
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Why this breeder was featured
+                  </h3>
+
+                  <p className="mt-2 text-sm text-gray-500 leading-7">
+                    A standout breeder this month based on marketplace activity, trust, and visibility.
+                  </p>
+
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-gray-100 bg-green-50 px-4 py-4">
+                      <div className="w-10 h-10 rounded-2xl bg-white text-green-600 flex items-center justify-center shadow-sm">
+                        <Star size={18} />
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-gray-900">
+                        Active listings
                       </p>
-                      <p className="mt-1 text-sm text-gray-500 leading-6">
-                        This breeder has remained active through listings, profile presence, and consistent participation on the platform.
+                      <p className="mt-1 text-xs text-gray-500 leading-5">
+                        {breederOfTheMonth.listingsCount} live on the marketplace
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-blue-50 border border-blue-100 px-4 py-4">
-                      <p className="text-sm font-semibold text-gray-900">
-                        Trusted breeder profile
+                    <div className="rounded-2xl border border-gray-100 bg-blue-50 px-4 py-4">
+                      <div className="w-10 h-10 rounded-2xl bg-white text-blue-600 flex items-center justify-center shadow-sm">
+                        <Users size={18} />
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-gray-900">
+                        Community interest
                       </p>
-                      <p className="mt-1 text-sm text-gray-500 leading-6">
-                        Buyers can explore breeder details, browse active listings, and follow their updates in one place.
+                      <p className="mt-1 text-xs text-gray-500 leading-5">
+                        {breederOfTheMonth.followersCount} followers tracking updates
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-amber-50 border border-amber-100 px-4 py-4">
-                      <p className="text-sm font-semibold text-gray-900">
-                        Community visibility
+                    <div className="rounded-2xl border border-gray-100 bg-amber-50 px-4 py-4">
+                      <div className="w-10 h-10 rounded-2xl bg-white text-amber-600 flex items-center justify-center shadow-sm">
+                        <Sparkles size={18} />
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-gray-900">
+                        Profile activity
                       </p>
-                      <p className="mt-1 text-sm text-gray-500 leading-6">
-                        Featured this month based on marketplace momentum, follower interest, and overall breeder engagement.
+                      <p className="mt-1 text-xs text-gray-500 leading-5">
+                        {breederOfTheMonth.announcementsCount} breeder updates shared
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-gray-100 bg-slate-50 px-4 py-4">
+                      <div className="w-10 h-10 rounded-2xl bg-white text-slate-700 flex items-center justify-center shadow-sm">
+                        {breederOfTheMonth.breeder_verified ? (
+                          <BadgeCheck size={18} />
+                        ) : (
+                          <Award size={18} />
+                        )}
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-gray-900">
+                        Trust signal
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500 leading-5">
+                        {breederOfTheMonth.breeder_verified
+                          ? "Verified breeder profile"
+                          : "Strong marketplace presence"}
                       </p>
                     </div>
                   </div>
