@@ -548,7 +548,7 @@ export default function Home() {
 
         <div className="relative max-w-7xl mx-auto px-4 pt-3 sm:pt-6 pb-3 sm:pb-5">
           <div className="max-w-5xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85 backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[11px] font-medium text-white/85 backdrop-blur">
               <Sparkles size={14} />
               Australia-wide pet marketplace
             </div>
@@ -566,18 +566,18 @@ export default function Home() {
               <button
                 type="button"
                 onClick={openSearchSheet}
-                className="w-full rounded-[26px] border border-white/10 bg-white/95 shadow-xl backdrop-blur px-4 py-3.5 flex items-center justify-between gap-3 hover:bg-white transition"
+                className="w-full rounded-[28px] border border-white/10 bg-white/95 shadow-xl backdrop-blur px-4 py-4 flex items-center justify-between gap-3 hover:bg-white transition"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
-                    <Search size={18} className="text-gray-500" />
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-11 h-11 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
+                    <Search size={19} className="text-gray-500" />
                   </div>
 
-                  <div className="min-w-0 text-left">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
+                  <div className="min-w-0 text-left flex-1">
+                    <p className="text-[15px] font-semibold text-gray-900 truncate leading-5">
                       {searchTerm.trim() ? searchTerm : "Search pets, breeds or keywords"}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-[13px] text-gray-500 truncate mt-0.5">
                       {locationFilter.trim()
                         ? locationFilter
                         : categoryFilter.trim()
@@ -587,7 +587,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-[#07111f] text-white px-4 py-2.5 text-sm font-semibold shrink-0 inline-flex items-center gap-2">
+                <div className="rounded-2xl bg-[#07111f] text-white px-4 py-3 text-sm font-semibold shrink-0 inline-flex items-center gap-2">
                   <SlidersHorizontal size={16} />
                   Search
                 </div>
@@ -700,29 +700,31 @@ export default function Home() {
             </div>
 
             {/* QUICK CHIPS */}
-            <div className="mt-3 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-              <Link href="/upcoming-litters">
-                <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 px-4 py-2.5 text-sm font-semibold hover:bg-green-100 transition">
-                  <Sparkles size={15} />
-                  Upcoming Litters
-                </button>
-              </Link>
+            <div className="mt-3 rounded-[24px] bg-white/8 border border-white/8 p-2">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                <Link href="/upcoming-litters">
+                  <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white/92 border border-green-100 text-green-700 px-4 py-2 text-[13px] font-semibold shadow-sm hover:bg-white transition">
+                    <Sparkles size={14} />
+                    Upcoming Litters
+                  </button>
+                </Link>
 
-              {categoryItems.slice(0, 5).map((cat) => (
-                <button
-                  key={cat.name}
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    params.set("category", cat.name);
-                    params.set("sortBy", "newest");
-                    router.push(`/search?${params.toString()}`);
-                  }}
-                  className="shrink-0 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/95 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-white transition"
-                >
-                  <cat.icon size={15} />
-                  {cat.name}
-                </button>
-              ))}
+                {categoryItems.slice(0, 5).map((cat) => (
+                  <button
+                    key={cat.name}
+                    onClick={() => {
+                      const params = new URLSearchParams();
+                      params.set("category", cat.name);
+                      params.set("sortBy", "newest");
+                      router.push(`/search?${params.toString()}`);
+                    }}
+                    className="shrink-0 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/88 backdrop-blur px-4 py-2 text-[13px] font-medium text-gray-700 shadow-sm hover:bg-white transition"
+                  >
+                    <cat.icon size={14} />
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -784,13 +786,12 @@ export default function Home() {
 
           <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
             {featuredListings.map((item) => (
-              <Link
+              <div
                 key={item.id}
-                href={`/listing/${item.id}`}
                 className="snap-start min-w-[280px] sm:min-w-[340px] max-w-[340px]"
               >
                 <ListingCard item={item} />
-              </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -1137,9 +1138,7 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {latestListings.slice(0, 6).map((item) => (
-              <Link key={item.id} href={`/listing/${item.id}`}>
-                <ListingCard item={item} compact />
-              </Link>
+              <ListingCard key={item.id} item={item} compact />
             ))}
           </div>
         )}
