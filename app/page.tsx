@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import Footer from "@/components/Footer";
+import ListingCard from "@/components/ListingCard";
 
 import {
   Bird,
@@ -545,7 +546,7 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/90 to-[#07111f]/75" />
 
-        <div className="relative max-w-7xl mx-auto px-4 pt-4 sm:pt-6 pb-4 sm:pb-5">
+        <div className="relative max-w-7xl mx-auto px-4 pt-4 sm:pt-5 pb-3 sm:pb-4">
           <div className="max-w-5xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85 backdrop-blur">
               <Sparkles size={14} />
@@ -754,7 +755,7 @@ export default function Home() {
 
       {/* FEATURED LISTINGS */}
       {featuredListings.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-3 sm:mt-10 relative z-10">
+        <section className="max-w-7xl mx-auto px-4 mt-5 sm:mt-8 relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
@@ -782,64 +783,7 @@ export default function Home() {
                 href={`/listing/${item.id}`}
                 className="snap-start min-w-[280px] sm:min-w-[340px] max-w-[340px]"
               >
-                <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={
-                        item.image && item.image !== ""
-                          ? item.image
-                          : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
-                      }
-                      alt={item.title}
-                      className="h-40 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
-                    />
-
-                    {item.is_featured ? (
-                      <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
-                        ★ Featured
-                      </span>
-                    ) : (
-                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
-                        New
-                      </span>
-                    )}
-
-                    <div className="absolute left-3 bottom-4">
-                      <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
-                        ${item.price}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 sm:p-4">
-                    <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
-                      {item.title}
-                    </h3>
-
-                    <p className="mt-1.5 text-sm text-gray-500 flex items-center gap-1.5">
-                      <MapPin size={14} className="shrink-0" />
-                      <span className="truncate">{item.location}</span>
-                    </p>
-
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {item.profiles?.is_breeder && (
-                        <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
-                          Breeder
-                        </span>
-                      )}
-
-                      {item.profiles?.breeder_verified && (
-                        <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
-                          Verified
-                        </span>
-                      )}
-
-                      <span className="inline-flex max-w-full truncate rounded-full bg-green-50 text-green-700 px-2.5 py-1 text-[11px]">
-                        {item.category || "Pet Listing"}
-                      </span>
-                    </div>
-                  </div>
-                </article>
+                <ListingCard item={item} />
               </Link>
             ))}
           </div>
@@ -848,7 +792,7 @@ export default function Home() {
 
       {/* PROMO STRIP */}
       <section className="bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 pt-5 sm:pt-6">
+        <div className="max-w-7xl mx-auto px-4 pt-4 sm:pt-5">
           <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-4">
             <Link href="/upcoming-litters">
               <article className="group relative overflow-hidden rounded-[30px] border border-green-100 bg-gradient-to-br from-green-50 via-white to-emerald-50 p-6 sm:p-7 shadow-sm hover:shadow-xl transition duration-300">
@@ -1080,7 +1024,7 @@ export default function Home() {
     )}
 
     {latestBreederUpdates.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-10 mb-14">
+        <section className="max-w-7xl mx-auto px-4 mt-8 mb-12">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
@@ -1154,7 +1098,7 @@ export default function Home() {
       )}
       
       {/* LATEST LISTINGS */}
-      <section className="max-w-7xl mx-auto px-4 mt-10 mb-14">
+      <section className="max-w-7xl mx-auto px-4 mt-8 mb-12">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
@@ -1188,64 +1132,7 @@ export default function Home() {
           <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {latestListings.slice(0, 6).map((item) => (
               <Link key={item.id} href={`/listing/${item.id}`}>
-                <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={
-                        item.image && item.image !== ""
-                          ? item.image
-                          : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
-                      }
-                      alt={item.title}
-                      className="h-36 sm:h-56 w-full object-cover group-hover:scale-105 transition duration-500"
-                    />
-
-                    {item.is_featured ? (
-                      <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
-                        ★ Featured
-                      </span>
-                    ) : (
-                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
-                        New
-                      </span>
-                    )}
-
-                    <div className="absolute left-3 bottom-4">
-                      <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
-                        ${item.price}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 sm:p-4">
-                    <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
-                      {item.title}
-                    </h3>
-
-                    <p className="mt-1.5 text-sm text-gray-500 flex items-center gap-1.5">
-                      <MapPin size={14} className="shrink-0" />
-                      <span className="truncate">{item.location}</span>
-                    </p>
-
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {item.profiles?.is_breeder && (
-                        <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
-                          Breeder
-                        </span>
-                      )}
-
-                      {item.profiles?.breeder_verified && (
-                        <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
-                          Verified
-                        </span>
-                      )}
-
-                      <span className="inline-flex max-w-full truncate rounded-full bg-green-50 text-green-700 px-2.5 py-1 text-[11px]">
-                        {item.category || "Pet Listing"}
-                      </span>
-                    </div>
-                  </div>
-                </article>
+                <ListingCard item={item} compact />
               </Link>
             ))}
           </div>
@@ -1355,38 +1242,26 @@ export default function Home() {
 
       {/* STICKY SEARCH */}
       {showStickySearch && (
-        <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
-          <div className="max-w-7xl mx-auto">
-            <div className="mt-3 rounded-2xl border border-gray-200 bg-white/95 backdrop-blur shadow-lg p-2">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 flex-1 rounded-xl bg-gray-50 px-3 py-2.5">
-                  <Search size={16} className="text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search pets..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        runSearch();
-                      }
-                    }}
-                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                  />
-                </div>
-
-                <button
-                  onClick={() => runSearch()}
-                  className="shrink-0 rounded-xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-4 py-2.5 text-sm font-semibold transition"
-                >
-                  Search
-                </button>
-              </div>
+      <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
+        <div className="max-w-7xl mx-auto">
+          <button
+            onClick={openSearchSheet}
+            className="w-full rounded-2xl border border-gray-200 bg-white/95 backdrop-blur shadow-lg px-4 py-3 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2 text-gray-600">
+              <Search size={16} />
+              <span className="text-sm">
+                {searchTerm || "Search pets..."}
+              </span>
             </div>
-          </div>
+
+            <span className="text-xs text-gray-500">
+              Filters
+            </span>
+          </button>
         </div>
-      )}
+      </div>
+    )}
 
       {/* SEARCH SHEET */}
       {searchSheetOpen && (

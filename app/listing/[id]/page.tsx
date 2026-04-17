@@ -302,16 +302,17 @@ export default function ListingPage() {
     }
 
     const listingData = data as Listing;
-    setListing(listingData);
 
     if (
       listingData.expires_at &&
       new Date(listingData.expires_at).getTime() <= Date.now()
     ) {
-      setLoading(false);
       setListing(null);
+      setLoading(false);
       return;
     }
+
+    setListing(listingData);
 
     const normalized = normalizeImages(data.images, data.image);
     setGalleryImages(normalized);
