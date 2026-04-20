@@ -420,6 +420,7 @@ export default function CreateListingPage() {
           latitude: finalLatitude,
           longitude: finalLongitude,
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "available",
         },
       ])
       .select()

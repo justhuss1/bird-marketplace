@@ -40,6 +40,7 @@ type Listing = {
   is_expired?: boolean | null;
   attributes?: Record<string, string> | null;
   view_count?: number | null;
+  status?: "available" | "pending" | "sold" | null;
   profiles?: {
     username?: string | null;
     breeder_name?: string | null;
@@ -141,14 +142,19 @@ export default function ListingPage() {
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [sellerListings, setSellerListings] = useState<any[]>([]);
-  const sellerName =
-  seller?.breeder_name || seller?.username || "Seller";
+  const sellerName = seller?.breeder_name || seller?.username || "Seller";
   const sellerListingsCount = sellerListings?.length || 0;
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
   const touchEndXRef = useRef<number | null>(null);
   const mainTouchStartXRef = useRef<number | null>(null);
   const mainTouchEndXRef = useRef<number | null>(null);
+  const [ratingAvg, setRatingAvg] = useState<number | null>(null);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewText, setReviewText] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   
 
   useEffect(() => {
@@ -181,6 +187,31 @@ export default function ListingPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightboxOpen, selectedImage, galleryImages]);
 
+  const fetchRatingsSummary = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("ratings")
+      .select("rating")
+      .eq("reviewed_user_id", userId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const rows = data || [];
+    const count = rows.length;
+
+    if (count === 0) {
+      setRatingAvg(null);
+      setRatingCount(0);
+      return;
+    }
+
+    const total = rows.reduce((sum, row) => sum + row.rating, 0);
+    setRatingAvg(total / count);
+    setRatingCount(count);
+  };
+
   const fetchSellerListings = async (userId: string) => {
     const { data, error } = await supabase
       .from("listings")
@@ -209,6 +240,49 @@ export default function ListingPage() {
     setSellerListingCount(count || 0);
   };
 
+  const handleSubmitReview = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("Please log in to leave a review.");
+      router.push("/login");
+      return;
+    }
+
+    if (!listing) return;
+
+    if (user.id === listing.user_id) {
+      alert("You cannot review your own listing.");
+      return;
+    }
+
+    setSubmittingReview(true);
+
+    const { error } = await supabase.from("ratings").insert([
+      {
+        reviewer_id: user.id,
+        reviewed_user_id: listing.user_id,
+        listing_id: listing.id,
+        rating: reviewRating,
+        review: reviewText.trim() || null,
+      },
+    ]);
+
+    setSubmittingReview(false);
+
+    if (error) {
+      console.error(error);
+      alert("Could not submit review. You may have already reviewed this listing.");
+      return;
+    }
+
+    setReviewText("");
+    setReviewRating(5);
+    alert("Review submitted.");
+  };
+
   const incrementViewCount = async (listingId: string, currentCount?: number | null) => {
     const nextCount = (currentCount || 0) + 1;
 
@@ -232,6 +306,7 @@ export default function ListingPage() {
       .select("*")
       .neq("id", listingId)
       .gt("expires_at", new Date().toISOString())
+      .eq("status", "available")
       .order("created_at", { ascending: false })
       .limit(4);
 
@@ -303,6 +378,13 @@ export default function ListingPage() {
 
     const listingData = data as Listing;
 
+    if (listingData.status &&
+    listingData.status !== 'available') {
+      setListing(null);
+      setLoading(false);
+      return;
+    }
+
     if (
       listingData.expires_at &&
       new Date(listingData.expires_at).getTime() <= Date.now()
@@ -329,6 +411,8 @@ export default function ListingPage() {
 
     if (!sellerError && sellerData) {
       setSeller(sellerData as SellerProfile);
+      await
+      fetchRatingsSummary(sellerData.id);
     }
 
     fetchSellerStats(data.user_id);
@@ -1122,6 +1206,50 @@ export default function ListingPage() {
                 )}
 
               </div>
+            </section>
+            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900">Rate this seller</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Share your experience with this seller.
+              </p>
+
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rating
+                </label>
+                <select
+                  value={reviewRating}
+                  onChange={(e) => setReviewRating(Number(e.target.value))}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                >
+                  <option value={5}>5 stars</option>
+                  <option value={4}>4 stars</option>
+                  <option value={3}>3 stars</option>
+                  <option value={2}>2 stars</option>
+                  <option value={1}>1 star</option>
+                </select>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Review
+                </label>
+                <textarea
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  rows={4}
+                  placeholder="Write a short review..."
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500 resize-none"
+                />
+              </div>
+
+              <button
+                onClick={handleSubmitReview}
+                disabled={submittingReview}
+                className="w-full mt-5 rounded-2xl bg-green-600 hover:bg-green-700 text-white py-3.5 text-sm font-semibold transition shadow-md"
+              >
+                {submittingReview ? "Submitting..." : "Submit Review"}
+              </button>
             </section>
           </div>
         </div>

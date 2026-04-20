@@ -12,6 +12,7 @@ type ListingCardProps = {
     image: string | null;
     category?: string | null;
     is_featured?: boolean | null;
+    status?: "available" | "pending" | "sold" | null;
     profiles?: {
       username?: string | null;
       breeder_name?: string | null;
@@ -45,7 +46,15 @@ export default function ListingCard({
             }`}
           />
 
-          {item.is_featured ? (
+          {item.status === "sold" ? (
+            <span className="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+              Sold
+            </span>
+          ) : item.status === "pending" ? (
+            <span className="absolute top-3 left-3 bg-amber-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
+              Pending
+            </span>
+          ) : item.is_featured ? (
             <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
               ★ Featured
             </span>

@@ -33,6 +33,7 @@ type Listing = {
   longitude?: number | null;
   expires_at?: string | null;
   is_expired?: boolean | null;
+  status?: "available" | "pending" | "sold" | null;
   profiles?: {
     username?: string | null;
     breeder_name?: string | null;
@@ -318,6 +319,7 @@ export default function SearchPageClient() {
       .from("listings")
       .select("*")
       .gt("expires_at", new Date().toISOString())
+      .eq("status", "available")
       .order("created_at", { ascending: false });
 
     if (error) {

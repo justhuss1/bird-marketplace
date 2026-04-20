@@ -38,6 +38,7 @@ type Listing = {
   created_at?: string | null;
   expires_at?: string | null;
   is_expired?: boolean | null;
+  status?: "available" | "pending" | "sold" | null;
 };
 
 type Announcement = {
@@ -63,6 +64,9 @@ export default function BreederProfilePage() {
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
+  const [ratingAvg, setRatingAvg] = useState<number | null>(null);
+  const [ratingCount, setRatingCount] = useState(0);
+  const [recentReviews, setRecentReviews] = useState<any[]>([]);
 
   useEffect(() => {
     if (breederId) {
@@ -84,6 +88,47 @@ export default function BreederProfilePage() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const fetchRatingsSummary = async (profileId: string) => {
+    const { data, error } = await supabase
+      .from("ratings")
+      .select("rating")
+      .eq("reviewed_user_id", profileId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const rows = data || [];
+      const count = rows.length;
+
+      if (count === 0) {
+        setRatingAvg(null);
+        setRatingCount(0);
+        return;
+      }
+
+      const total = rows.reduce((sum, row) => sum + row.rating, 0);
+      setRatingAvg(total / count);
+      setRatingCount(count);
+    };
+
+  const fetchRecentReviews = async (profileId: string) => {
+    const { data, error } = await supabase
+      .from("ratings")
+      .select("id, rating, review, created_at")
+      .eq("reviewed_user_id", profileId)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setRecentReviews(data || []);
   };
 
   const formatJoinedDate = (date?: string | null) => {
@@ -201,12 +246,15 @@ export default function BreederProfilePage() {
     }
 
     setProfile(profileData as Profile);
+    await fetchRatingsSummary(breederId);
+    await fetchRecentReviews(breederId);
 
     const { data: listingsData, error: listingsError } = await supabase
       .from("listings")
       .select("*")
       .eq("user_id", breederId)
       .gt("expires_at", new Date().toISOString())
+      .eq("status", "available")
       .order("created_at", { ascending: false });
 
     if (listingsError) {
@@ -382,6 +430,27 @@ export default function BreederProfilePage() {
                   <p className="mt-3 text-sm text-white/60">
                     {formatJoinedDate(profile.created_at)}
                   </p>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <Star size={16} className="text-yellow-300 fill-yellow-300" />
+                    <span className="text-sm font-semibold text-white">
+                      {ratingAvg ? ratingAvg.toFixed(1) : "New"}
+                    </span>
+                    <span className="text-xs text-white/70">
+                      ({ratingCount} review{ratingCount === 1 ? "" : "s"})
+                    </span>
+                  </div>
+
+
+                  <div className="flex items-center gap-2 mt-3">
+                    <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                    <span className="text-sm font-semibold text-gray-900">
+                      {ratingAvg ? ratingAvg.toFixed(1) : "New"}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      ({ratingCount} review{ratingCount === 1 ? "" : "s"})
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -498,6 +567,50 @@ export default function BreederProfilePage() {
             </div>
           )}
         </section>
+
+        {recentReviews.length > 0 && (
+          <section className="mt-8">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+              <div>
+                <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                  Reviews
+                </p>
+                <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+                  Recent Reviews
+                </h2>
+                <p className="mt-2 text-sm text-gray-500">
+                  Feedback from buyers and marketplace users.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {recentReviews.map((review) => (
+                <article
+                  key={review.id}
+                  className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6"
+                >
+                  <div className="flex items-center gap-2">
+                    <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                    <p className="text-sm font-semibold text-gray-900">
+                      {review.rating}/5
+                    </p>
+                  </div>
+
+                  {review.review && (
+                    <p className="mt-3 text-sm text-gray-700 leading-7 whitespace-pre-line">
+                      {review.review}
+                    </p>
+                  )}
+
+                  <p className="mt-4 text-xs text-gray-400">
+                    {new Date(review.created_at).toLocaleDateString()}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mt-8">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">

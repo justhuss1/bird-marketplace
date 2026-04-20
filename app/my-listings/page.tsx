@@ -30,6 +30,8 @@ type Listing = {
   created_at?: string;
   expires_at?: string | null;
   is_expired?: boolean | null;
+  status?: "available" | "pending" | 
+"sold" | null;
 };
 
 export default function MyListingsPage() {
@@ -91,6 +93,28 @@ export default function MyListingsPage() {
     }
 
     setListings((prev) => prev.filter((listing) => listing.id !== listingId));
+  };
+
+  const handleStatusChange = async (
+    listingId: string,
+    newStatus: "available" | "pending" | "sold"
+  ) => {
+    const { error } = await supabase
+      .from("listings")
+      .update({ status: newStatus })
+      .eq("id", listingId);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to update listing status");
+      return;
+    }
+
+    setListings((prev) =>
+      prev.map((listing) =>
+        listing.id === listingId ? { ...listing, status: newStatus } : listing
+      )
+    );
   };
 
   const handleRenewListing = async (listingId: string) => {
@@ -346,12 +370,15 @@ export default function MyListingsPage() {
                 </p>
               </div>
             </div>
+            
 
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {expiringSoonListings.slice(0, 4).map((item) => {
                 const daysLeft = getDaysUntilExpiry(item.expires_at);
 
                 return (
+
+                  
                   <div
                     key={item.id}
                     className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-4"
@@ -507,6 +534,26 @@ export default function MyListingsPage() {
                             ? `Expired ${formatExpiryDate(listing.expires_at)}`
                             : `Expires ${formatExpiryDate(listing.expires_at)}`}
                         </span>
+                      </div>
+
+                      <div className="mt-4">
+                        <label className="block text-xs font-medium text-gray-500 mb-2">
+                          Listing Status
+                        </label>
+                        <select
+                          value={listing.status || "available"}
+                          onChange={(e) =>
+                            handleStatusChange(
+                              listing.id,
+                              e.target.value as "available" | "pending" | "sold"
+                            )
+                          }
+                          className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                        >
+                          <option value="available">Available</option>
+                          <option value="pending">Pending</option>
+                          <option value="sold">Sold</option>
+                        </select>
                       </div>
 
                       <div className="mt-5 grid grid-cols-2 gap-3">

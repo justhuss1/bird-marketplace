@@ -46,6 +46,7 @@ type Listing = {
   attributes?: Record<string, string> | 
   null;
   user_id?: string;
+  status?: "available" | "pending" | "sold" | null;
   profiles?: {
     username?: string | null;
     breeder_name?: string | null;
@@ -205,6 +206,7 @@ export default function Home() {
       .from("listings")
       .select("*")
       .gt("expires_at", new Date().toISOString())
+      .eq("status", "available")
       .order("created_at", { ascending: false });
 
     if (error) {

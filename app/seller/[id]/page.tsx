@@ -12,6 +12,7 @@ import {
   User,
   CalendarDays,
   Tag,
+  Star,
 } from "lucide-react";
 
 type Profile = {
@@ -42,12 +43,39 @@ export default function SellerPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ratingAvg, setRatingAvg] = useState<number | null>(null);
+  const [ratingCount, setRatingCount] = useState(0);
 
   useEffect(() => {
     if (sellerId) {
       fetchSellerPage();
     }
   }, [sellerId]);
+
+  const fetchRatingsSummary = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("ratings")
+      .select("rating")
+      .eq("reviewed_user_id", userId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const rows = data || [];
+    const count = rows.length;
+
+    if (count === 0) {
+      setRatingAvg(null);
+      setRatingCount(0);
+      return;
+    }
+
+  const total = rows.reduce((sum, row) => sum + row.rating, 0);
+  setRatingAvg(total / count);
+  setRatingCount(count);
+};
 
   const fetchSellerPage = async () => {
     setLoading(true);
@@ -65,6 +93,7 @@ export default function SellerPage() {
     }
 
     setProfile(profileData);
+    await fetchRatingsSummary(sellerId);
 
     const { data: listingData, error: listingError } = await supabase
       .from("listings")
@@ -177,6 +206,16 @@ export default function SellerPage() {
                     {listings.length === 1 ? "" : "s"}
                   </span>
                 </p>
+
+                <div className="flex items-center gap-2 mt-3">
+                  <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                  <span className="text-sm font-semibold text-gray-900">
+                    {ratingAvg ? ratingAvg.toFixed(1) : "New"}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    ({ratingCount} review{ratingCount === 1 ? "" : "s"})
+                  </span>
+                </div>
               </div>
             </div>
           </div>
