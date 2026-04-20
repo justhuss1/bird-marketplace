@@ -632,10 +632,20 @@ export default function MyListingsPage() {
                           className={`absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full shadow font-medium ${
                             isExpired
                               ? "bg-red-50 text-red-600"
+                              : listing.status === "sold"
+                              ? "bg-red-600 text-white"
+                              : listing.status === "pending"
+                              ? "bg-amber-500 text-white"
                               : "bg-green-50 text-green-700"
                           }`}
                         >
-                          {isExpired ? "Expired" : "Active"}
+                          {isExpired
+                            ? "Expired"
+                            : listing.status === "sold"
+                            ? "Sold"
+                            : listing.status === "pending"
+                            ? "Pending"
+                            : "Available"}
                         </span>
                       </div>
                     </Link>
@@ -675,13 +685,14 @@ export default function MyListingsPage() {
                         <label className="block text-xs font-medium text-gray-500 mb-2">
                           Listing Status
                         </label>
+
                         <select
-                          value={listing.status || "available"}
+                          value={pendingStatusChanges[listing.id] || listing.status || "available"}
                           onChange={(e) =>
-                            handleStatusChange(
-                              listing.id,
-                              e.target.value as "available" | "pending" | "sold"
-                            )
+                            setPendingStatusChanges((prev) => ({
+                              ...prev,
+                              [listing.id]: e.target.value as "available" | "pending" | "sold",
+                            }))
                           }
                           className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
                         >
@@ -689,6 +700,94 @@ export default function MyListingsPage() {
                           <option value="pending">Pending</option>
                           <option value="sold">Sold</option>
                         </select>
+
+                        {(pendingStatusChanges[listing.id] || listing.status || "available") !==
+                          (listing.status || "available") && (
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleStatusChange(
+                                  listing.id,
+                                  pendingStatusChanges[listing.id] as
+                                    | "available"
+                                    | "pending"
+                                    | "sold"
+                                )
+                              }
+                              disabled={statusSavingId === listing.id}
+                              className="rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-xs font-semibold transition disabled:opacity-50"
+                            >
+                              {statusSavingId === listing.id ? "Saving..." : "Confirm Status"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPendingStatusChanges((prev) => {
+                                  const updated = { ...prev };
+                                  delete updated[listing.id];
+                                  return updated;
+                                })
+                              }
+                              className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 text-xs font-semibold transition"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+
+                        {soldPickerOpenId === listing.id && (
+                          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                            <label className="block text-xs font-medium text-gray-700 mb-2">
+                              Select the buyer you sold this item to
+                            </label>
+
+                            <select
+                              value={selectedSoldBuyer[listing.id] || ""}
+                              onChange={(e) =>
+                                setSelectedSoldBuyer((prev) => ({
+                                  ...prev,
+                                  [listing.id]: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                            >
+                              <option value="">Choose buyer</option>
+                              {(soldBuyerOptions[listing.id] || []).map((buyer: any) => (
+                                <option key={buyer.buyer_id} value={buyer.buyer_id}>
+                                  {buyer.username}
+                                </option>
+                              ))}
+                            </select>
+
+                            <div className="mt-3 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => confirmSoldToBuyer(listing.id)}
+                                disabled={statusSavingId === listing.id}
+                                className="rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-xs font-semibold transition disabled:opacity-50"
+                              >
+                                {statusSavingId === listing.id ? "Saving..." : "Confirm Sold"}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSoldPickerOpenId(null);
+                                  setPendingStatusChanges((prev) => {
+                                    const updated = { ...prev };
+                                    delete updated[listing.id];
+                                    return updated;
+                                  });
+                                }}
+                                className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 text-xs font-semibold transition"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-5 grid grid-cols-2 gap-3">
