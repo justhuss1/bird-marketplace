@@ -30,8 +30,9 @@ type Listing = {
   created_at?: string;
   expires_at?: string | null;
   is_expired?: boolean | null;
-  status?: "available" | "pending" | 
-"sold" | null;
+  status?: "available" | "pending" | "sold" | null;
+  sold_to_user_id?: string | null;
+  sold_at?: string | null;
 };
 
 export default function MyListingsPage() {
@@ -39,6 +40,11 @@ export default function MyListingsPage() {
   const [loading, setLoading] = useState(true);
   const [listings, setListings] = useState<Listing[]>([]);
   const [userEmail, setUserEmail] = useState("");
+  const [pendingStatusChanges, setPendingStatusChanges] = useState<Record<string, "available" | "pending" | "sold">>({});
+  const [statusSavingId, setStatusSavingId] = useState<string | null>(null);
+  const [soldBuyerOptions, setSoldBuyerOptions] = useState<Record<string, any[]>>({});
+  const [selectedSoldBuyer, setSelectedSoldBuyer] = useState<Record<string, string>>({});
+  const [soldPickerOpenId, setSoldPickerOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMyListings();
@@ -95,14 +101,78 @@ export default function MyListingsPage() {
     setListings((prev) => prev.filter((listing) => listing.id !== listingId));
   };
 
+  const openSoldBuyerPicker = async (listingId: string) => {
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id, buyer_id")
+      .eq("listing_id", listingId);
+
+    if (error) {
+      console.error(error);
+      alert("Could not load buyers for this listing.");
+      return;
+    }
+
+    const conversations = data || [];
+
+    if (conversations.length === 0) {
+      alert("No buyers have messaged about this listing yet.");
+      return;
+    }
+
+    const buyerIds = Array.from(
+      new Set(conversations.map((conversation) => conversation.buyer_id))
+    );
+
+    const { data: buyerProfiles, error: buyerProfilesError } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("id", buyerIds);
+
+    if (buyerProfilesError) {
+      console.error(buyerProfilesError);
+      alert("Could not load buyer profiles.");
+      return;
+    }
+
+    const profileMap = new Map(
+      (buyerProfiles || []).map((profile) => [profile.id, profile])
+    );
+
+    const options = buyerIds.map((buyerId) => ({
+      buyer_id: buyerId,
+      username: profileMap.get(buyerId)?.username || "Buyer",
+    }));
+
+    setSoldBuyerOptions((prev) => ({
+      ...prev,
+      [listingId]: options,
+    }));
+
+    setSoldPickerOpenId(listingId);
+  };
+
   const handleStatusChange = async (
     listingId: string,
     newStatus: "available" | "pending" | "sold"
   ) => {
+    if (newStatus === "sold") {
+      await openSoldBuyerPicker(listingId);
+      return;
+    }
+
+    setStatusSavingId(listingId);
+
     const { error } = await supabase
       .from("listings")
-      .update({ status: newStatus })
+      .update({
+        status: newStatus,
+        sold_to_user_id: null,
+        sold_at: null,
+      })
       .eq("id", listingId);
+
+    setStatusSavingId(null);
 
     if (error) {
       console.error(error);
@@ -112,31 +182,96 @@ export default function MyListingsPage() {
 
     setListings((prev) =>
       prev.map((listing) =>
-        listing.id === listingId ? { ...listing, status: newStatus } : listing
+        listing.id === listingId
+          ? {
+              ...listing,
+              status: newStatus,
+              sold_to_user_id: null,
+              sold_at: null,
+            }
+          : listing
       )
     );
+
+    setPendingStatusChanges((prev) => {
+      const updated = { ...prev };
+      delete updated[listingId];
+      return updated;
+    });
   };
 
+  const confirmSoldToBuyer = async (listingId: string) => {
+    const buyerId = selectedSoldBuyer[listingId];
+
+    if (!buyerId) {
+      alert("Please select the buyer you sold this item to.");
+      return;
+    }
+
+    setStatusSavingId(listingId);
+
+    const soldAt = new Date().toISOString();
+
+    const { error } = await supabase
+      .from("listings")
+      .update({
+        status: "sold",
+        sold_to_user_id: buyerId,
+        sold_at: soldAt,
+      })
+      .eq("id", listingId);
+
+    setStatusSavingId(null);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to mark listing as sold.");
+      return;
+    }
+
+    setListings((prev) =>
+      prev.map((listing) =>
+        listing.id === listingId
+          ? {
+              ...listing,
+              status: "sold",
+              sold_to_user_id: buyerId,
+              sold_at: soldAt,
+            }
+          : listing
+      )
+    );
+
+    setPendingStatusChanges((prev) => {
+      const updated = { ...prev };
+      delete updated[listingId];
+      return updated;
+    });
+
+    setSoldPickerOpenId(null);
+  };
+
+
   const handleRenewListing = async (listingId: string) => {
-  const { error } = await supabase
-    .from("listings")
-    .update({
-      expires_at: new Date(
-        Date.now() + 30 * 24 * 60 * 60 * 1000
-      ).toISOString(),
-      is_expired: false,
-    })
-    .eq("id", listingId);
+    const { error } = await supabase
+      .from("listings")
+      .update({
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        is_expired: false,
+      })
+      .eq("id", listingId);
 
-  if (error) {
-    console.error(error);
-    alert("Could not renew listing.");
-    return;
-  }
+    if (error) {
+      console.error(error);
+      alert("Could not renew listing.");
+      return;
+    }
 
-  alert("Listing renewed for 30 days.");
-  fetchMyListings();
-};
+    alert("Listing renewed for 30 days.");
+    fetchMyListings();
+  };
 
   const handleCheckout = async (type: "feature" | "boost", listingId: string) => {
     try {
