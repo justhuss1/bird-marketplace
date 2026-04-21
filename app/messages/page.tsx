@@ -11,6 +11,7 @@ import {
   Search,
   Image as ImageIcon,
   FileText,
+  ArrowLeft,
 } from "lucide-react";
 
 type Conversation = {
@@ -122,7 +123,6 @@ export default function MessagesInboxPage() {
       (!!preview.attachment_name && !isImage);
 
     if (hasText) return preview.text;
-
     if (isImage) return "Photo";
     if (isFile) return preview.attachment_name || "File";
 
@@ -168,105 +168,134 @@ export default function MessagesInboxPage() {
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen py-6 sm:py-8 px-4 pb-24">
+    <main className="bg-[#f7f7f5] min-h-screen px-4 py-6 sm:py-8 pb-24">
       <div className="max-w-5xl mx-auto">
         <button
           onClick={() => router.back()}
-          className="mb-4 text-sm text-gray-600 hover:text-black transition"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
         >
-          ← Back
+          <ArrowLeft size={16} />
+          Back
         </button>
 
-        <div className="mb-6">
-          <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
-            Inbox
-          </p>
-          <h1 className="mt-2 text-3xl font-bold text-gray-900">Messages</h1>
-          <p className="text-gray-500 mt-2">
-            View your buyer and seller conversations for pets and listings in one place.
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-sm p-4 sm:p-5 mb-6">
-          <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
-            <Search size={18} className="text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search conversations"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-            />
-          </div>
-        </div>
-
-        {filteredConversations.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 text-center">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
-              <MessageCircle size={26} />
+        {/* HEADER */}
+        <section className="mt-4">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                Inbox
+              </p>
+              <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-gray-900">
+                Messages
+              </h1>
+              <p className="mt-2 text-sm text-gray-500">
+                View your buyer and seller conversations in one place.
+              </p>
             </div>
 
-            <h2 className="text-xl font-semibold text-gray-800">
-              {conversations.length === 0
-                ? "No conversations yet"
-                : "No matching conversations"}
-            </h2>
-
-            <p className="text-gray-500 mt-2 max-w-md mx-auto">
-              {conversations.length === 0
-                ? "When you message a seller about a pet or listing, your conversations will appear here."
-                : "Try searching for a listing title, location, or message preview."}
-            </p>
+            <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.12em] text-gray-500 font-medium">
+                Conversations
+              </p>
+              <p className="mt-1 text-lg font-bold text-gray-900">
+                {filteredConversations.length}
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredConversations.map((conversation) => (
-              <Link key={conversation.id} href={`/messages/${conversation.id}`}>
-                <article className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition duration-300 p-4 sm:p-5 cursor-pointer">
-                  <div className="flex gap-4 items-center">
-                    <div className="shrink-0">
-                      <img
-                        src={
-                          conversation.listings?.image &&
-                          conversation.listings.image !== ""
-                            ? conversation.listings.image
-                            : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
-                        }
-                        alt={conversation.listings?.title || "Listing"}
-                        className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover"
-                      />
-                    </div>
+        </section>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <h2 className="text-lg font-semibold text-gray-900 line-clamp-1">
-                          {conversation.listings?.title || "Untitled Listing"}
-                        </h2>
+        {/* SEARCH */}
+        <section className="mt-5">
+          <div className="rounded-[24px] border border-gray-200 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Search size={18} className="text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search conversations"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+        </section>
 
-                        <div className="hidden sm:flex items-center gap-1 text-sm text-gray-400 shrink-0">
-                          <span>Open</span>
-                          <ChevronRight size={16} />
+        {/* LIST */}
+        <section className="mt-6">
+          {filteredConversations.length === 0 ? (
+            <div className="bg-white rounded-[30px] border border-gray-100 shadow-sm p-10 text-center">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
+                <MessageCircle size={26} />
+              </div>
+
+              <h2 className="text-xl font-semibold text-gray-800">
+                {conversations.length === 0
+                  ? "No conversations yet"
+                  : "No matching conversations"}
+              </h2>
+
+              <p className="text-gray-500 mt-2 max-w-md mx-auto leading-7">
+                {conversations.length === 0
+                  ? "When you message a seller about a pet or listing, your conversations will appear here."
+                  : "Try searching for a listing title, location, or message preview."}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-[30px] border border-gray-100 shadow-sm overflow-hidden">
+              <div className="divide-y divide-gray-100">
+                {filteredConversations.map((conversation) => (
+                  <Link key={conversation.id} href={`/messages/${conversation.id}`}>
+                    <article className="group px-4 sm:px-5 py-4 hover:bg-gray-50 transition cursor-pointer">
+                      <div className="flex gap-4 items-center">
+                        <div className="shrink-0">
+                          <img
+                            src={
+                              conversation.listings?.image &&
+                              conversation.listings.image !== ""
+                                ? conversation.listings.image
+                                : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
+                            }
+                            alt={conversation.listings?.title || "Listing"}
+                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover"
+                          />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h2 className="text-[15px] sm:text-lg font-semibold text-gray-900 line-clamp-1">
+                                {conversation.listings?.title || "Untitled Listing"}
+                              </h2>
+
+                              <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
+                                <MapPin size={14} />
+                                <span className="truncate">
+                                  {conversation.listings?.location || "Unknown location"}
+                                </span>
+                              </p>
+                            </div>
+
+                            <div className="hidden sm:flex items-center gap-1 text-sm text-gray-400 shrink-0 group-hover:text-gray-600 transition">
+                              <span>Open</span>
+                              <ChevronRight size={16} />
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                            {getPreviewIcon(conversation.id)}
+                            <span className="line-clamp-2">
+                              {getPreviewText(conversation.id)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-
-                      <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-                        <MapPin size={14} />
-                        {conversation.listings?.location || "Unknown location"}
-                      </p>
-
-                      <div className="mt-3 flex items-center gap-2 text-sm text-gray-600 line-clamp-2">
-                        {getPreviewIcon(conversation.id)}
-                        <span className="line-clamp-2">
-                          {getPreviewText(conversation.id)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              </Link>
-            ))}
-          </div>
-        )}
+                    </article>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
