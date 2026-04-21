@@ -13,7 +13,7 @@ import {
   PlusSquare,
   LayoutDashboard,
   LogOut,
-  UserCircle2
+  UserCircle2,
 } from "lucide-react";
 
 type Profile = {
@@ -135,35 +135,40 @@ export default function TopNavbar() {
   const avatarLetter = (username || userEmail || "A").charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-black/5 bg-[#fafaf7]/85 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="h-16 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/branding/logo-navbar.png"
-              alt="Pet Marketplace"
-              width={36}
-              height={36}
-              className="rounded-xl"
-              priority
-            />
-            <span className="text-xl font-bold text-green-600">
-              Pet Marketplace
-            </span>
+        <div className="h-[68px] flex items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-3 min-w-0">
+            <div className="shrink-0">
+              <Image
+                src="/branding/logo-navbar.png"
+                alt="Pet Marketplace"
+                width={38}
+                height={38}
+                className="rounded-xl"
+                priority
+              />
+            </div>
+
+            <div className="min-w-0">
+              <span className="block text-[17px] sm:text-[19px] font-bold tracking-[-0.02em] text-gray-900 truncate">
+                Pet Marketplace
+              </span>
+            </div>
           </Link>
 
           {!userEmail ? (
             <Link href="/login">
-              <button className="rounded-xl bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-semibold transition">
+              <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 text-sm font-semibold transition shadow-sm">
                 Login
               </button>
             </Link>
           ) : (
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Notifications button */}
+              {/* Notifications */}
               <Link href="/notifications" className="relative">
-                <button className="relative w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center transition">
-                  <Bell size={18} className="text-gray-700" />
+                <button className="relative w-11 h-11 rounded-2xl border border-gray-200 bg-white/90 hover:bg-white text-gray-700 flex items-center justify-center transition shadow-sm">
+                  <Bell size={18} />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-semibold flex items-center justify-center shadow">
                       {unreadCount > 99 ? "99+" : unreadCount}
@@ -172,11 +177,11 @@ export default function TopNavbar() {
                 </button>
               </Link>
 
-              {/* Account menu */}
+              {/* Menu */}
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 px-2.5 py-2 transition"
+                  className="flex items-center gap-3 rounded-[20px] border border-gray-200 bg-white/90 hover:bg-white px-2.5 py-2 transition shadow-sm"
                 >
                   <div className="relative w-9 h-9 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold text-sm">
                     {avatarLetter}
@@ -186,7 +191,7 @@ export default function TopNavbar() {
                   </div>
 
                   <div className="hidden sm:block text-left">
-                    <p className="text-sm font-medium text-gray-900 max-w-[140px] truncate">
+                    <p className="text-sm font-semibold text-gray-900 max-w-[140px] truncate">
                       {displayName}
                     </p>
                     <p className="text-xs text-gray-500 max-w-[160px] truncate">
@@ -203,8 +208,9 @@ export default function TopNavbar() {
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 mt-3 w-[290px] rounded-3xl border border-gray-100 bg-white shadow-xl overflow-hidden">
-                    <div className="px-4 py-4 border-b border-gray-100 bg-gray-50">
+                  <div className="absolute right-0 mt-3 w-[300px] rounded-[28px] border border-gray-100 bg-white shadow-2xl overflow-hidden">
+                    {/* top summary */}
+                    <div className="px-4 py-4 border-b border-gray-100 bg-[#fafaf7]">
                       <div className="flex items-center gap-3">
                         <div className="relative w-11 h-11 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold">
                           {avatarLetter}
@@ -234,7 +240,7 @@ export default function TopNavbar() {
                       <p className="px-3 pt-2 pb-1 text-[11px] uppercase tracking-[0.14em] text-gray-400">
                         Account
                       </p>
-                      
+
                       <Link
                         href="/account"
                         onClick={() => setMenuOpen(false)}
