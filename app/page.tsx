@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -10,11 +10,6 @@ import ListingCard from "@/components/ListingCard";
 
 import {
   Bird,
-  Heart,
-  MapPin,
-  ShieldCheck,
-  MessageCircle,
-  Star,
   Search,
   Cat,
   Dog,
@@ -30,6 +25,9 @@ import {
   Award,
   BadgeCheck,
   Users,
+  ShieldCheck,
+  MessageCircle,
+  Star,
 } from "lucide-react";
 
 type Listing = {
@@ -43,8 +41,7 @@ type Listing = {
   boost_until?: string | null;
   expires_at?: string | null;
   is_expired?: boolean | null;
-  attributes?: Record<string, string> | 
-  null;
+  attributes?: Record<string, string> | null;
   user_id?: string;
   status?: "available" | "pending" | "sold" | null;
   profiles?: {
@@ -73,8 +70,6 @@ export default function Home() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
-  const [userEmail, setUserEmail] = useState("");
-  const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -90,8 +85,6 @@ export default function Home() {
 
   useEffect(() => {
     fetchListings();
-    getCurrentUser();
-    fetchSavedListings();
     fetchLatestBreederUpdates();
     fetchBreederOfTheMonth();
 
@@ -103,7 +96,7 @@ export default function Home() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowStickySearch(window.scrollY > 420);
+      setShowStickySearch(window.scrollY > 240);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -153,32 +146,28 @@ export default function Home() {
       breeders.map(async (breeder) => {
         const nowIso = new Date().toISOString();
 
-        const [{ count: listingsCount }, { count: followersCount }, { count: announcementsCount }, { data: latestAnnouncement }] =
-          await Promise.all([
-            supabase
-              .from("listings")
-              .select("*", { count: "exact", head: true })
-              .eq("user_id", breeder.id)
-              .gt("expires_at", nowIso),
+        const [
+          { count: listingsCount },
+          { count: followersCount },
+          { count: announcementsCount },
+        ] = await Promise.all([
+          supabase
+            .from("listings")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", breeder.id)
+            .gt("expires_at", nowIso)
+            .eq("status", "available"),
 
-            supabase
-              .from("follows")
-              .select("*", { count: "exact", head: true })
-              .eq("breeder_id", breeder.id),
+          supabase
+            .from("follows")
+            .select("*", { count: "exact", head: true })
+            .eq("breeder_id", breeder.id),
 
-            supabase
-              .from("breeder_announcements")
-              .select("*", { count: "exact", head: true })
-              .eq("breeder_id", breeder.id),
-
-            supabase
-              .from("breeder_announcements")
-              .select("title, post_type, expected_date, created_at")
-              .eq("breeder_id", breeder.id)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .maybeSingle(),
-          ]);
+          supabase
+            .from("breeder_announcements")
+            .select("*", { count: "exact", head: true })
+            .eq("breeder_id", breeder.id),
+        ]);
 
         const score =
           (listingsCount || 0) * 3 +
@@ -191,7 +180,6 @@ export default function Home() {
           listingsCount: listingsCount || 0,
           followersCount: followersCount || 0,
           announcementsCount: announcementsCount || 0,
-          latestAnnouncement: latestAnnouncement || null,
           score,
         };
       })
@@ -252,94 +240,6 @@ export default function Home() {
     setListings(mergedListings);
   };
 
-  const getSellerLabel = (item: Listing) => {
-    return (
-      item.profiles?.breeder_name ||
-      item.profiles?.username ||
-      "Seller"
-    );
-  };
-
-  const getCurrentUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    setUserEmail(user?.email || "");
-  };
-
-  const fetchSavedListings = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setSavedListingIds([]);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("saved_listings")
-      .select("listing_id")
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.error(error);
-      return;
-    }
-
-    setSavedListingIds((data || []).map((item) => item.listing_id));
-  };
-
-  const handleToggleSave = async (
-    e: React.MouseEvent,
-    listingId: string
-  ) => {
-    e.preventDefault();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      alert("Please log in to save listings.");
-      return;
-    }
-
-    const isSaved = savedListingIds.includes(listingId);
-
-    if (isSaved) {
-      const { error } = await supabase
-        .from("saved_listings")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("listing_id", listingId);
-
-      if (error) {
-        console.error(error);
-        alert("Failed to remove saved listing");
-        return;
-      }
-
-      setSavedListingIds((prev) => prev.filter((id) => id !== listingId));
-    } else {
-      const { error } = await supabase.from("saved_listings").insert([
-        {
-          user_id: user.id,
-          listing_id: listingId,
-        },
-      ]);
-
-      if (error) {
-        console.error(error);
-        alert("Failed to save listing");
-        return;
-      }
-
-      setSavedListingIds((prev) => [...prev, listingId]);
-    }
-  };
-
   const formatAnnouncementType = (postType: string) => {
     if (postType === "upcoming_litter") return "Upcoming Litter";
     if (postType === "available_soon") return "Available Soon";
@@ -349,21 +249,6 @@ export default function Home() {
   const formatAnnouncementDate = (date?: string) => {
     if (!date) return "";
 
-    return new Date(date).toLocaleDateString(undefined, {
-      day: "numeric",
-      month: "short",
-    });
-  };
-
-  const formatBreederPostType = (postType?: string) => {
-    if (!postType) return "Announcement";
-    if (postType === "upcoming_litter") return "Upcoming Litter";
-    if (postType === "available_soon") return "Available Soon";
-    return "Announcement";
-  };
-
-  const formatShortDate = (date?: string) => {
-    if (!date) return "";
     return new Date(date).toLocaleDateString(undefined, {
       day: "numeric",
       month: "short",
@@ -451,15 +336,6 @@ export default function Home() {
     localStorage.setItem("recentSearches", JSON.stringify(updated));
   };
 
-  const removeRecentSearch = (itemToRemove: string) => {
-    const updated = recentSearches.filter(
-      (item) => item.toLowerCase() !== itemToRemove.toLowerCase()
-    );
-
-    setRecentSearches(updated);
-    localStorage.setItem("recentSearches", JSON.stringify(updated));
-  };
-
   const clearAllRecentSearches = () => {
     setRecentSearches([]);
     localStorage.removeItem("recentSearches");
@@ -525,55 +401,57 @@ export default function Home() {
   const latestListings = filteredListings.filter((item) => !item.is_featured);
 
   const categoryItems = [
-    { name: "Birds", icon: Bird },
-    { name: "Cats", icon: Cat },
     { name: "Dogs", icon: Dog },
+    { name: "Cats", icon: Cat },
+    { name: "Birds", icon: Bird },
     { name: "Fish", icon: Fish },
+    { name: "Rabbits", icon: Rabbit },
     { name: "Horses & Ponies", icon: Bird },
     { name: "Livestock", icon: Beef },
     { name: "Reptiles & Amphibians", icon: Turtle },
-    { name: "Rabbits", icon: Rabbit },
     { name: "Pet Supplies", icon: Package },
   ];
 
-  return (
-    <main className="bg-gray-50 min-h-screen pb-24">
-      {/* COMPACT TOP SEARCH */}
-      <section className="bg-[#07111f] relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-15"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?auto=format&fit=crop&w=1800&q=80')",
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#07111f]/95 via-[#07111f]/90 to-[#07111f]/75" />
+  const quickMarketplacePoints = [
+    {
+      title: "Verified sellers",
+      icon: ShieldCheck,
+    },
+    {
+      title: "Secure chat",
+      icon: MessageCircle,
+    },
+    {
+      title: "Breeder profiles",
+      icon: Users,
+    },
+    {
+      title: "Upcoming litters",
+      icon: Sparkles,
+    },
+  ];
 
-        <div className="relative max-w-7xl mx-auto px-4 pt-3 sm:pt-6 pb-3 sm:pb-5">
+  return (
+    <main className="bg-[#f7f7f5] min-h-screen pb-24">
+      {/* TOP SEARCH AREA */}
+      <section className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 pt-3 pb-3 sm:pt-5 sm:pb-5">
           <div className="max-w-5xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[11px] font-medium text-white/85 backdrop-blur">
-              <Sparkles size={14} />
+            <div className="hidden md:inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-medium text-gray-600">
+              <Sparkles size={13} />
               Australia-wide pet marketplace
             </div>
 
-            <h1 className="hidden md:block mt-4 text-2xl sm:text-4xl font-bold leading-tight text-white max-w-3xl">
-              Find pets, breeders and supplies fast
-            </h1>
-
-            <p className="hidden md:block mt-2 text-sm sm:text-base text-white/75 max-w-2xl leading-7">
-              Browse trusted listings, follow breeders, and discover upcoming litters.
-            </p>
-
-            {/* MOBILE SEARCH BAR */}
-            <div className="mt-3 block md:hidden">
+            {/* MOBILE SEARCH */}
+            <div className="block md:hidden">
               <button
                 type="button"
                 onClick={openSearchSheet}
-                className="w-full rounded-[28px] border border-white/10 bg-white/95 shadow-xl backdrop-blur px-4 py-4 flex items-center justify-between gap-3 hover:bg-white transition"
+                className="w-full rounded-[24px] border border-gray-200 bg-white shadow-sm px-4 py-3.5 flex items-center justify-between gap-3 hover:bg-gray-50 transition"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-11 h-11 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
-                    <Search size={19} className="text-gray-500" />
+                  <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
+                    <Search size={18} className="text-gray-500" />
                   </div>
 
                   <div className="min-w-0 text-left flex-1">
@@ -590,16 +468,16 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-[#07111f] text-white px-4 py-3 text-sm font-semibold shrink-0 inline-flex items-center gap-2">
-                  <SlidersHorizontal size={16} />
+                <div className="rounded-2xl bg-[#111827] text-white px-4 py-2.5 text-sm font-semibold shrink-0 inline-flex items-center gap-2">
+                  <SlidersHorizontal size={15} />
                   Search
                 </div>
               </button>
             </div>
 
-            {/* DESKTOP INLINE SEARCH */}
-            <div className="hidden md:block mt-5">
-              <div className="rounded-[28px] border border-white/10 bg-white/95 p-3 shadow-2xl backdrop-blur">
+            {/* DESKTOP SEARCH */}
+            <div className="hidden md:block mt-4">
+              <div className="rounded-[24px] border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="grid grid-cols-[1.2fr_0.95fr_0.8fr_auto] gap-3 items-start">
                   <div className="relative">
                     <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
@@ -675,7 +553,7 @@ export default function Home() {
                       setShowSuggestions(false);
                       runSearch();
                     }}
-                    className="rounded-2xl bg-[#07111f] hover:bg-[#0c1a2d] text-white px-5 py-3 text-sm font-semibold transition h-[50px]"
+                    className="rounded-2xl bg-[#111827] hover:bg-[#1f2937] text-white px-5 py-3 text-sm font-semibold transition h-[50px]"
                   >
                     Search
                   </button>
@@ -692,7 +570,7 @@ export default function Home() {
                           setShowSuggestions(false);
                           runSearch(item);
                         }}
-                        className="rounded-full border border-gray-200 bg-white hover:bg-gray-50 px-4 py-2 text-sm text-gray-700 transition"
+                        className="rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-sm text-gray-700 transition"
                       >
                         {item}
                       </button>
@@ -702,17 +580,10 @@ export default function Home() {
               </div>
             </div>
 
-            {/* QUICK CHIPS */}
-            <div className="mt-3 rounded-[24px] bg-white/8 border border-white/8 p-2">
+            {/* CATEGORY ROW */}
+            <div className="mt-3">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                <Link href="/upcoming-litters">
-                  <button className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white/92 border border-green-100 text-green-700 px-4 py-2 text-[13px] font-semibold shadow-sm hover:bg-white transition">
-                    <Sparkles size={14} />
-                    Upcoming Litters
-                  </button>
-                </Link>
-
-                {categoryItems.slice(0, 5).map((cat) => (
+                {categoryItems.map((cat) => (
                   <button
                     key={cat.name}
                     onClick={() => {
@@ -721,7 +592,7 @@ export default function Home() {
                       params.set("sortBy", "newest");
                       router.push(`/search?${params.toString()}`);
                     }}
-                    className="shrink-0 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/88 backdrop-blur px-4 py-2 text-[13px] font-medium text-gray-700 shadow-sm hover:bg-white transition"
+                    className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-[13px] font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
                   >
                     <cat.icon size={14} />
                     {cat.name}
@@ -733,40 +604,26 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SCROLLING FEATURE RIBBON */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-3 overflow-hidden">
+      {/* FEATURE STRIP */}
+      <section className="bg-[#f7f7f5] border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {[
-              "Follow breeders",
-              "Upcoming litters",
-              "Verified sellers",
-              "Safe in-app chat",
-              "Featured listings",
-              "Australia-wide search",
-              "Fast photo uploads",
-              "Pet supplies included",
-            ].map((item, index) => (
+            {quickMarketplacePoints.map((point) => (
               <div
-                key={item}
-                className={`shrink-0 inline-flex items-center rounded-2xl px-4 py-2 text-[12px] font-semibold tracking-[0.02em] ${
-                  index % 3 === 0
-                    ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-100"
-                    : index % 3 === 1
-                    ? "bg-gradient-to-r from-blue-50 to-slate-50 text-slate-700 border border-slate-100"
-                    : "bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border border-amber-100"
-                }`}
+                key={point.title}
+                className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-[12px] font-semibold text-gray-700"
               >
-                {item}
+                <point.icon size={14} className="text-green-600" />
+                {point.title}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FEATURED LISTINGS */}
+      {/* FEATURED */}
       {featuredListings.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-5 sm:mt-8 relative z-10">
+        <section className="max-w-7xl mx-auto px-4 mt-6 sm:mt-8">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
@@ -800,336 +657,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* PROMO STRIP */}
-      <section className="bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 pt-4 sm:pt-5">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-4">
-            <Link href="/upcoming-litters">
-              <article className="group relative overflow-hidden rounded-[30px] border border-green-100 bg-gradient-to-br from-green-50 via-white to-emerald-50 p-6 sm:p-7 shadow-sm hover:shadow-xl transition duration-300">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-green-100/50 rounded-full blur-3xl pointer-events-none" />
-                <div className="relative">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/90 border border-green-100 px-3 py-1.5 text-xs font-semibold text-green-700 shadow-sm">
-                    <Sparkles size={14} />
-                    New feature
-                  </div>
-
-                  <h2 className="mt-4 text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
-                    Discover upcoming litters before they are listed
-                  </h2>
-
-                  <p className="mt-3 text-sm sm:text-base text-gray-600 leading-7 max-w-2xl">
-                    Follow breeders, keep track of expected dates, and get ahead of new arrivals before standard listings go live.
-                  </p>
-
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <span className="inline-flex rounded-full bg-white border border-green-100 px-3 py-1.5 text-xs font-medium text-gray-700">
-                      Follow breeders
-                    </span>
-                    <span className="inline-flex rounded-full bg-white border border-green-100 px-3 py-1.5 text-xs font-medium text-gray-700">
-                      Expected dates
-                    </span>
-                    <span className="inline-flex rounded-full bg-white border border-green-100 px-3 py-1.5 text-xs font-medium text-gray-700">
-                      Early discovery
-                    </span>
-                  </div>
-
-                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-green-700 group-hover:gap-3 transition-all">
-                    Browse Upcoming Litters
-                    <ArrowRight size={16} />
-                  </div>
-                </div>
-              </article>
-            </Link>
-
-            <Link href="/search?sortBy=newest">
-              <article className="group relative overflow-hidden rounded-[30px] border border-gray-100 bg-white p-6 sm:p-7 shadow-sm hover:shadow-xl transition duration-300">
-                <div className="absolute bottom-0 left-0 w-36 h-36 bg-blue-50 rounded-full blur-3xl pointer-events-none" />
-                <div className="relative">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700">
-                    <ShieldCheck size={14} />
-                    Built for trust
-                  </div>
-
-                  <h3 className="mt-4 text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
-                    Breeder profiles make the marketplace feel more trusted
-                  </h3>
-
-                  <p className="mt-3 text-sm text-gray-600 leading-7">
-                    Buyers can explore breeder pages, see updates, follow programs, and browse active listings in one place.
-                  </p>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-4">
-                      <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
-                        Profiles
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-gray-900">
-                        Public breeder pages
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-4">
-                      <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
-                        Updates
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-gray-900">
-                        Litters & announcements
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-900 group-hover:gap-3 transition-all">
-                    Explore Listings
-                    <ArrowRight size={16} />
-                  </div>
-                </div>
-              </article>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* BREEDER OF THE MONTH */}
-      {breederOfTheMonth && (
-      <section className="bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 pt-6 sm:pt-8">
-          <div className="rounded-[32px] overflow-hidden border border-yellow-100 bg-gradient-to-br from-[#fff8e8] via-white to-[#f7fbf4] shadow-sm">
-            <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-0">
-              <div className="p-6 sm:p-8 lg:p-10">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white border border-yellow-200 px-3 py-1.5 text-xs font-semibold text-yellow-700 shadow-sm">
-                  <Award size={14} />
-                  Breeder of the Month
-                </div>
-
-                <h2 className="mt-4 text-2xl sm:text-4xl font-bold text-gray-900 leading-tight">
-                  {breederOfTheMonth.breeder_name ||
-                    breederOfTheMonth.username ||
-                    "Featured Breeder"}
-                </h2>
-
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-3 py-1 text-xs font-medium">
-                    <Star size={12} />
-                    Top breeder pick
-                  </span>
-
-                  {breederOfTheMonth.breeder_verified && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs font-medium">
-                      <BadgeCheck size={12} />
-                      Verified
-                    </span>
-                  )}
-                </div>
-
-                <p className="mt-4 text-sm sm:text-base text-gray-600 leading-7 max-w-2xl">
-                  {breederOfTheMonth.breeder_bio ||
-                    "A standout breeder this month based on activity, listings, updates, and community engagement."}
-                </p>
-
-                <div className="mt-6 grid grid-cols-3 gap-3 max-w-xl">
-                  <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4">
-                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
-                      Active Listings
-                    </p>
-                    <p className="mt-2 text-xl font-bold text-gray-900">
-                      {breederOfTheMonth.listingsCount}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4">
-                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
-                      Followers
-                    </p>
-                    <p className="mt-2 text-xl font-bold text-gray-900">
-                      {breederOfTheMonth.followersCount}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4">
-                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
-                      Updates
-                    </p>
-                    <p className="mt-2 text-xl font-bold text-gray-900">
-                      {breederOfTheMonth.announcementsCount}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Link href={`/breeders/${breederOfTheMonth.id}`}>
-                    <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md inline-flex items-center gap-2">
-                      View Breeder Profile
-                      <ArrowRight size={16} />
-                    </button>
-                  </Link>
-
-                  <Link href="/upcoming-litters">
-                    <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
-                      Browse Upcoming Litters
-                    </button>
-                  </Link>
-                </div>
-              </div>
-
-              <div className="p-6 sm:p-8 lg:p-10 bg-white/60 border-t lg:border-t-0 lg:border-l border-gray-100">
-                <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
-                  Spotlight
-                </p>
-
-                <div className="mt-4 rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Why this breeder was featured
-                  </h3>
-
-                  <p className="mt-2 text-sm text-gray-500 leading-7">
-                    A standout breeder this month based on marketplace activity, trust, and visibility.
-                  </p>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-gray-100 bg-green-50 px-4 py-4">
-                      <div className="w-10 h-10 rounded-2xl bg-white text-green-600 flex items-center justify-center shadow-sm">
-                        <Star size={18} />
-                      </div>
-                      <p className="mt-3 text-sm font-semibold text-gray-900">
-                        Active listings
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500 leading-5">
-                        {breederOfTheMonth.listingsCount} live on the marketplace
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-blue-50 px-4 py-4">
-                      <div className="w-10 h-10 rounded-2xl bg-white text-blue-600 flex items-center justify-center shadow-sm">
-                        <Users size={18} />
-                      </div>
-                      <p className="mt-3 text-sm font-semibold text-gray-900">
-                        Community interest
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500 leading-5">
-                        {breederOfTheMonth.followersCount} followers tracking updates
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-amber-50 px-4 py-4">
-                      <div className="w-10 h-10 rounded-2xl bg-white text-amber-600 flex items-center justify-center shadow-sm">
-                        <Sparkles size={18} />
-                      </div>
-                      <p className="mt-3 text-sm font-semibold text-gray-900">
-                        Profile activity
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500 leading-5">
-                        {breederOfTheMonth.announcementsCount} breeder updates shared
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-gray-100 bg-slate-50 px-4 py-4">
-                      <div className="w-10 h-10 rounded-2xl bg-white text-slate-700 flex items-center justify-center shadow-sm">
-                        {breederOfTheMonth.breeder_verified ? (
-                          <BadgeCheck size={18} />
-                        ) : (
-                          <Award size={18} />
-                        )}
-                      </div>
-                      <p className="mt-3 text-sm font-semibold text-gray-900">
-                        Trust signal
-                      </p>
-                      <p className="mt-1 text-xs text-gray-500 leading-5">
-                        {breederOfTheMonth.breeder_verified
-                          ? "Verified breeder profile"
-                          : "Strong marketplace presence"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <Link href={`/breeders/${breederOfTheMonth.id}`}>
-                    <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-green-700">
-                      Explore breeder profile
-                      <ArrowRight size={15} />
-                    </div>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    )}
-
-    {latestBreederUpdates.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mt-8 mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
-                Breeder Updates
-              </p>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
-                Latest Breeder Updates
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Follow breeders to get notified about upcoming litters and new availability.
-              </p>
-            </div>
-
-            <Link href="/upcoming-litters">
-              <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition self-start sm:self-auto">
-                View all →
-              </button>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {latestBreederUpdates.map((post) => {
-              const breederName =
-                post.profiles?.breeder_name ||
-                post.profiles?.username ||
-                "Breeder";
-
-              return (
-                <Link key={post.id} href={`/breeders/${post.breeder_id}`}>
-                  <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 p-5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                        {formatAnnouncementType(post.post_type)}
-                      </span>
-
-                      {post.expected_date && (
-                        <span className="inline-flex text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
-                          {formatAnnouncementDate(post.expected_date)}
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="mt-4 text-lg font-semibold text-gray-900 line-clamp-2">
-                      {post.title}
-                    </h3>
-
-                    <p className="mt-3 text-sm text-gray-600 line-clamp-4 leading-7">
-                      {post.content}
-                    </p>
-
-                    <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {breederName}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {post.profiles?.breeder_verified ? "Verified Breeder" : "Breeder"}
-                        </p>
-                      </div>
-
-                      <span className="text-xs text-green-600 font-medium">
-                        View profile
-                      </span>
-                    </div>
-                  </article>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-      
-      {/* LATEST LISTINGS */}
+      {/* LATEST */}
       <section className="max-w-7xl mx-auto px-4 mt-8 mb-12">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div>
@@ -1169,69 +697,211 @@ export default function Home() {
         )}
       </section>
 
-      {/* TRUST - LOWER ON PAGE */}
-      <section className="max-w-7xl mx-auto px-4 mb-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-green-50 rounded-2xl border border-green-100 p-6 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="bg-white text-green-600 p-2.5 rounded-xl shrink-0">
-                <ShieldCheck size={20} />
+      {/* LOWER DISCOVERY AREA */}
+      <section className="max-w-7xl mx-auto px-4 mb-12">
+        <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-5">
+          {/* BREEDER OF THE MONTH */}
+          {breederOfTheMonth && (
+            <section className="rounded-[30px] border border-yellow-100 bg-gradient-to-br from-[#fff9eb] via-white to-[#f9fbf6] shadow-sm overflow-hidden">
+              <div className="p-5 sm:p-7">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white border border-yellow-200 px-3 py-1.5 text-xs font-semibold text-yellow-700 shadow-sm">
+                  <Award size={14} />
+                  Breeder of the Month
+                </div>
+
+                <h2 className="mt-4 text-2xl sm:text-3xl font-bold text-gray-900">
+                  {breederOfTheMonth.breeder_name ||
+                    breederOfTheMonth.username ||
+                    "Featured Breeder"}
+                </h2>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-3 py-1 text-xs font-medium">
+                    <Star size={12} />
+                    Top breeder pick
+                  </span>
+
+                  {breederOfTheMonth.breeder_verified && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs font-medium">
+                      <BadgeCheck size={12} />
+                      Verified
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-4 text-sm text-gray-600 leading-7 max-w-2xl">
+                  {breederOfTheMonth.breeder_bio ||
+                    "A standout breeder this month based on activity, listings, updates, and community engagement."}
+                </p>
+
+                <div className="mt-5 grid grid-cols-3 gap-3">
+                  <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
+                      Listings
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-gray-900">
+                      {breederOfTheMonth.listingsCount}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
+                      Followers
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-gray-900">
+                      {breederOfTheMonth.followersCount}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-white border border-gray-100 px-4 py-4">
+                    <p className="text-xs uppercase tracking-[0.14em] text-gray-500 font-medium">
+                      Updates
+                    </p>
+                    <p className="mt-2 text-xl font-bold text-gray-900">
+                      {breederOfTheMonth.announcementsCount}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-col sm:flex-row gap-3">
+                  <Link href={`/breeders/${breederOfTheMonth.id}`}>
+                    <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md inline-flex items-center gap-2">
+                      View Breeder Profile
+                      <ArrowRight size={16} />
+                    </button>
+                  </Link>
+
+                  <Link href="/upcoming-litters">
+                    <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
+                      Browse Upcoming Litters
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* LATEST BREEDER UPDATES */}
+          {latestBreederUpdates.length > 0 && (
+            <section className="rounded-[30px] border border-gray-100 bg-white shadow-sm overflow-hidden">
+              <div className="p-5 sm:p-7">
+                <div className="flex items-end justify-between gap-3 mb-4">
+                  <div>
+                    <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                      Breeder Updates
+                    </p>
+                    <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+                      Latest Updates
+                    </h2>
+                  </div>
+
+                  <Link href="/upcoming-litters">
+                    <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">
+                      View all →
+                    </button>
+                  </Link>
+                </div>
+
+                <div className="space-y-3">
+                  {latestBreederUpdates.map((post) => {
+                    const breederName =
+                      post.profiles?.breeder_name ||
+                      post.profiles?.username ||
+                      "Breeder";
+
+                    return (
+                      <Link key={post.id} href={`/breeders/${post.breeder_id}`}>
+                        <article className="rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-sm transition p-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
+                              {formatAnnouncementType(post.post_type)}
+                            </span>
+
+                            {post.expected_date && (
+                              <span className="inline-flex text-xs bg-white text-gray-700 px-2.5 py-1 rounded-full border border-gray-200">
+                                {formatAnnouncementDate(post.expected_date)}
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="mt-3 text-base font-semibold text-gray-900 line-clamp-2">
+                            {post.title}
+                          </h3>
+
+                          <div className="mt-3 flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {breederName}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {post.profiles?.breeder_verified
+                                  ? "Verified Breeder"
+                                  : "Breeder"}
+                              </p>
+                            </div>
+
+                            <span className="text-xs text-green-600 font-medium">
+                              View
+                            </span>
+                          </div>
+                        </article>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
+      </section>
+
+      {/* TRUST STRIP */}
+      <section className="max-w-7xl mx-auto px-4 mb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                <ShieldCheck size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-gray-900">
-                  Verified Sellers
-                </h4>
-                <p className="text-xs text-gray-500 mt-1 leading-5">
-                  Authenticated users for safer transactions.
-                </p>
+                <p className="text-sm font-semibold text-gray-900">Verified sellers</p>
+                <p className="text-xs text-gray-500 mt-1">Safer browsing</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
-                <MessageCircle size={20} />
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                <MessageCircle size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-gray-900">
-                  Secure Messaging
-                </h4>
-                <p className="text-xs text-gray-500 mt-1 leading-5">
-                  Chat safely inside the platform.
-                </p>
+                <p className="text-sm font-semibold text-gray-900">Secure chat</p>
+                <p className="text-xs text-gray-500 mt-1">In-app messaging</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
-                <Bird size={20} />
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                <Users size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-gray-900">
-                  Pet-Focused
-                </h4>
-                <p className="text-xs text-gray-500 mt-1 leading-5">
-                  Built for pets, animals, and supplies.
-                </p>
+                <p className="text-sm font-semibold text-gray-900">Breeder profiles</p>
+                <p className="text-xs text-gray-500 mt-1">More trust signals</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="bg-green-50 text-green-600 p-2.5 rounded-xl shrink-0">
-                <Star size={20} />
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                <Sparkles size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-gray-900">
-                  Simple Rehoming
-                </h4>
-                <p className="text-xs text-gray-500 mt-1 leading-5">
-                  Easy to buy, sell, and rehome responsibly.
-                </p>
+                <p className="text-sm font-semibold text-gray-900">Upcoming litters</p>
+                <p className="text-xs text-gray-500 mt-1">Discover earlier</p>
               </div>
             </div>
           </div>
@@ -1239,59 +909,58 @@ export default function Home() {
       </section>
 
       {/* SELL CTA */}
-      <section className="max-w-6xl mx-auto px-4 pb-14">
-        <div className="rounded-[32px] overflow-hidden bg-[#07111f] text-white shadow-xl p-8 sm:p-10 lg:p-12">
-          <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-400">
-            For Sellers
-          </p>
+      <section className="max-w-7xl mx-auto px-4 pb-14">
+        <div className="rounded-[28px] overflow-hidden border border-gray-100 bg-white shadow-sm p-6 sm:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+                For Sellers
+              </p>
+              <h3 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+                Ready to list your pet or supply item?
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-gray-600 leading-7">
+                Create a listing, upload photos, and connect with interested buyers across Australia.
+              </p>
+            </div>
 
-          <h3 className="mt-3 text-2xl sm:text-3xl font-bold leading-tight">
-            Ready to list your pet or supply item?
-          </h3>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href="/create">
+                <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md">
+                  Post Your Listing
+                </button>
+              </Link>
 
-          <p className="mt-4 text-sm sm:text-base text-white/75 max-w-2xl leading-7">
-            Create a listing, upload photos, and connect with interested buyers
-            across Australia.
-          </p>
-
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <Link href="/create">
-              <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition shadow-md">
-                Post Your Listing
-              </button>
-            </Link>
-
-            <Link href="/upcoming-litters">
-              <button className="rounded-2xl border border-gray-200 bg-white/10 hover:bg-white/20 text-white px-5 py-3 text-sm font-semibold transition">
-                Upcoming Litters
-              </button>
-            </Link>
+              <Link href="/upcoming-litters">
+                <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
+                  Browse Upcoming Litters
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* STICKY SEARCH */}
       {showStickySearch && (
-      <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
-        <div className="max-w-7xl mx-auto">
-          <button
-            onClick={openSearchSheet}
-            className="w-full rounded-2xl border border-gray-200 bg-white/95 backdrop-blur shadow-lg px-4 py-3 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-2 text-gray-600">
-              <Search size={16} />
-              <span className="text-sm">
-                {searchTerm || "Search pets..."}
-              </span>
-            </div>
+        <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
+          <div className="max-w-7xl mx-auto">
+            <button
+              onClick={openSearchSheet}
+              className="w-full rounded-2xl border border-gray-200 bg-white/95 backdrop-blur shadow-lg px-4 py-3 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2 text-gray-600 min-w-0">
+                <Search size={16} />
+                <span className="text-sm truncate">
+                  {searchTerm || "Search pets..."}
+                </span>
+              </div>
 
-            <span className="text-xs text-gray-500">
-              Filters
-            </span>
-          </button>
+              <span className="text-xs text-gray-500">Filters</span>
+            </button>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* SEARCH SHEET */}
       {searchSheetOpen && (
@@ -1460,6 +1129,7 @@ export default function Home() {
           </div>
         </>
       )}
+
       <Footer />
     </main>
   );
