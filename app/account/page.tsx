@@ -396,12 +396,13 @@ export default function AccountPage() {
   const displayName = profile.username || "User";
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-8 pb-24">
+    <main className="max-w-6xl mx-auto px-4 py-6 sm:py-8 pb-24">
+      {/* HERO */}
       <section className="overflow-hidden rounded-[32px] border border-gray-100 shadow-sm bg-white">
-        <div className="bg-gradient-to-r from-[#07111f] via-[#102038] to-[#1b2e4a] px-6 sm:px-8 py-10 sm:py-12 text-white">
+        <div className="bg-[#111827] px-6 sm:px-8 py-8 sm:py-10 text-white">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-white/15 border border-white/10 backdrop-blur flex items-center justify-center text-2xl font-bold">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-white/15 border border-white/10 flex items-center justify-center text-2xl font-bold">
                 {displayName.charAt(0).toUpperCase()}
               </div>
 
@@ -432,7 +433,7 @@ export default function AccountPage() {
                 </div>
 
                 <p className="mt-3 max-w-2xl text-sm sm:text-base text-white/75 leading-7">
-                  Manage your profile, listings, saved items, and breeder tools in one place.
+                  Manage your account, listings, saved items, messages, and breeder tools.
                 </p>
               </div>
             </div>
@@ -500,7 +501,8 @@ export default function AccountPage() {
         </div>
       </section>
 
-      <section className="mt-8 bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
+      {/* QUICK ACCESS */}
+      <section className="mt-8 bg-white rounded-[30px] border border-gray-100 shadow-sm p-6 sm:p-7">
         <div>
           <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
             Marketplace
@@ -572,8 +574,9 @@ export default function AccountPage() {
         </div>
       </section>
 
+      {/* BASIC PROFILE */}
       {profileEditOpen && (
-        <section className="mt-8 bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
+        <section className="mt-8 bg-white rounded-[30px] border border-gray-100 shadow-sm p-6 sm:p-7">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
@@ -618,8 +621,9 @@ export default function AccountPage() {
         </section>
       )}
 
+      {/* BECOME BREEDER */}
       {!profile.is_breeder && (
-        <section className="mt-8 bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
+        <section className="mt-8 bg-white rounded-[30px] border border-gray-100 shadow-sm p-6 sm:p-7">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="max-w-2xl">
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
@@ -647,8 +651,9 @@ export default function AccountPage() {
 
       {profile.is_breeder && (
         <>
+          {/* BREEDER PROFILE */}
           {breederEditOpen && (
-            <section className="mt-8 bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
+            <section className="mt-8 bg-white rounded-[30px] border border-gray-100 shadow-sm p-6 sm:p-7">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
@@ -714,7 +719,8 @@ export default function AccountPage() {
             </section>
           )}
 
-          <section className="mt-8 bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
+          {/* ANNOUNCEMENT FORM */}
+          <section className="mt-8 bg-white rounded-[30px] border border-gray-100 shadow-sm p-6 sm:p-7">
             <div>
               <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
                 Announcements
@@ -810,8 +816,9 @@ export default function AccountPage() {
             </div>
           </section>
 
+          {/* POSTS */}
           {myAnnouncements.length > 0 && (
-            <section className="mt-8 bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
+            <section className="mt-8 bg-white rounded-[30px] border border-gray-100 shadow-sm p-6 sm:p-7">
               <div>
                 <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
                   Your Posts
