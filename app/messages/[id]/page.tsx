@@ -9,7 +9,6 @@ import {
   MapPin,
   Send,
   Paperclip,
-  Image as ImageIcon,
   FileText,
   X,
 } from "lucide-react";
@@ -337,7 +336,7 @@ export default function MessagesThreadPage() {
 
   if (!conversation) {
     return (
-      <main className="bg-gray-50 min-h-screen px-4 py-6 pb-24">
+      <main className="bg-[#f7f7f5] min-h-screen px-4 py-6 pb-24">
         <div className="max-w-5xl mx-auto">
           <button
             onClick={() => router.push("/messages")}
@@ -361,243 +360,248 @@ export default function MessagesThreadPage() {
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen px-4 py-6 pb-24">
+    <main className="bg-[#f7f7f5] min-h-screen px-4 py-6 pb-24">
       <div className="max-w-5xl mx-auto">
-        <div className="mb-4">
-          <button
-            onClick={() => router.push("/messages")}
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
-          >
-            <ArrowLeft size={16} />
-            Back to messages
-          </button>
-        </div>
+        <button
+          onClick={() => router.push("/messages")}
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
+        >
+          <ArrowLeft size={16} />
+          Back to messages
+        </button>
 
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden">
-          <div className="border-b border-gray-100 p-4 sm:p-5 bg-white">
-            <div className="flex items-center gap-4">
-              <div className="shrink-0">
-                <img
-                  src={
-                    conversation.listings?.image &&
-                    conversation.listings.image !== ""
-                      ? conversation.listings.image
-                      : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
-                  }
-                  alt={conversation.listings?.title || "Listing"}
-                  className="w-16 h-16 rounded-2xl object-cover"
-                />
-              </div>
+        <div className="mt-4 grid grid-cols-1 gap-4">
+          {/* HEADER */}
+          <section className="bg-white border border-gray-100 rounded-[28px] shadow-sm overflow-hidden">
+            <div className="p-4 sm:p-5">
+              <div className="flex items-center gap-4">
+                <div className="shrink-0">
+                  <img
+                    src={
+                      conversation.listings?.image &&
+                      conversation.listings.image !== ""
+                        ? conversation.listings.image
+                        : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=600"
+                    }
+                    alt={conversation.listings?.title || "Listing"}
+                    className="w-16 h-16 rounded-2xl object-cover"
+                  />
+                </div>
 
-              <div className="min-w-0 flex-1">
-                <Link
-                  href={`/listing/${conversation.listing_id}`}
-                  className="text-lg font-semibold text-gray-900 hover:text-green-600 transition"
-                >
-                  {conversation.listings?.title || "Untitled Listing"}
-                </Link>
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/listing/${conversation.listing_id}`}
+                    className="text-lg font-semibold text-gray-900 hover:text-green-600 transition line-clamp-1"
+                  >
+                    {conversation.listings?.title || "Untitled Listing"}
+                  </Link>
 
-                <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-                  <MapPin size={14} />
-                  {conversation.listings?.location || "Unknown location"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 px-4 sm:px-5 py-5 h-[60vh] overflow-y-auto">
-            {messages.length === 0 ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center max-w-sm">
-                  <div className="w-14 h-14 mx-auto rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
-                    <Send size={24} />
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Start the conversation
-                  </h2>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Ask about availability, pickup, price, or any details about
-                    this pet or listing.
+                  <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
+                    <MapPin size={14} />
+                    <span className="truncate">
+                      {conversation.listings?.location || "Unknown location"}
+                    </span>
                   </p>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {messages.map((message) => {
-                  const isOwnMessage = message.sender_id === userId;
+            </div>
+          </section>
 
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        isOwnMessage ? "justify-end" : "justify-start"
-                      }`}
-                    >
+          {/* THREAD */}
+          <section className="bg-white border border-gray-100 rounded-[28px] shadow-sm overflow-hidden">
+            <div className="bg-[#f9fafb] px-4 sm:px-5 py-5 h-[58vh] sm:h-[62vh] overflow-y-auto">
+              {messages.length === 0 ? (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center max-w-sm">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
+                      <Send size={24} />
+                    </div>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Start the conversation
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-2 leading-7">
+                      Ask about availability, pickup, price, or any details about
+                      this pet or listing.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {messages.map((message) => {
+                    const isOwnMessage = message.sender_id === userId;
+
+                    return (
                       <div
-                        className={`max-w-[85%] sm:max-w-[70%] rounded-3xl px-4 py-3 shadow-sm ${
-                          isOwnMessage
-                            ? "bg-green-600 text-white rounded-br-md"
-                            : "bg-white text-gray-900 border border-gray-100 rounded-bl-md"
+                        key={message.id}
+                        className={`flex ${
+                          isOwnMessage ? "justify-end" : "justify-start"
                         }`}
                       >
-                        {!!message.text && (
-                          <p className="text-sm leading-6 break-words">
-                            {message.text}
-                          </p>
-                        )}
-
-                        {message.attachment_url && isImageMessage(message) && (
-                          <div className={message.text ? "mt-3" : ""}>
-                            <a
-                              href={message.attachment_url}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <img
-                                src={message.attachment_url}
-                                alt={message.attachment_name || "Attachment"}
-                                className="max-w-full w-[220px] sm:w-[260px] rounded-2xl object-cover border border-white/10"
-                              />
-                            </a>
-                          </div>
-                        )}
-
-                        {message.attachment_url && !isImageMessage(message) && (
-                          <div
-                            className={`rounded-2xl px-3 py-3 ${
-                              message.text ? "mt-3" : ""
-                            } ${
-                              isOwnMessage
-                                ? "bg-white/10"
-                                : "bg-gray-50 border border-gray-100"
-                            }`}
-                          >
-                            <a
-                              href={message.attachment_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center gap-3"
-                            >
-                              <div
-                                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                                  isOwnMessage
-                                    ? "bg-white/10 text-white"
-                                    : "bg-white text-gray-700 border border-gray-200"
-                                }`}
-                              >
-                                <FileText size={18} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium truncate">
-                                  {message.attachment_name || "Attachment"}
-                                </p>
-                                <p
-                                  className={`text-xs ${
-                                    isOwnMessage
-                                      ? "text-white/70"
-                                      : "text-gray-500"
-                                  }`}
-                                >
-                                  Open file
-                                </p>
-                              </div>
-                            </a>
-                          </div>
-                        )}
-
-                        <p
-                          className={`mt-2 text-[11px] ${
-                            isOwnMessage ? "text-white/70" : "text-gray-400"
+                        <div
+                          className={`max-w-[86%] sm:max-w-[72%] rounded-[24px] px-4 py-3 shadow-sm ${
+                            isOwnMessage
+                              ? "bg-green-600 text-white rounded-br-md"
+                              : "bg-white text-gray-900 border border-gray-100 rounded-bl-md"
                           }`}
                         >
-                          {formatMessageTime(message.created_at)}
-                        </p>
+                          {!!message.text && (
+                            <p className="text-sm leading-6 break-words">
+                              {message.text}
+                            </p>
+                          )}
+
+                          {message.attachment_url && isImageMessage(message) && (
+                            <div className={message.text ? "mt-3" : ""}>
+                              <a
+                                href={message.attachment_url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <img
+                                  src={message.attachment_url}
+                                  alt={message.attachment_name || "Attachment"}
+                                  className="max-w-full w-[220px] sm:w-[280px] rounded-2xl object-cover border border-white/10"
+                                />
+                              </a>
+                            </div>
+                          )}
+
+                          {message.attachment_url && !isImageMessage(message) && (
+                            <div
+                              className={`rounded-2xl px-3 py-3 ${
+                                message.text ? "mt-3" : ""
+                              } ${
+                                isOwnMessage
+                                  ? "bg-white/10"
+                                  : "bg-gray-50 border border-gray-100"
+                              }`}
+                            >
+                              <a
+                                href={message.attachment_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-3"
+                              >
+                                <div
+                                  className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                    isOwnMessage
+                                      ? "bg-white/10 text-white"
+                                      : "bg-white text-gray-700 border border-gray-200"
+                                  }`}
+                                >
+                                  <FileText size={18} />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">
+                                    {message.attachment_name || "Attachment"}
+                                  </p>
+                                  <p
+                                    className={`text-xs ${
+                                      isOwnMessage
+                                        ? "text-white/70"
+                                        : "text-gray-500"
+                                    }`}
+                                  >
+                                    Open file
+                                  </p>
+                                </div>
+                              </a>
+                            </div>
+                          )}
+
+                          <p
+                            className={`mt-2 text-[11px] ${
+                              isOwnMessage ? "text-white/70" : "text-gray-400"
+                            }`}
+                          >
+                            {formatMessageTime(message.created_at)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-gray-100 p-4 bg-white">
-           {selectedFile && (
-            <div className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-between gap-3">
-              
-              <div className="flex items-center gap-3 min-w-0">
-                
-                {selectedFile.type.startsWith("image/") ? (
-                  <img
-                    src={URL.createObjectURL(selectedFile)}
-                    alt="Preview"
-                    className="w-14 h-14 rounded-xl object-cover border"
-                  />
-                ) : (
-                  <div className="w-14 h-14 rounded-xl bg-white border flex items-center justify-center">
-                    <FileText size={18} />
-                  </div>
-                )}
-
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {selectedFile.name}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
                 </div>
+              )}
+            </div>
+
+            {/* COMPOSER */}
+            <div className="border-t border-gray-100 bg-white p-4">
+              {selectedFile && (
+                <div className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {selectedFile.type.startsWith("image/") ? (
+                      <img
+                        src={URL.createObjectURL(selectedFile)}
+                        alt="Preview"
+                        className="w-14 h-14 rounded-xl object-cover border"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-xl bg-white border flex items-center justify-center">
+                        <FileText size={18} />
+                      </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={clearSelectedFile}
+                    className="rounded-full p-2 hover:bg-gray-100 transition"
+                  >
+                    <X size={16} className="text-gray-500" />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,application/pdf,.doc,.docx,.txt"
+                  onChange={handleFileSelected}
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={openFilePicker}
+                  className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-4 py-3 transition shrink-0"
+                >
+                  <Paperclip size={18} />
+                </button>
+
+                <input
+                  type="text"
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="flex-1 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500 focus:bg-white"
+                />
+
+                <button
+                  onClick={handleSend}
+                  disabled={
+                    sending ||
+                    uploadingAttachment ||
+                    (!newMessage.trim() && !selectedFile)
+                  }
+                  className="rounded-2xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 transition shadow-sm shrink-0"
+                >
+                  <Send size={18} />
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={clearSelectedFile}
-                className="rounded-full p-2 hover:bg-gray-100 transition"
-              >
-                <X size={16} className="text-gray-500" />
-              </button>
             </div>
-          )}
-
-            <div className="flex items-center gap-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,application/pdf,.doc,.docx,.txt"
-                onChange={handleFileSelected}
-                className="hidden"
-              />
-              {/* File upload */}
-              <button
-                type="button"
-                onClick={openFilePicker}
-                className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 px-4 py-3 transition"
-              >
-                <Paperclip size={18} />
-              </button>
-
-              <input
-                type="text"
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="flex-1 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500 focus:bg-white"
-              />
-
-              <button
-                onClick={handleSend}
-                disabled={
-                  sending ||
-                  uploadingAttachment ||
-                  (!newMessage.trim() && !selectedFile)
-                }
-                className="rounded-2xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 transition shadow-md"
-              >
-                <Send size={18} />
-              </button>
-            </div>
-          </div>
+          </section>
         </div>
       </div>
     </main>
