@@ -7,14 +7,12 @@ import { supabase } from "@/lib/supabase";
 import ListingCard from "@/components/ListingCard";
 import {
   ArrowLeft,
-  Heart,
-  MapPin,
-  ShieldCheck,
   Star,
   UserPlus,
   UserCheck,
   BadgeCheck,
   CalendarDays,
+  ShieldCheck,
 } from "lucide-react";
 
 type Profile = {
@@ -90,6 +88,15 @@ export default function BreederProfilePage() {
     });
   };
 
+  const formatJoinedDate = (date?: string | null) => {
+    if (!date) return "Recently joined";
+
+    return `Member since ${new Date(date).toLocaleDateString(undefined, {
+      month: "short",
+      year: "numeric",
+    })}`;
+  };
+
   const fetchRatingsSummary = async (profileId: string) => {
     const { data, error } = await supabase
       .from("ratings")
@@ -102,18 +109,18 @@ export default function BreederProfilePage() {
     }
 
     const rows = data || [];
-      const count = rows.length;
+    const count = rows.length;
 
-      if (count === 0) {
-        setRatingAvg(null);
-        setRatingCount(0);
-        return;
-      }
+    if (count === 0) {
+      setRatingAvg(null);
+      setRatingCount(0);
+      return;
+    }
 
-      const total = rows.reduce((sum, row) => sum + row.rating, 0);
-      setRatingAvg(total / count);
-      setRatingCount(count);
-    };
+    const total = rows.reduce((sum, row) => sum + row.rating, 0);
+    setRatingAvg(total / count);
+    setRatingCount(count);
+  };
 
   const fetchRecentReviews = async (profileId: string) => {
     const { data, error } = await supabase
@@ -129,15 +136,6 @@ export default function BreederProfilePage() {
     }
 
     setRecentReviews(data || []);
-  };
-
-  const formatJoinedDate = (date?: string | null) => {
-    if (!date) return "Recently joined";
-
-    return `Member since ${new Date(date).toLocaleDateString(undefined, {
-      month: "short",
-      year: "numeric",
-    })}`;
   };
 
   const fetchSavedListings = async (currentUserId?: string | null) => {
@@ -159,56 +157,6 @@ export default function BreederProfilePage() {
     }
 
     setSavedListingIds((data || []).map((item) => item.listing_id));
-  };
-
-  const handleToggleSave = async (
-    e: React.MouseEvent,
-    listingId: string
-  ) => {
-    e.preventDefault();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      alert("Please log in to save listings.");
-      router.push("/login");
-      return;
-    }
-
-    const isSaved = savedListingIds.includes(listingId);
-
-    if (isSaved) {
-      const { error } = await supabase
-        .from("saved_listings")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("listing_id", listingId);
-
-      if (error) {
-        console.error(error);
-        alert("Failed to remove saved listing");
-        return;
-      }
-
-      setSavedListingIds((prev) => prev.filter((id) => id !== listingId));
-    } else {
-      const { error } = await supabase.from("saved_listings").insert([
-        {
-          user_id: user.id,
-          listing_id: listingId,
-        },
-      ]);
-
-      if (error) {
-        console.error(error);
-        alert("Failed to save listing");
-        return;
-      }
-
-      setSavedListingIds((prev) => [...prev, listingId]);
-    }
   };
 
   const fetchData = async () => {
@@ -350,7 +298,7 @@ export default function BreederProfilePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 px-4 py-8">
+      <main className="min-h-screen bg-[#f7f7f5] px-4 py-8">
         <div className="max-w-6xl mx-auto">Loading breeder profile...</div>
       </main>
     );
@@ -358,7 +306,7 @@ export default function BreederProfilePage() {
 
   if (!profile) {
     return (
-      <main className="min-h-screen bg-gray-50 px-4 py-8">
+      <main className="min-h-screen bg-[#f7f7f5] px-4 py-8">
         <div className="max-w-6xl mx-auto">
           <button
             onClick={() => router.back()}
@@ -385,7 +333,7 @@ export default function BreederProfilePage() {
     profile.breeder_name || profile.username || "Breeder";
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-6 sm:py-8 pb-24">
+    <main className="min-h-screen bg-[#f7f7f5] px-4 py-6 sm:py-8 pb-24">
       <div className="max-w-6xl mx-auto">
         <button
           onClick={() => router.back()}
@@ -395,60 +343,50 @@ export default function BreederProfilePage() {
           Back
         </button>
 
+        {/* HERO */}
         <section className="mt-5 overflow-hidden rounded-[32px] border border-gray-100 shadow-sm bg-white">
-          <div className="bg-gradient-to-r from-[#07111f] via-[#102038] to-[#1b2e4a] px-6 sm:px-8 py-10 sm:py-12 text-white">
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+          <div className="px-6 sm:px-8 py-8 sm:py-10 bg-white">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-white/15 border border-white/10 backdrop-blur flex items-center justify-center text-2xl font-bold">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-green-50 border border-green-100 flex items-center justify-center text-2xl font-bold text-green-700">
                   {breederDisplayName?.charAt(0)?.toUpperCase() || "B"}
                 </div>
 
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
+                    <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-gray-900">
                       {breederDisplayName}
                     </h1>
 
-                    <span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 border border-green-400/20 px-3 py-1 text-xs font-medium text-green-200">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-100 px-3 py-1 text-xs font-medium text-green-700">
                       <Star size={12} />
                       Breeder
                     </span>
 
                     {profile.breeder_verified && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-400/20 px-3 py-1 text-xs font-medium text-blue-200">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
                         <BadgeCheck size={12} />
                         Verified
                       </span>
                     )}
                   </div>
 
-                  <p className="mt-3 max-w-2xl text-sm sm:text-base text-white/75 leading-7">
+                  <p className="mt-3 max-w-2xl text-sm sm:text-base text-gray-600 leading-7">
                     {profile.breeder_bio ||
                       "This breeder has not added a bio yet."}
                   </p>
 
-                  <p className="mt-3 text-sm text-white/60">
-                    {formatJoinedDate(profile.created_at)}
-                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                    <span>{formatJoinedDate(profile.created_at)}</span>
 
-                  <div className="mt-3 flex items-center gap-2">
-                    <Star size={16} className="text-yellow-300 fill-yellow-300" />
-                    <span className="text-sm font-semibold text-white">
-                      {ratingAvg ? ratingAvg.toFixed(1) : "New"}
-                    </span>
-                    <span className="text-xs text-white/70">
-                      ({ratingCount} review{ratingCount === 1 ? "" : "s"})
-                    </span>
-                  </div>
-
-
-                  <div className="flex items-center gap-2 mt-3">
-                    <Star size={16} className="text-yellow-500 fill-yellow-500" />
-                    <span className="text-sm font-semibold text-gray-900">
-                      {ratingAvg ? ratingAvg.toFixed(1) : "New"}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      ({ratingCount} review{ratingCount === 1 ? "" : "s"})
+                    <span className="inline-flex items-center gap-1.5">
+                      <Star size={15} className="text-yellow-500 fill-yellow-500" />
+                      <span className="font-semibold text-gray-900">
+                        {ratingAvg ? ratingAvg.toFixed(1) : "New"}
+                      </span>
+                      <span>
+                        ({ratingCount} review{ratingCount === 1 ? "" : "s"})
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -458,9 +396,9 @@ export default function BreederProfilePage() {
                 <button
                   onClick={toggleFollow}
                   disabled={followLoading}
-                  className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition shadow-md ${
+                  className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition shadow-sm ${
                     isFollowing
-                      ? "bg-white text-gray-900 hover:bg-gray-100"
+                      ? "bg-gray-900 text-white hover:bg-black"
                       : "bg-green-600 text-white hover:bg-green-700"
                   } disabled:opacity-50`}
                 >
@@ -475,9 +413,9 @@ export default function BreederProfilePage() {
             </div>
           </div>
 
-          <div className="px-6 sm:px-8 py-6 bg-white">
+          <div className="px-6 sm:px-8 py-5 border-t border-gray-100 bg-gray-50">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-2xl bg-gray-50 px-4 py-4 border border-gray-100">
+              <div className="rounded-2xl bg-white px-4 py-4 border border-gray-100">
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
                   Followers
                 </p>
@@ -486,7 +424,7 @@ export default function BreederProfilePage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-gray-50 px-4 py-4 border border-gray-100">
+              <div className="rounded-2xl bg-white px-4 py-4 border border-gray-100">
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
                   Active Listings
                 </p>
@@ -495,7 +433,7 @@ export default function BreederProfilePage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-gray-50 px-4 py-4 border border-gray-100">
+              <div className="rounded-2xl bg-white px-4 py-4 border border-gray-100">
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
                   Profile Type
                 </p>
@@ -507,6 +445,7 @@ export default function BreederProfilePage() {
           </div>
         </section>
 
+        {/* ANNOUNCEMENTS */}
         <section className="mt-8">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
             <div>
@@ -568,6 +507,7 @@ export default function BreederProfilePage() {
           )}
         </section>
 
+        {/* REVIEWS */}
         {recentReviews.length > 0 && (
           <section className="mt-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
@@ -584,7 +524,7 @@ export default function BreederProfilePage() {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {recentReviews.map((review) => (
                 <article
                   key={review.id}
@@ -612,6 +552,7 @@ export default function BreederProfilePage() {
           </section>
         )}
 
+        {/* LISTINGS */}
         <section className="mt-8">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
             <div>
@@ -637,7 +578,7 @@ export default function BreederProfilePage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5">
               {listings.map((item) => (
                 <ListingCard
                   key={item.id}
@@ -650,6 +591,7 @@ export default function BreederProfilePage() {
                       is_breeder: profile.is_breeder,
                     },
                   }}
+                  compact
                 />
               ))}
             </div>
