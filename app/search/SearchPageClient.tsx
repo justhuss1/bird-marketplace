@@ -744,7 +744,7 @@ export default function SearchPageClient() {
                 setShowKeywordSuggestions(false);
               }
             }}
-            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+            className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
           />
 
           {showKeywordSuggestions && keywordSuggestions.length > 0 && (
@@ -769,7 +769,7 @@ export default function SearchPageClient() {
         <select
           value={category}
           onChange={(e) => handleCategoryChange(e.target.value)}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+          className="rounded-2xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
         >
           <option value="">All Categories</option>
           {PET_CATEGORIES.map((item) => (
@@ -790,7 +790,7 @@ export default function SearchPageClient() {
           placeholder="Min $"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+          className="rounded-2xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
         />
 
         <input
@@ -798,13 +798,13 @@ export default function SearchPageClient() {
           placeholder="Max $"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+          className="rounded-2xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
         />
 
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+          className="rounded-2xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
         >
           <option value="newest">Newest</option>
           <option value="lowest">Price: Low → High</option>
@@ -818,7 +818,7 @@ export default function SearchPageClient() {
           type="button"
           onClick={handleUseMyLocation}
           disabled={gettingLocation}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-800 transition disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 px-4 py-3 text-sm font-medium text-gray-800 transition disabled:opacity-50"
         >
           <Crosshair size={16} />
           {gettingLocation ? "Locating..." : "Use my location"}
@@ -827,7 +827,7 @@ export default function SearchPageClient() {
         <select
           value={radiusKm}
           onChange={(e) => setRadiusKm(e.target.value)}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+          className="rounded-2xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
         >
           <option value="">Any distance</option>
           {RADIUS_OPTIONS.filter(Boolean).map((option) => (
@@ -841,7 +841,7 @@ export default function SearchPageClient() {
           <button
             type="button"
             onClick={clearMyLocation}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-3 text-sm font-medium text-gray-700 transition"
           >
             Clear my location
           </button>
@@ -860,7 +860,7 @@ export default function SearchPageClient() {
                 onChange={(e) =>
                   handleAttributeFilterChange(field.key, e.target.value)
                 }
-                className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+                className="rounded-2xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
               >
                 <option value="">{field.label}</option>
                 {field.options?.map((option) => (
@@ -878,7 +878,7 @@ export default function SearchPageClient() {
                 onChange={(e) =>
                   handleAttributeFilterChange(field.key, e.target.value)
                 }
-                className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500"
+                className="rounded-2xl border border-gray-200 bg-white px-3 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
               />
             )
           )}
@@ -888,7 +888,7 @@ export default function SearchPageClient() {
       <div className="mt-4 flex items-center justify-between gap-3">
         <button
           onClick={resetFilters}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition"
+          className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition"
         >
           <RotateCcw size={14} />
           Reset
@@ -896,7 +896,7 @@ export default function SearchPageClient() {
 
         <button
           onClick={() => setMobileFiltersOpen(false)}
-          className="md:hidden inline-flex items-center gap-2 rounded-xl bg-[#07111f] text-white px-4 py-2 text-sm font-medium"
+          className="md:hidden inline-flex items-center gap-2 rounded-2xl bg-[#07111f] text-white px-4 py-2 text-sm font-medium"
         >
           Show Results
         </button>
@@ -904,74 +904,86 @@ export default function SearchPageClient() {
     </>
   );
 
+  const Chip = ({
+    label,
+    onRemove,
+  }: {
+    label: string;
+    onRemove: () => void;
+  }) => (
+    <div className="flex items-center gap-2 bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-full whitespace-nowrap">
+      {label}
+      <button onClick={onRemove}>
+        <X size={12} />
+      </button>
+    </div>
+  );
+
   return (
     <main className="bg-gray-50 min-h-screen px-4 py-6 pb-24">
       <div className="max-w-7xl mx-auto">
-        <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        {/* CLEAN SEARCH HEADER */}
+        <section className="mb-5">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 px-3 py-1 text-xs font-medium">
-                <Search size={14} />
-                Search Results
-              </div>
-
-              <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-gray-900">
-                {q ? `Results for “${q}”` : "Browse Listings"}
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                {q ? `Results for "${q}"` : "Browse Listings"}
               </h1>
-
-              <p className="mt-2 text-sm text-gray-500">
-                {filteredListings.length} matching listing
+              <p className="text-sm text-gray-500 mt-1">
+                {filteredListings.length} listing
                 {filteredListings.length === 1 ? "" : "s"}
               </p>
             </div>
 
-            <Link href="/" className="hidden sm:block">
-              <button className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-5 py-3 text-sm font-semibold transition">
-                Back to Home
+            <Link href="/">
+              <button className="text-sm text-gray-600 hover:text-gray-900">
+                Back
               </button>
             </Link>
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            {q && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
-                Search: {q}
-              </span>
+          {/* QUICK SEARCH BAR */}
+          <div className="mt-4 flex items-center gap-2">
+            <div className="flex-1 flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+              <Search size={16} className="text-gray-400" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search pets, breeds..."
+                className="w-full bg-transparent outline-none text-sm"
+              />
+            </div>
+
+            <button
+              onClick={() => setMobileFiltersOpen(true)}
+              className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm flex items-center gap-2 shadow-sm"
+            >
+              <SlidersHorizontal size={16} />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* FILTER CHIPS */}
+          <div className="mt-3 flex gap-2 overflow-x-auto scrollbar-hide">
+            {category && (
+              <Chip label={category} onRemove={() => setCategory("")} />
             )}
             {location && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
-                Location: {location}
-              </span>
-            )}
-            {category && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
-                Category: {category}
-              </span>
-            )}
-            {(minPrice || maxPrice) && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
-                Price: {minPrice || "0"} - {maxPrice || "Any"}
-              </span>
+              <Chip label={location} onRemove={() => setLocation("")} />
             )}
             {radiusKm && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
-                Within {radiusKm} km
-              </span>
+              <Chip label={`${radiusKm}km`} onRemove={() => setRadiusKm("")} />
             )}
-            {usingCurrentLocation && (
-              <span className="rounded-full bg-green-50 px-3 py-1 text-xs text-green-700">
-                Using current location
-              </span>
+            {minPrice && (
+              <Chip label={`Min $${minPrice}`} onRemove={() => setMinPrice("")} />
             )}
-            {Object.entries(attributeFilters).map(([key, value]) =>
-              value ? (
-                <span
-                  key={key}
-                  className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700"
-                >
-                  {key}: {value}
-                </span>
-              ) : null
+            {maxPrice && (
+              <Chip label={`Max $${maxPrice}`} onRemove={() => setMaxPrice("")} />
             )}
           </div>
         </section>
@@ -1030,8 +1042,8 @@ export default function SearchPageClient() {
           )}
         </section>
 
-        <section className="hidden md:block mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-5">
-          <div className="flex items-center gap-2 mb-4">
+        <section className="hidden md:block mb-6">
+          <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
             <SlidersHorizontal size={18} className="text-gray-500" />
             <h2 className="text-base font-semibold text-gray-900">
               Filter Results
@@ -1041,7 +1053,7 @@ export default function SearchPageClient() {
           <FilterPanel />
         </section>
 
-        <section className="mt-8">
+        <section className="mt-4">
           <div className="flex items-center gap-2 mb-5">
             <SlidersHorizontal size={18} className="text-gray-500" />
             <h2 className="text-lg font-semibold text-gray-900">
@@ -1063,7 +1075,7 @@ export default function SearchPageClient() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
               {filteredListings.map((item) => (
                 <ListingCard key={item.id} item={item} compact />
               ))}

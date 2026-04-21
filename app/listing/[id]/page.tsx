@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import ListingCard from "@/components/ListingCard";
 import {
   Heart,
   MapPin,
@@ -14,13 +15,13 @@ import {
   ChevronRight,
   ArrowLeft,
   CalendarDays,
-  Tag,
   Eye,
   Flag,
   Share2,
   Star,
   X,
   ZoomIn,
+  BadgeCheck,
 } from "lucide-react";
 
 type Listing = {
@@ -126,8 +127,6 @@ const formatAttributeValue = (value: string) => {
   return value;
 };
 
-
-
 export default function ListingPage() {
   const params = useParams();
   const router = useRouter();
@@ -141,21 +140,23 @@ export default function ListingPage() {
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sellerListings, setSellerListings] = useState<any[]>([]);
-  const sellerName = seller?.breeder_name || seller?.username || "Seller";
-  const sellerListingsCount = sellerListings?.length || 0;
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const touchStartXRef = useRef<number | null>(null);
-  const touchEndXRef = useRef<number | null>(null);
-  const mainTouchStartXRef = useRef<number | null>(null);
-  const mainTouchEndXRef = useRef<number | null>(null);
+
+  const [sellerListings, setSellerListings] = useState<any[]>([]);
   const [ratingAvg, setRatingAvg] = useState<number | null>(null);
   const [ratingCount, setRatingCount] = useState(0);
   const [reviewRating, setReviewRating] = useState<number>(5);
   const [reviewText, setReviewText] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
 
-  
+  const touchStartXRef = useRef<number | null>(null);
+  const touchEndXRef = useRef<number | null>(null);
+  const mainTouchStartXRef = useRef<number | null>(null);
+  const mainTouchEndXRef = useRef<number | null>(null);
+
+  const sellerDisplayName =
+    seller?.breeder_name || seller?.username || "Seller";
+  const sellerListingsCount = sellerListings?.length || 0;
 
   useEffect(() => {
     if (id) {
@@ -168,7 +169,7 @@ export default function ListingPage() {
     if (listing?.user_id) {
       fetchSellerListings(listing.user_id);
     }
-    }, [listing]);
+  }, [listing]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -260,30 +261,36 @@ export default function ListingPage() {
 
     setSubmittingReview(true);
 
-    const { error } = await supabase.from("ratings").insert([
-      {
-        reviewer_id: user.id,
-        reviewed_user_id: listing.user_id,
-        listing_id: listing.id,
-        rating: reviewRating,
-        review: reviewText.trim() || null,
-      },
-    ]);
+    const payload = {
+      reviewer_id: user.id,
+      reviewed_user_id: listing.user_id,
+      listing_id: listing.id,
+      rating: reviewRating,
+      review: reviewText.trim() || null,
+    };
+
+    const { error } = await supabase.from("ratings").upsert(payload, {
+      onConflict: "reviewer_id,listing_id",
+    });
 
     setSubmittingReview(false);
 
     if (error) {
-      console.error(error);
-      alert("Could not submit review. You may have already reviewed this listing.");
+      console.error("REVIEW SUBMIT ERROR:", error);
+      alert(error.message || "Could not submit review.");
       return;
     }
 
     setReviewText("");
     setReviewRating(5);
     alert("Review submitted.");
+    fetchRatingsSummary(listing.user_id);
   };
 
-  const incrementViewCount = async (listingId: string, currentCount?: number | null) => {
+  const incrementViewCount = async (
+    listingId: string,
+    currentCount?: number | null
+  ) => {
     const nextCount = (currentCount || 0) + 1;
 
     const { error } = await supabase
@@ -378,8 +385,7 @@ export default function ListingPage() {
 
     const listingData = data as Listing;
 
-    if (listingData.status &&
-    listingData.status !== 'available') {
+    if (listingData.status && listingData.status !== "available") {
       setListing(null);
       setLoading(false);
       return;
@@ -411,8 +417,7 @@ export default function ListingPage() {
 
     if (!sellerError && sellerData) {
       setSeller(sellerData as SellerProfile);
-      await
-      fetchRatingsSummary(sellerData.id);
+      await fetchRatingsSummary(sellerData.id);
     }
 
     fetchSellerStats(data.user_id);
@@ -482,17 +487,6 @@ export default function ListingPage() {
       setIsSaved(true);
     }
   };
-
-  const getSellerLabel = (item: Listing) => {
-    return (
-      item.profiles?.breeder_name ||
-      item.profiles?.username ||
-      "Seller"
-    );
-  };
-
-  const sellerDisplayName =
-    seller?.breeder_name || seller?.username || "Seller";
 
   const handleShareListing = async () => {
     const shareUrl = window.location.href;
@@ -731,7 +725,7 @@ export default function ListingPage() {
 
   if (!listing) {
     return (
-      <main className="bg-gray-50 min-h-screen px-4 py-8 pb-24">
+      <main className="bg-[#f7f7f5] min-h-screen px-4 py-8 pb-24">
         <div className="max-w-6xl mx-auto">
           <button
             onClick={() => router.back()}
@@ -753,8 +747,8 @@ export default function ListingPage() {
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen px-4 py-6 sm:py-8 pb-32">
-      <div className="max-w-6xl mx-auto">
+    <main className="bg-[#f7f7f5] min-h-screen px-4 py-6 sm:py-8 pb-32">
+      <div className="max-w-7xl mx-auto">
         <button
           onClick={() => router.back()}
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black transition"
@@ -763,11 +757,79 @@ export default function ListingPage() {
           Back
         </button>
 
-        <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1.35fr_0.9fr] gap-6">
+        {/* TOP SUMMARY */}
+        <section className="mt-4 mb-5">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {listing.category && (
+                  <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 px-3 py-1 text-xs font-medium">
+                    {listing.category}
+                  </span>
+                )}
+
+                {seller?.is_breeder && (
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-medium">
+                    Breeder Listing
+                  </span>
+                )}
+
+                {listing.is_featured && (
+                  <span className="inline-flex items-center rounded-full bg-yellow-50 text-yellow-700 px-3 py-1 text-xs font-medium">
+                    ★ Featured
+                  </span>
+                )}
+
+                {listing.boost_until &&
+                  new Date(listing.boost_until) > new Date() && (
+                    <span className="inline-flex items-center rounded-full bg-purple-50 text-purple-700 px-3 py-1 text-xs font-medium">
+                      Boosted
+                    </span>
+                  )}
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
+                {listing.title}
+              </h1>
+
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin size={15} />
+                  {listing.location}
+                </span>
+
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays size={15} />
+                  {formatPostedDate(listing.created_at)}
+                </span>
+
+                <span className="inline-flex items-center gap-1.5">
+                  <Eye size={15} />
+                  {listing.view_count || 0} views
+                </span>
+              </div>
+            </div>
+
+            <div className="shrink-0">
+              <div className="rounded-[24px] border border-gray-200 bg-white px-5 py-4 shadow-sm min-w-[160px]">
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
+                  Price
+                </p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">
+                  ${listing.price}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.82fr] gap-6">
+          {/* LEFT COLUMN */}
           <div className="space-y-5">
-            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
+            {/* GALLERY */}
+            <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm overflow-hidden">
               <div
-                className="relative overflow-hidden"
+                className="relative overflow-hidden bg-gray-100"
                 onTouchStart={handleMainGalleryTouchStart}
                 onTouchMove={handleMainGalleryTouchMove}
                 onTouchEnd={handleMainGalleryTouchEnd}
@@ -780,17 +842,18 @@ export default function ListingPage() {
                   <img
                     src={selectedImage}
                     alt={listing.title}
-                    className="w-full h-[320px] sm:h-[460px] object-cover transition duration-500 hover:scale-[1.02]"
+                    className="w-full h-[320px] sm:h-[520px] object-cover transition duration-500"
                   />
                 </button>
 
-                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/35 to-transparent pointer-events-none" />
-                  {galleryImages.length > 1 && (
+                <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+
+                {galleryImages.length > 1 && (
                   <div className="absolute bottom-4 left-4 rounded-full bg-black/45 backdrop-blur text-white text-xs font-medium px-3 py-1.5">
                     {galleryImages.indexOf(selectedImage) + 1} / {galleryImages.length}
                   </div>
                 )}
-                
+
                 <button
                   type="button"
                   onClick={openLightbox}
@@ -799,14 +862,6 @@ export default function ListingPage() {
                   <ZoomIn size={14} />
                   Tap to zoom
                 </button>
-
-                
-
-                {listing.is_featured && (
-                  <span className="absolute top-4 left-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
-                    ★ Featured
-                  </span>
-                )}
 
                 {galleryImages.length > 1 && (
                   <>
@@ -825,18 +880,6 @@ export default function ListingPage() {
                     </button>
                   </>
                 )}
-
-                <button
-                  onClick={handleToggleSave}
-                  className={`absolute top-4 right-4 text-xs px-3 py-1 rounded-full font-medium shadow backdrop-blur transition ${
-                    isSaved ? "bg-red-500 text-white" : "bg-white/90 text-gray-800"
-                  }`}
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    <Heart size={14} />
-                    {isSaved ? "Saved" : "Save"}
-                  </span>
-                </button>
               </div>
 
               {galleryImages.length > 1 && (
@@ -865,98 +908,36 @@ export default function ListingPage() {
               )}
             </section>
 
-            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6 sm:p-7">
-              <div className="flex flex-col gap-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  {listing.category && (
-                    <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-                      🐾 {listing.category}
-                    </span>
-                  )}
+            {/* DETAILS */}
+            <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm p-6 sm:p-7">
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
+                <button
+                  onClick={handleToggleSave}
+                  className={`rounded-2xl px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2 ${
+                    isSaved
+                      ? "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                      : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                  }`}
+                >
+                  <Heart size={16} className={isSaved ? "fill-current" : ""} />
+                  {isSaved ? "Saved" : "Save listing"}
+                </button>
 
-                  {seller?.is_breeder && (
-                    <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-                      Breeder Listing
-                    </span>
-                  )}
+                <button
+                  onClick={handleShareListing}
+                  className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
+                >
+                  <Share2 size={16} />
+                  Share
+                </button>
 
-                  <span className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
-                    Available now
-                  </span>
-
-                  {listing.boost_until &&
-                    new Date(listing.boost_until) > new Date() && (
-                      <span className="text-xs bg-purple-50 text-purple-700 px-3 py-1 rounded-full">
-                        Boosted
-                      </span>
-                    )}
-                </div>
-
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-                  <div className="min-w-0">
-                    <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-gray-900">
-                      {listing.title}
-                    </h1>
-
-                    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
-                      <span className="inline-flex items-center gap-1.5">
-                        <MapPin size={15} />
-                        {listing.location}
-                      </span>
-
-                      <span className="inline-flex items-center gap-1.5">
-                        <CalendarDays size={15} />
-                        {formatPostedDate(listing.created_at)}
-                      </span>
-
-                      <span className="inline-flex items-center gap-1.5">
-                        <Eye size={15} />
-                        {listing.view_count || 0} views
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="shrink-0">
-                    <div className="rounded-3xl border border-gray-100 bg-gray-50 px-5 py-4">
-                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
-                        Price
-                      </p>
-                      <p className="mt-2 text-3xl font-bold text-gray-900">
-                        ${listing.price}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3">
-                  <button
-                    onClick={handleToggleSave}
-                    className={`rounded-2xl px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2 ${
-                      isSaved
-                        ? "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
-                        : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Heart size={16} className={isSaved ? "fill-current" : ""} />
-                    {isSaved ? "Saved" : "Save listing"}
-                  </button>
-
-                  <button
-                    onClick={handleShareListing}
-                    className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
-                  >
-                    <Share2 size={16} />
-                    Share
-                  </button>
-
-                  <button
-                    onClick={handleReportListing}
-                    className="rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
-                  >
-                    <Flag size={16} />
-                    Report
-                  </button>
-                </div>
+                <button
+                  onClick={handleReportListing}
+                  className="rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
+                >
+                  <Flag size={16} />
+                  Report
+                </button>
               </div>
 
               {listing.attributes && Object.keys(listing.attributes).length > 0 && (
@@ -1004,8 +985,10 @@ export default function ListingPage() {
             </section>
           </div>
 
-          <div className="flex flex-col space-y-5 xl:sticky xl:top-24 self-start">
-            <section className="order-2 xl:order-1 bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
+          {/* RIGHT COLUMN */}
+          <div className="space-y-5 xl:sticky xl:top-24 self-start">
+            {/* CONTACT */}
+            <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-green-50 to-white">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -1085,12 +1068,10 @@ export default function ListingPage() {
               </div>
             </section>
 
-            <section className="order-1 xl:order-2 bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden">
-
-              {/* HEADER */}
-              <div className="bg-gradient-to-r from-[#07111f] via-[#102038] to-[#1b2e4a] px-5 py-5 text-white">
+            {/* SELLER */}
+            <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-[#111827] px-5 py-5 text-white">
                 <div className="flex items-center gap-3">
-
                   <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/10 flex items-center justify-center font-semibold text-lg">
                     {sellerDisplayName.charAt(0).toUpperCase()}
                   </div>
@@ -1112,7 +1093,8 @@ export default function ListingPage() {
                       )}
 
                       {seller?.breeder_verified && (
-                        <span className="text-[10px] bg-blue-500/20 text-blue-200 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] bg-blue-500/20 text-blue-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                          <BadgeCheck size={10} />
                           Verified
                         </span>
                       )}
@@ -1121,9 +1103,7 @@ export default function ListingPage() {
                 </div>
               </div>
 
-              {/* STATS */}
               <div className="px-5 py-4 border-b border-gray-100 grid grid-cols-2 gap-3">
-
                 <div className="bg-gray-50 rounded-2xl px-4 py-3">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">
                     Listings
@@ -1141,11 +1121,20 @@ export default function ListingPage() {
                     {formatJoinedDate(seller?.created_at)}
                   </p>
                 </div>
-
               </div>
 
-              {/* TRUST BLOCK */}
               <div className="px-5 py-4 space-y-3">
+                <div className="rounded-2xl bg-gray-50 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                    <p className="text-sm font-medium text-gray-900">
+                      {ratingAvg ? ratingAvg.toFixed(1) : "New"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      ({ratingCount} review{ratingCount === 1 ? "" : "s"})
+                    </p>
+                  </div>
+                </div>
 
                 <div className="flex items-start gap-3 bg-gray-50 rounded-2xl px-4 py-3">
                   <ShieldCheck size={16} className="text-green-600 shrink-0 mt-0.5" />
@@ -1184,12 +1173,9 @@ export default function ListingPage() {
                     </div>
                   </div>
                 )}
-
               </div>
 
-              {/* CTA */}
               <div className="px-5 pb-5 space-y-3">
-
                 <button
                   onClick={handleMessageSeller}
                   className="w-full rounded-2xl bg-green-600 hover:bg-green-700 text-white py-3.5 text-sm font-semibold transition shadow-md"
@@ -1204,10 +1190,11 @@ export default function ListingPage() {
                     </button>
                   </Link>
                 )}
-
               </div>
             </section>
-            <section className="bg-white rounded-[28px] border border-gray-100 shadow-sm p-6">
+
+            {/* REVIEW */}
+            <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900">Rate this seller</h2>
               <p className="text-sm text-gray-500 mt-1">
                 Share your experience with this seller.
@@ -1254,6 +1241,7 @@ export default function ListingPage() {
           </div>
         </div>
 
+        {/* SIMILAR */}
         {similarListings.length > 0 && (
           <section className="mt-10">
             <div className="flex items-end justify-between gap-4 mb-5">
@@ -1270,83 +1258,15 @@ export default function ListingPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
               {similarListings.map((item) => (
-                <Link key={item.id} href={`/listing/${item.id}`}>
-                  <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={
-                          item.image && item.image !== ""
-                            ? item.image
-                            : "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=900"
-                        }
-                        alt={item.title}
-                        className="h-52 w-full object-cover group-hover:scale-105 transition duration-500"
-                      />
-
-                      {item.is_featured ? (
-                        <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white text-xs px-3 py-1 rounded-full shadow font-medium">
-                          ★ Featured
-                        </span>
-                      ) : (
-                        <span className="absolute top-3 left-3 bg-white/90 backdrop-blur text-gray-800 text-xs px-3 py-1 rounded-full shadow font-medium">
-                          New
-                        </span>
-                      )}
-
-                      <div className="absolute left-3 bottom-4">
-                        <span className="inline-flex rounded-full bg-white/95 backdrop-blur text-green-600 px-3 py-1.5 text-[15px] font-bold shadow">
-                          ${item.price}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 mb-2 min-w-0 flex-wrap">
-                        {item.profiles?.is_breeder && (
-                          <span className="inline-flex rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
-                            Breeder
-                          </span>
-                        )}
-
-                        {item.profiles?.breeder_verified && (
-                          <span className="inline-flex rounded-full bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-semibold">
-                            Verified
-                          </span>
-                        )}
-
-                        {(item.profiles?.is_breeder || item.profiles?.breeder_verified) && (
-                          <span className="truncate text-[10px] text-gray-500">
-                            {getSellerLabel(item)}
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className="font-semibold text-[17px] text-gray-900 line-clamp-2 leading-snug min-h-[46px]">
-                        {item.title}
-                      </h3>
-
-                      <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
-                        <MapPin size={14} className="shrink-0" />
-                        <span className="truncate">{item.location}</span>
-                      </p>
-
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className="inline-flex max-w-full truncate text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full">
-                          {item.category || "Pet Listing"}
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-                </Link>
+                <ListingCard key={item.id} item={item} compact />
               ))}
             </div>
           </section>
         )}
       </div>
 
-      
       {/* STICKY MOBILE CTA */}
       <div className="fixed bottom-0 inset-x-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur md:hidden">
         <div className="max-w-6xl mx-auto px-4 py-3">
@@ -1383,10 +1303,11 @@ export default function ListingPage() {
           </button>
         </div>
       </div>
+
+      {/* LIGHTBOX */}
       {lightboxOpen && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm">
           <div className="absolute inset-0 flex flex-col">
-            {/* Top bar */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-4">
               <div className="text-white text-sm">
                 {galleryImages.indexOf(selectedImage) + 1} / {galleryImages.length}
@@ -1401,19 +1322,19 @@ export default function ListingPage() {
               </button>
             </div>
 
-            {/* Main image area */}
             <div
-                className="relative flex-1 flex items-center justify-center px-4 sm:px-8"
-                onTouchStart={handleLightboxTouchStart}
-                onTouchMove={handleLightboxTouchMove}
-                onTouchEnd={handleLightboxTouchEnd}
-              >
+              className="relative flex-1 flex items-center justify-center px-4 sm:px-8"
+              onTouchStart={handleLightboxTouchStart}
+              onTouchMove={handleLightboxTouchMove}
+              onTouchEnd={handleLightboxTouchEnd}
+            >
               <img
                 src={selectedImage}
                 alt={listing.title}
                 className="max-h-[75vh] sm:max-h-[78vh] max-w-full object-contain rounded-2xl select-none pointer-events-none"
                 draggable={false}
               />
+
               {galleryImages.length > 1 && (
                 <button
                   type="button"
@@ -1435,7 +1356,6 @@ export default function ListingPage() {
               )}
             </div>
 
-            {/* Thumbnails */}
             {galleryImages.length > 1 && (
               <div className="px-4 sm:px-6 pb-5 pt-3">
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide justify-start sm:justify-center">
@@ -1465,7 +1385,6 @@ export default function ListingPage() {
             )}
           </div>
 
-          {/* Click outside to close */}
           <button
             type="button"
             onClick={closeLightbox}
@@ -1475,5 +1394,5 @@ export default function ListingPage() {
         </div>
       )}
     </main>
-    );
+  );
 }
