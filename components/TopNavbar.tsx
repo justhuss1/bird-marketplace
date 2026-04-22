@@ -218,7 +218,7 @@ export default function TopNavbar() {
                 {menuOpen && (
                   <div className="absolute right-0 mt-3 w-[300px] rounded-[28px] border border-gray-100 bg-white shadow-2xl overflow-hidden">
                     {/* top summary */}
-                    <div className="px-4 py-4 border-b border-gray-100 bg-[#fafaf7]">
+                    <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-b from-[#fafaf7] to-white">
                       <div className="flex items-center gap-3">
                         <div className="relative w-11 h-11 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold">
                           {avatarLetter}
