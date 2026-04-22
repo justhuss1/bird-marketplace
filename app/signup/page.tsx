@@ -9,47 +9,112 @@ import {
   EyeOff,
   ArrowRight,
   UserCircle2,
+  Mail,
   LockKeyhole,
 } from "lucide-react";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
 
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const isValidUsername = (value: string) => {
+    return /^[a-zA-Z0-9_]{3,20}$/.test(value);
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email.trim() || !password.trim()) {
-      alert("Please enter your email and password.");
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedUsername || !trimmedEmail || !trimmedPassword) {
+      alert("Please complete all fields.");
+      return;
+    }
+
+    if (!isValidUsername(trimmedUsername)) {
+      alert(
+        "Username must be 3 to 20 characters and can only contain letters, numbers, and underscores."
+      );
+      return;
+    }
+
+    if (trimmedPassword.length < 6) {
+      alert("Password must be at least 6 characters.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
+      const { data: existingUsername, error: usernameCheckError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username_lower", trimmedUsername.toLowerCase())
+        .maybeSingle();
 
-      setLoading(false);
-
-      if (error) {
-        console.error(error);
-        alert(error.message || "Could not log in.");
+      if (usernameCheckError) {
+        console.error(usernameCheckError);
+        setLoading(false);
+        alert("Could not validate username. Please try again.");
         return;
       }
 
-      router.push("/");
-      router.refresh();
+      if (existingUsername) {
+        setLoading(false);
+        alert("That username is already taken.");
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password: trimmedPassword,
+      });
+
+      if (error) {
+        console.error(error);
+        setLoading(false);
+        alert(error.message || "Could not create account.");
+        return;
+      }
+
+      const userId = data.user?.id;
+
+      if (userId) {
+        const { error: profileError } = await supabase.from("profiles").upsert({
+          id: userId,
+          username: trimmedUsername,
+          username_lower: trimmedUsername.toLowerCase(),
+        });
+
+        if (profileError) {
+          console.error(profileError);
+          setLoading(false);
+          alert("Account created, but profile setup failed. Please contact support or try logging in.");
+          return;
+        }
+      }
+
+      setLoading(false);
+
+      if (data.session) {
+        alert("Account created successfully.");
+        router.push("/");
+        router.refresh();
+      } else {
+        alert("Account created. Please check your email to confirm your account.");
+        router.push("/login");
+      }
     } catch (error) {
       console.error(error);
       setLoading(false);
-      alert("Something went wrong while logging in.");
+      alert("Something went wrong while creating your account.");
     }
   };
 
@@ -64,26 +129,26 @@ export default function LoginPage() {
               </div>
 
               <h1 className="mt-6 text-4xl font-bold leading-tight">
-                Welcome back
+                Create your account
               </h1>
 
               <p className="mt-4 text-white/75 leading-7 max-w-md">
-                Log in to manage your listings, message buyers and sellers, save favourites, and keep up with breeder updates.
+                Join the marketplace to post listings, message users, save favourites, and build your breeder profile later if you want.
               </p>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
               <div className="rounded-3xl bg-white/10 border border-white/10 p-5">
-                <p className="text-sm font-semibold">Faster selling</p>
+                <p className="text-sm font-semibold">Buy and sell faster</p>
                 <p className="mt-2 text-sm text-white/70">
-                  Manage ads, mark listings sold, and stay on top of conversations.
+                  Create listings, chat securely, and manage your account in one place.
                 </p>
               </div>
 
               <div className="rounded-3xl bg-white/10 border border-white/10 p-5">
-                <p className="text-sm font-semibold">Safer communication</p>
+                <p className="text-sm font-semibold">Build trust</p>
                 <p className="mt-2 text-sm text-white/70">
-                  Keep messages and attachments in one secure place.
+                  Create your profile, save favourites, and upgrade to a breeder profile later.
                 </p>
               </div>
             </div>
@@ -99,19 +164,39 @@ export default function LoginPage() {
             </div>
 
             <h2 className="mt-4 text-3xl font-bold text-gray-900">
-              Log in
+              Sign up
             </h2>
             <p className="mt-2 text-sm text-gray-500 leading-6">
-              Use your email and password to access your account.
+              Create your account with a username, email, and password.
             </p>
 
-            <form onSubmit={handleLogin} className="mt-8 space-y-4">
+            <form onSubmit={handleSignup} className="mt-8 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Username
+                </label>
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 focus-within:border-green-500">
+                  <UserCircle2 size={18} className="text-gray-400" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Choose a username"
+                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                    autoComplete="username"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  3–20 characters. Letters, numbers, and underscores only.
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email
                 </label>
                 <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 focus-within:border-green-500">
-                  <UserCircle2 size={18} className="text-gray-400" />
+                  <Mail size={18} className="text-gray-400" />
                   <input
                     type="email"
                     value={email}
@@ -133,9 +218,9 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder="Create a password"
                     className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -152,25 +237,22 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full rounded-2xl bg-green-600 hover:bg-green-700 text-white py-3.5 text-sm font-semibold transition shadow-sm disabled:opacity-50"
               >
-                {loading ? "Logging in..." : "Log In"}
+                {loading ? "Creating account..." : "Create Account"}
               </button>
             </form>
 
-            <div className="mt-6 flex items-center justify-between gap-3 text-sm">
+            <div className="mt-6 text-sm text-gray-500">
+              Already have an account?{" "}
               <Link
-                href="/forgot-password"
-                className="text-gray-500 hover:text-gray-900 transition"
+                href="/login"
+                className="font-semibold text-green-700 hover:text-green-800 transition"
               >
-                Forgot password?
+                Log in
               </Link>
+            </div>
 
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 font-semibold text-green-700 hover:text-green-800 transition"
-              >
-                Create account
-                <ArrowRight size={16} />
-              </Link>
+            <div className="mt-4 text-xs text-gray-400 leading-6">
+              By signing up, you can create listings, message users, save favourites, and later activate breeder features from your account page.
             </div>
           </div>
         </section>
