@@ -11,45 +11,72 @@ import {
   UserCircle2,
   LockKeyhole,
 } from "lucide-react";
+import FormMessage from "@/components/FormMessage";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
+    setFormSuccess("");
 
-    if (!email.trim() || !password.trim()) {
-      alert("Please enter your email and password.");
+    const trimmedIdentifier = identifier.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedIdentifier || !trimmedPassword) {
+      setFormError("Please enter your email or username and password.");
       return;
     }
 
     setLoading(true);
 
     try {
+      let resolvedEmail = trimmedIdentifier.toLowerCase();
+
+      if (!trimmedIdentifier.includes("@")) {
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("username_lower", trimmedIdentifier.toLowerCase())
+          .maybeSingle();
+
+        if (profileError || !profileData?.email) {
+          setLoading(false);
+          setFormError("No account found with that username.");
+          return;
+        }
+
+        resolvedEmail = profileData.email.toLowerCase();
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+        email: resolvedEmail,
+        password: trimmedPassword,
       });
 
       setLoading(false);
 
       if (error) {
         console.error(error);
-        alert(error.message || "Could not log in.");
+        setFormError(error.message || "Could not log in.");
         return;
       }
 
+      setFormSuccess("Logged in successfully.");
       router.push("/");
       router.refresh();
     } catch (error) {
       console.error(error);
       setLoading(false);
-      alert("Something went wrong while logging in.");
+      setFormError("Something went wrong while logging in.");
     }
   };
 
@@ -102,23 +129,23 @@ export default function LoginPage() {
               Log in
             </h2>
             <p className="mt-2 text-sm text-gray-500 leading-6">
-              Use your email and password to access your account.
+              Use your email or username and password to access your account.
             </p>
 
             <form onSubmit={handleLogin} className="mt-8 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
+                  Email or Username
                 </label>
                 <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 focus-within:border-green-500">
                   <UserCircle2 size={18} className="text-gray-400" />
                   <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="Enter your email or username"
                     className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
-                    autoComplete="email"
+                    autoComplete="username"
                   />
                 </div>
               </div>
@@ -146,6 +173,9 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+
+              <FormMessage type="error" message={formError} />
+              <FormMessage type="success" message={formSuccess} />
 
               <button
                 type="submit"

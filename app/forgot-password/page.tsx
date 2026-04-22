@@ -4,18 +4,23 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { Mail, ArrowLeft } from "lucide-react";
+import FormMessage from "@/components/FormMessage";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
 
   const handleResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
+    setFormSuccess("");
 
     const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedEmail) {
-      alert("Please enter your email.");
+      setFormError("Please enter your email.");
       return;
     }
 
@@ -31,11 +36,11 @@ export default function ForgotPasswordPage() {
 
     if (error) {
       console.error(error);
-      alert(error.message || "Could not send reset email.");
+      setFormError(error.message || "Could not send reset email.");
       return;
     }
 
-    alert("Password reset email sent. Please check your inbox.");
+    setFormSuccess("Password reset email sent. Please check your inbox.");
   };
 
   return (
@@ -100,6 +105,9 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
               </div>
+
+              <FormMessage type="error" message={formError} />
+              <FormMessage type="success" message={formSuccess} />
 
               <button
                 type="submit"

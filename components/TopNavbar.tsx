@@ -158,11 +158,19 @@ export default function TopNavbar() {
           </Link>
 
           {!userEmail ? (
-            <Link href="/login">
-              <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 text-sm font-semibold transition shadow-sm">
-                Login
-              </button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/login">
+                <button className="rounded-2xl border border-gray-200 bg-white/90 hover:bg-white text-gray-800 px-4 py-2.5 text-sm font-semibold transition shadow-sm">
+                  Log in
+                </button>
+              </Link>
+
+              <Link href="/signup" className="hidden sm:block">
+                <button className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 text-sm font-semibold transition shadow-sm">
+                  Sign up
+                </button>
+              </Link>
+            </div>
           ) : (
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Notifications */}

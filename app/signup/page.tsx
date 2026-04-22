@@ -7,11 +7,11 @@ import { supabase } from "@/lib/supabase";
 import {
   Eye,
   EyeOff,
-  ArrowRight,
   UserCircle2,
   Mail,
   LockKeyhole,
 } from "lucide-react";
+import FormMessage from "@/components/FormMessage";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -19,8 +19,11 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
 
   const isValidUsername = (value: string) => {
     return /^[a-zA-Z0-9_]{3,20}$/.test(value);
@@ -28,25 +31,33 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
+    setFormSuccess("");
 
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
+    const trimmedConfirmPassword = confirmPassword.trim();
 
-    if (!trimmedUsername || !trimmedEmail || !trimmedPassword) {
-      alert("Please complete all fields.");
+    if (!trimmedUsername || !trimmedEmail || !trimmedPassword || !trimmedConfirmPassword) {
+      setFormError("Please complete all fields.");
       return;
     }
 
     if (!isValidUsername(trimmedUsername)) {
-      alert(
+      setFormError(
         "Username must be 3 to 20 characters and can only contain letters, numbers, and underscores."
       );
       return;
     }
 
     if (trimmedPassword.length < 6) {
-      alert("Password must be at least 6 characters.");
+      setFormError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (trimmedPassword !== trimmedConfirmPassword) {
+      setFormError("Passwords do not match.");
       return;
     }
 
@@ -62,13 +73,13 @@ export default function SignupPage() {
       if (usernameCheckError) {
         console.error(usernameCheckError);
         setLoading(false);
-        alert("Could not validate username. Please try again.");
+        setFormError("Could not validate username. Please try again.");
         return;
       }
 
       if (existingUsername) {
         setLoading(false);
-        alert("That username is already taken.");
+        setFormError("That username is already taken.");
         return;
       }
 
@@ -80,7 +91,7 @@ export default function SignupPage() {
       if (error) {
         console.error(error);
         setLoading(false);
-        alert(error.message || "Could not create account.");
+        setFormError(error.message || "Could not create account.");
         return;
       }
 
@@ -91,12 +102,13 @@ export default function SignupPage() {
           id: userId,
           username: trimmedUsername,
           username_lower: trimmedUsername.toLowerCase(),
+          email: trimmedEmail,
         });
 
         if (profileError) {
           console.error(profileError);
           setLoading(false);
-          alert("Account created, but profile setup failed. Please contact support or try logging in.");
+          setFormError("Account created, but profile setup failed.");
           return;
         }
       }
@@ -104,17 +116,17 @@ export default function SignupPage() {
       setLoading(false);
 
       if (data.session) {
-        alert("Account created successfully.");
+        setFormSuccess("Account created successfully.");
         router.push("/");
         router.refresh();
       } else {
-        alert("Account created. Please check your email to confirm your account.");
-        router.push("/login");
+        setFormSuccess("Account created. Please check your email to confirm your account.");
+        setTimeout(() => router.push("/login"), 1200);
       }
     } catch (error) {
       console.error(error);
       setLoading(false);
-      alert("Something went wrong while creating your account.");
+      setFormError("Something went wrong while creating your account.");
     }
   };
 
@@ -232,6 +244,26 @@ export default function SignupPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password
+                </label>
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 focus-within:border-green-500">
+                  <LockKeyhole size={18} className="text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                    className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+                    autoComplete="new-password"
+                  />
+                </div>
+              </div>
+
+              <FormMessage type="error" message={formError} />
+              <FormMessage type="success" message={formSuccess} />
+
               <button
                 type="submit"
                 disabled={loading}
@@ -249,10 +281,6 @@ export default function SignupPage() {
               >
                 Log in
               </Link>
-            </div>
-
-            <div className="mt-4 text-xs text-gray-400 leading-6">
-              By signing up, you can create listings, message users, save favourites, and later activate breeder features from your account page.
             </div>
           </div>
         </section>

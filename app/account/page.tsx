@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { notifyBreederFollowersOfAnnouncement } from "@/lib/breederAnnouncementNotifications";
+import FormMessage from "@/components/FormMessage";
 import {
   UserCircle2,
   Save,
@@ -58,6 +59,8 @@ export default function AccountPage() {
 
   const [profileEditOpen, setProfileEditOpen] = useState(true);
   const [breederEditOpen, setBreederEditOpen] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
 
   useEffect(() => {
     fetchProfile();
@@ -139,17 +142,20 @@ export default function AccountPage() {
   };
 
   const handleSaveBasicProfile = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("Please log in first.");
+      setFormError("Please log in first.");
       return;
     }
 
     if (!username.trim()) {
-      alert("Please enter a username.");
+      setFormError("Please enter a username.");
       return;
     }
 
@@ -159,6 +165,7 @@ export default function AccountPage() {
       .from("profiles")
       .update({
         username: username.trim(),
+        username_lower: username.trim().toLowerCase(),
       })
       .eq("id", user.id);
 
@@ -166,22 +173,26 @@ export default function AccountPage() {
 
     if (error) {
       console.error(error);
-      alert("Could not save profile.");
+      setFormError("Could not save profile.");
       return;
     }
 
-    alert("Profile updated.");
+    setFormSuccess("Profile updated successfully.");
     setProfileEditOpen(false);
     await fetchProfile();
   };
 
+
   const handleBecomeBreeder = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("Please log in first.");
+      setFormError("Please log in first.");
       return;
     }
 
@@ -201,26 +212,31 @@ export default function AccountPage() {
 
     if (error) {
       console.error(error);
-      alert("Could not activate breeder profile.");
+      setFormError("Could not activate breeder profile.");
       return;
     }
 
     if (!data) {
-      alert("No matching profile row found for this user.");
+      setFormError("No matching profile row found for this user.");
       return;
     }
 
+    setFormSuccess("Breeder profile activated successfully.");
     setBreederEditOpen(true);
     await fetchProfile();
   };
 
+
   const handleSaveBreederProfile = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("Please log in first.");
+      setFormError("Please log in first.");
       return;
     }
 
@@ -238,11 +254,11 @@ export default function AccountPage() {
 
     if (error) {
       console.error(error);
-      alert("Could not save breeder profile.");
+      setFormError("Could not save breeder profile.");
       return;
     }
 
-    alert("Breeder profile updated.");
+    setFormSuccess("Breeder profile updated successfully.");
     setBreederEditOpen(false);
     await fetchProfile();
   };
@@ -291,17 +307,20 @@ export default function AccountPage() {
   };
 
   const handleSaveAnnouncement = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user || !profile?.is_breeder) {
-      alert("Only breeders can manage announcements.");
+      setFormError("Only breeders can manage announcements.");
       return;
     }
 
     if (!announcementTitle.trim() || !announcementContent.trim()) {
-      alert("Please add a title and content.");
+      setFormError("Please add a title and content.");
       return;
     }
 
@@ -323,13 +342,13 @@ export default function AccountPage() {
 
       if (error) {
         console.error(error);
-        alert("Could not update announcement.");
+        setFormError("Could not update announcement.");
         return;
       }
 
       resetAnnouncementForm();
       await fetchMyAnnouncements(user.id);
-      alert("Announcement updated.");
+      setFormSuccess("Announcement updated successfully.");
       return;
     }
 
@@ -351,7 +370,7 @@ export default function AccountPage() {
 
     if (error) {
       console.error(error);
-      alert("Could not post announcement.");
+      setFormError("Could not post announcement.");
       return;
     }
 
@@ -368,7 +387,7 @@ export default function AccountPage() {
 
     resetAnnouncementForm();
     await fetchMyAnnouncements(user.id);
-    alert("Announcement posted.");
+    setFormSuccess("Announcement posted successfully.");
   };
 
   const formatPostType = (postType: string) => {
@@ -500,6 +519,15 @@ export default function AccountPage() {
           </div>
         </div>
       </section>
+
+      {(formError || formSuccess) && (
+        <div className="mt-6">
+          <FormMessage
+            type={formError ? "error" : "success"}
+            message={formError || formSuccess}
+          />
+        </div>
+      )}
 
       {/* QUICK ACCESS */}
       <section className="mt-8 bg-white rounded-[30px] border border-gray-100 shadow-sm p-6 sm:p-7">

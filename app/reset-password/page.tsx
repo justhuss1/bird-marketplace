@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Eye, EyeOff, LockKeyhole, ArrowLeft } from "lucide-react";
+import FormMessage from "@/components/FormMessage";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -14,6 +15,8 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
 
   useEffect(() => {
     const init = async () => {
@@ -30,7 +33,7 @@ export default function ResetPasswordPage() {
 
         if (error) {
           console.error(error);
-          alert("This reset link is invalid or has expired.");
+          setFormError("This reset link is invalid or has expired.");
           router.push("/forgot-password");
           return;
         }
@@ -44,19 +47,21 @@ export default function ResetPasswordPage() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
+    setFormSuccess("");
 
     if (!password.trim() || !confirmPassword.trim()) {
-      alert("Please complete both password fields.");
+      setFormError("Please complete both password fields.");
       return;
     }
 
     if (password.length < 6) {
-      alert("Password must be at least 6 characters.");
+      setFormError("Password must be at least 6 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match.");
+      setFormError("Passwords do not match.");
       return;
     }
 
@@ -70,12 +75,12 @@ export default function ResetPasswordPage() {
 
     if (error) {
       console.error(error);
-      alert(error.message || "Could not reset password.");
+      setFormError(error.message || "Could not reset password.");
       return;
     }
 
-    alert("Password updated successfully.");
-    router.push("/login");
+    setFormSuccess("Password updated successfully.");
+    setTimeout(() => router.push("/login"), 1200);
   };
 
   if (!ready) {
@@ -174,6 +179,9 @@ export default function ResetPasswordPage() {
                   />
                 </div>
               </div>
+
+              <FormMessage type="error" message={formError} />
+              <FormMessage type="success" message={formSuccess} />
 
               <button
                 type="submit"
