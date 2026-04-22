@@ -426,78 +426,76 @@ export default function AccountPage() {
     <main className="min-h-screen bg-[#f7f7f5] px-4 py-6 sm:py-8 pb-24">
       <div className="max-w-7xl mx-auto">
         {/* TOP HEADER */}
-        <section className="rounded-[32px] border border-gray-200 bg-white shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-br from-[#111827] via-[#132033] to-[#1a2b42] px-6 sm:px-8 py-8 sm:py-10 text-white">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-[28px] bg-white/12 border border-white/10 flex items-center justify-center text-2xl font-bold shrink-0">
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
+        <section className="rounded-[28px] border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="px-5 sm:px-8 py-5 sm:py-7">
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-[24px] bg-green-50 border border-green-100 flex items-center justify-center text-2xl font-bold text-green-700 shrink-0">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
 
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                      My Account
-                    </h1>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">
+                    My Account
+                  </h1>
 
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80">
-                      <UserCircle2 size={12} />
-                      {profile.is_breeder ? "Marketplace Account" : "Standard Account"}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                    <UserCircle2 size={12} />
+                    {profile.is_breeder ? "Marketplace Account" : "Standard Account"}
+                  </span>
+
+                  {profile.is_breeder && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+                      <Sparkles size={12} />
+                      Breeder Active
                     </span>
+                  )}
 
-                    {profile.is_breeder && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-200">
-                        <Sparkles size={12} />
-                        Breeder Active
-                      </span>
-                    )}
-
-                    {profile.breeder_verified && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-medium text-blue-200">
-                        <BadgeCheck size={12} />
-                        Verified
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="mt-3 max-w-2xl text-sm sm:text-base text-white/72 leading-7">
-                    Manage your profile, listings, messages, saved items, and breeder tools
-                    in one clean workspace.
-                  </p>
+                  {profile.breeder_verified && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                      <BadgeCheck size={12} />
+                      Verified
+                    </span>
+                  )}
                 </div>
-              </div>
 
-              <div className="flex flex-wrap gap-3">
+                <p className="mt-3 text-sm sm:text-base text-gray-500 leading-7 max-w-2xl">
+                  Manage your profile, listings, messages, saved items, and breeder tools.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setProfileEditOpen((prev) => !prev)}
+                className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-900 px-5 py-3 text-sm font-semibold transition inline-flex items-center justify-center gap-2"
+              >
+                <Pencil size={16} />
+                {profileEditOpen ? "Close Profile Edit" : "Edit Profile"}
+              </button>
+
+              {profile.is_breeder ? (
                 <button
-                  onClick={() => setProfileEditOpen((prev) => !prev)}
-                  className="rounded-2xl bg-white text-gray-900 hover:bg-gray-100 px-5 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
+                  onClick={() => setBreederEditOpen((prev) => !prev)}
+                  className="rounded-2xl bg-[#111827] hover:bg-[#1b2433] text-white px-5 py-3 text-sm font-semibold transition inline-flex items-center justify-center gap-2"
                 >
-                  <Pencil size={16} />
-                  {profileEditOpen ? "Close Profile Edit" : "Edit Profile"}
+                  <Sparkles size={16} />
+                  {breederEditOpen ? "Close Breeder Tools" : "Open Breeder Tools"}
                 </button>
-
-                {profile.is_breeder ? (
-                  <button
-                    onClick={() => setBreederEditOpen((prev) => !prev)}
-                    className="rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white px-5 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
-                  >
-                    <Sparkles size={16} />
-                    {breederEditOpen ? "Close Breeder Tools" : "Open Breeder Tools"}
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleBecomeBreeder}
-                    disabled={saving}
-                    className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition inline-flex items-center gap-2 disabled:opacity-50"
-                  >
-                    <Star size={16} />
-                    {saving ? "Activating..." : "Become a Breeder"}
-                  </button>
-                )}
-              </div>
+              ) : (
+                <button
+                  onClick={handleBecomeBreeder}
+                  disabled={saving}
+                  className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-5 py-3 text-sm font-semibold transition inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Star size={16} />
+                  {saving ? "Activating..." : "Become a Breeder"}
+                </button>
+              )}
             </div>
           </div>
         </section>
+
 
         {/* MAIN LAYOUT */}
         <div className="mt-6 grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-6 items-start">
