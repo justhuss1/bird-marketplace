@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ListingCard from "@/components/ListingCard";
+import FormMessage from "@/components/FormMessage";
 import {
   Heart,
   MapPin,
@@ -141,13 +142,17 @@ export default function ListingPage() {
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
   const [sellerListings, setSellerListings] = useState<any[]>([]);
   const [ratingAvg, setRatingAvg] = useState<number | null>(null);
   const [ratingCount, setRatingCount] = useState(0);
   const [reviewRating, setReviewRating] = useState<number>(5);
   const [reviewText, setReviewText] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
 
   const touchStartXRef = useRef<number | null>(null);
   const touchEndXRef = useRef<number | null>(null);
@@ -242,12 +247,15 @@ export default function ListingPage() {
   };
 
   const handleSubmitReview = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("Please log in to leave a review.");
+      setFormError("Please log in to leave a review.");
       router.push("/login");
       return;
     }
@@ -255,7 +263,7 @@ export default function ListingPage() {
     if (!listing) return;
 
     if (user.id === listing.user_id) {
-      alert("You cannot review your own listing.");
+      setFormError("You cannot review your own listing.");
       return;
     }
 
@@ -277,13 +285,13 @@ export default function ListingPage() {
 
     if (error) {
       console.error("REVIEW SUBMIT ERROR:", error);
-      alert(error.message || "Could not submit review.");
+      setFormError(error.message || "Could not submit review.");
       return;
     }
 
     setReviewText("");
     setReviewRating(5);
-    alert("Review submitted.");
+    setFormSuccess("Review submitted successfully.");
     fetchRatingsSummary(listing.user_id);
   };
 
@@ -444,12 +452,15 @@ export default function ListingPage() {
   };
 
   const handleToggleSave = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("Please log in to save listings.");
+      setFormError("Please log in to save listings.");
       router.push("/login");
       return;
     }
@@ -465,11 +476,12 @@ export default function ListingPage() {
 
       if (error) {
         console.error(error);
-        alert("Failed to remove saved listing");
+        setFormError("Failed to remove saved listing.");
         return;
       }
 
       setIsSaved(false);
+      setFormSuccess("Listing removed from saved items.");
     } else {
       const { error } = await supabase.from("saved_listings").insert([
         {
@@ -480,15 +492,19 @@ export default function ListingPage() {
 
       if (error) {
         console.error(error);
-        alert("Failed to save listing");
+        setFormError("Failed to save listing.");
         return;
       }
 
       setIsSaved(true);
+      setFormSuccess("Listing saved successfully.");
     }
   };
 
   const handleShareListing = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     const shareUrl = window.location.href;
 
     try {
@@ -498,25 +514,30 @@ export default function ListingPage() {
           text: "Check out this listing on Pet Marketplace",
           url: shareUrl,
         });
+        setFormSuccess("Listing shared.");
         return;
       }
 
       await navigator.clipboard.writeText(shareUrl);
-      alert("Listing link copied to clipboard.");
+      setFormSuccess("Listing link copied to clipboard.");
     } catch (error) {
       console.error(error);
-      alert("Could not share this listing.");
+      setFormError("Could not share this listing.");
     }
   };
 
   const handleReportListing = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     if (!listing) return;
 
-    const reason = window.prompt(
-      "Please enter a short reason for reporting this listing:"
-    );
+    if (!reportReason.trim()) {
+      setFormError("Please enter a reason for reporting this listing.");
+      return;
+    }
 
-    if (!reason || !reason.trim()) return;
+    setSubmittingReport(true);
 
     const {
       data: { user },
@@ -526,26 +547,33 @@ export default function ListingPage() {
       {
         listing_id: listing.id,
         user_id: user?.id || null,
-        reason: reason.trim(),
+        reason: reportReason.trim(),
       },
     ]);
 
+    setSubmittingReport(false);
+
     if (error) {
       console.error(error);
-      alert("Could not report this listing.");
+      setFormError("Could not report this listing.");
       return;
     }
 
-    alert("Thanks. This listing has been reported for review.");
+    setReportReason("");
+    setReportModalOpen(false);
+    setFormSuccess("Thanks. This listing has been reported for review.");
   };
 
   const handleMessageSeller = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("Please log in to message the seller.");
+      setFormError("Please log in to message the seller.");
       router.push("/login");
       return;
     }
@@ -553,7 +581,7 @@ export default function ListingPage() {
     if (!listing) return;
 
     if (user.id === listing.user_id) {
-      alert("This is your own listing.");
+      setFormError("This is your own listing.");
       return;
     }
 
@@ -567,7 +595,7 @@ export default function ListingPage() {
 
     if (existingError) {
       console.error(existingError);
-      alert("Could not open conversation");
+      setFormError("Could not open conversation.");
       return;
     }
 
@@ -590,7 +618,7 @@ export default function ListingPage() {
 
     if (createError) {
       console.error(createError);
-      alert("Could not create conversation");
+      setFormError("Could not create conversation.");
       return;
     }
 
@@ -720,7 +748,186 @@ export default function ListingPage() {
   };
 
   if (loading) {
-    return <main className="p-4">Loading listing...</main>;
+    return (
+      <main className="bg-[#f7f7f5] min-h-screen px-4 py-6 sm:py-8 pb-32 animate-pulse">
+        <div className="max-w-7xl mx-auto">
+          <div className="h-5 w-24 rounded bg-gray-200" />
+
+          {/* TOP SUMMARY */}
+          <section className="mt-4 mb-5">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <div className="h-7 w-24 rounded-full bg-gray-200" />
+                  <div className="h-7 w-28 rounded-full bg-gray-200" />
+                </div>
+
+                <div className="h-10 w-full max-w-[520px] rounded bg-gray-200" />
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <div className="h-4 w-32 rounded bg-gray-200" />
+                  <div className="h-4 w-28 rounded bg-gray-200" />
+                  <div className="h-4 w-20 rounded bg-gray-200" />
+                </div>
+              </div>
+
+              <div className="shrink-0">
+                <div className="rounded-[24px] border border-gray-200 bg-white px-5 py-4 shadow-sm min-w-[160px]">
+                  <div className="h-3 w-12 rounded bg-gray-200" />
+                  <div className="mt-3 h-8 w-24 rounded bg-gray-200" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.82fr] gap-6">
+            {/* LEFT COLUMN */}
+            <div className="space-y-5">
+              <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm overflow-hidden">
+                <div className="w-full h-[320px] sm:h-[520px] bg-gray-200" />
+
+                <div className="p-3 sm:p-4 border-t border-gray-100">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="rounded-2xl h-20 sm:h-24 bg-gray-200"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm p-6 sm:p-7">
+                <div className="flex flex-wrap gap-3">
+                  <div className="h-12 w-32 rounded-2xl bg-gray-200" />
+                  <div className="h-12 w-24 rounded-2xl bg-gray-200" />
+                  <div className="h-12 w-24 rounded-2xl bg-gray-200" />
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <div className="h-6 w-40 rounded bg-gray-200 mb-4" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4"
+                      >
+                        <div className="h-3 w-20 rounded bg-gray-200" />
+                        <div className="mt-3 h-5 w-28 rounded bg-gray-200" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <div className="h-6 w-28 rounded bg-gray-200 mb-4" />
+                  <div className="space-y-3">
+                    <div className="h-4 w-full rounded bg-gray-200" />
+                    <div className="h-4 w-full rounded bg-gray-200" />
+                    <div className="h-4 w-[90%] rounded bg-gray-200" />
+                    <div className="h-4 w-[75%] rounded bg-gray-200" />
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            {/* RIGHT COLUMN */}
+            <div className="space-y-5">
+              <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
+                  <div className="h-6 w-36 rounded bg-gray-200" />
+                  <div className="mt-2 h-4 w-48 rounded bg-gray-200" />
+                </div>
+
+                <div className="p-6">
+                  <div className="rounded-3xl border border-gray-100 bg-gray-50 p-4">
+                    <div className="h-16 w-full rounded-2xl bg-gray-200" />
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    <div className="h-12 w-full rounded-2xl bg-gray-200" />
+                    <div className="h-12 w-full rounded-2xl bg-gray-200" />
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    <div className="h-16 w-full rounded-2xl bg-gray-200" />
+                    <div className="h-16 w-full rounded-2xl bg-gray-200" />
+                  </div>
+                </div>
+              </section>
+
+              <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-gray-900 px-5 py-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white/10" />
+                    <div className="flex-1">
+                      <div className="h-3 w-16 rounded bg-white/20" />
+                      <div className="mt-2 h-4 w-28 rounded bg-white/20" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-5 py-4 border-b border-gray-100 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-gray-50 px-4 py-3">
+                    <div className="h-3 w-14 rounded bg-gray-200" />
+                    <div className="mt-2 h-6 w-12 rounded bg-gray-200" />
+                  </div>
+
+                  <div className="rounded-2xl bg-gray-50 px-4 py-3">
+                    <div className="h-3 w-12 rounded bg-gray-200" />
+                    <div className="mt-2 h-5 w-20 rounded bg-gray-200" />
+                  </div>
+                </div>
+
+                <div className="px-5 py-4 space-y-3">
+                  <div className="h-14 w-full rounded-2xl bg-gray-200" />
+                  <div className="h-16 w-full rounded-2xl bg-gray-200" />
+                  <div className="h-16 w-full rounded-2xl bg-gray-200" />
+                </div>
+
+                <div className="px-5 pb-5 space-y-3">
+                  <div className="h-12 w-full rounded-2xl bg-gray-200" />
+                  <div className="h-12 w-full rounded-2xl bg-gray-200" />
+                </div>
+              </section>
+
+              <section className="bg-white rounded-[30px] border border-gray-100 shadow-sm p-6">
+                <div className="h-6 w-36 rounded bg-gray-200" />
+                <div className="mt-2 h-4 w-48 rounded bg-gray-200" />
+                <div className="mt-4 h-12 w-full rounded-2xl bg-gray-200" />
+                <div className="mt-4 h-28 w-full rounded-2xl bg-gray-200" />
+                <div className="mt-5 h-12 w-full rounded-2xl bg-gray-200" />
+              </section>
+            </div>
+          </div>
+
+          {/* SIMILAR LISTINGS */}
+          <section className="mt-10">
+            <div className="mb-5">
+              <div className="h-3 w-24 rounded bg-gray-200" />
+              <div className="mt-3 h-8 w-56 rounded bg-gray-200" />
+              <div className="mt-3 h-4 w-72 rounded bg-gray-200" />
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden"
+                >
+                  <div className="h-40 sm:h-52 w-full bg-gray-200" />
+                  <div className="p-4">
+                    <div className="h-5 w-3/4 rounded bg-gray-200" />
+                    <div className="mt-3 h-4 w-1/2 rounded bg-gray-200" />
+                    <div className="mt-3 h-6 w-20 rounded-full bg-gray-200" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </main>
+    );
   }
 
   if (!listing) {
@@ -757,6 +964,14 @@ export default function ListingPage() {
           Back
         </button>
 
+        {(formError || formSuccess) && (
+          <div className="mt-4">
+            <FormMessage
+              type={formError ? "error" : "success"}
+              message={formError || formSuccess}
+            />
+          </div>
+        )}
         {/* TOP SUMMARY */}
         <section className="mt-4 mb-5">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
@@ -932,7 +1147,12 @@ export default function ListingPage() {
                 </button>
 
                 <button
-                  onClick={handleReportListing}
+                  onClick={() => {
+                    setFormError("");
+                    setFormSuccess("");
+                    setReportReason("");
+                    setReportModalOpen(true);
+                  }}
                   className="rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-3 text-sm font-semibold transition inline-flex items-center gap-2"
                 >
                   <Flag size={16} />
@@ -1140,10 +1360,12 @@ export default function ListingPage() {
                   <ShieldCheck size={16} className="text-green-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      Verified account
+                      {seller?.breeder_verified ? "Verified breeder" : "Marketplace member"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Authenticated platform user
+                      {seller?.breeder_verified
+                        ? "This breeder profile has been verified."
+                        : "Active seller on the platform."}
                     </p>
                   </div>
                 </div>
@@ -1303,6 +1525,87 @@ export default function ListingPage() {
           </button>
         </div>
       </div>
+
+      {reportModalOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-[1px]"
+            onClick={() => {
+              if (submittingReport) return;
+              setReportModalOpen(false);
+            }}
+          />
+
+          <div className="fixed inset-x-0 bottom-0 z-[100] sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
+            <div className="w-full rounded-t-[30px] sm:rounded-[30px] bg-white border border-gray-100 shadow-2xl p-5 sm:max-w-lg">
+              <div className="w-12 h-1.5 rounded-full bg-gray-200 mx-auto mb-5 sm:hidden" />
+
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Report Listing
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500 leading-6">
+                    Let us know why this listing should be reviewed.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (submittingReport) return;
+                    setReportModalOpen(false);
+                  }}
+                  className="rounded-full p-2 hover:bg-gray-100 transition"
+                >
+                  <X size={18} className="text-gray-500" />
+                </button>
+              </div>
+
+              {formError && (
+                <div className="mt-4">
+                  <FormMessage type="error" message={formError} />
+                </div>
+              )}
+
+              <div className="mt-5">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason
+                </label>
+                <textarea
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  rows={5}
+                  placeholder="Briefly explain the issue with this listing..."
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500 resize-none"
+                />
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (submittingReport) return;
+                    setReportModalOpen(false);
+                  }}
+                  className="rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 px-4 py-3 text-sm font-semibold transition"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleReportListing}
+                  disabled={submittingReport}
+                  className="rounded-2xl bg-red-600 hover:bg-red-700 text-white px-4 py-3 text-sm font-semibold transition shadow-sm disabled:opacity-50"
+                >
+                  {submittingReport ? "Submitting..." : "Submit Report"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* LIGHTBOX */}
       {lightboxOpen && (
