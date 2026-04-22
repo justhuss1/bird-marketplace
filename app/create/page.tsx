@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LocationAutocomplete from "@/components/LocationAutocomplete";
 import { notifyBreederFollowersOfNewListing } from "@/lib/breederNotifications";
+import FormMessage from "@/components/FormMessage";
 import {
   ArrowLeft,
   Upload,
@@ -126,6 +127,8 @@ export default function CreateListingPage() {
 
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -223,68 +226,79 @@ export default function CreateListingPage() {
   };
 
   const handleUseCurrentLocation = async () => {
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported on this device.");
-    return;
-  }
+    setFormError("");
+    setFormSuccess("");
 
-  setGettingLocation(true);
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-
-      setLatitude(lat);
-      setLongitude(lng);
-
-      try {
-        const result = await reverseGeocode(lat, lng);
-        if (result.displayName) {
-          setLocation(result.displayName);
-        }
-      } catch (err) {
-        console.error("Reverse geocode failed:", err);
-      }
-
-      setGettingLocation(false);
-    },
-    (error) => {
-      console.error("Geolocation error:", error);
-
-      let message = "Unable to get your location.";
-
-      if (error.code === 1) {
-        message =
-          "Location permission denied. Please allow location access in your browser.";
-      } else if (error.code === 2) {
-        message =
-          "Location unavailable. Try again or check your device location settings.";
-      } else if (error.code === 3) {
-        message =
-          "Location request timed out. Try again or move to a better signal area.";
-      }
-
-      alert(message);
-      setGettingLocation(false);
-    },
-    {
-      enableHighAccuracy: false, // 🔑 IMPORTANT (fixes most desktop issues)
-      timeout: 20000,            // more forgiving
-      maximumAge: 60000,
+    if (!navigator.geolocation) {
+      setFormError("Geolocation is not supported on this device.");
+      return;
     }
-  );
-};
+
+    setGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        setLatitude(lat);
+        setLongitude(lng);
+
+        try {
+          const result = await reverseGeocode(lat, lng);
+          if (result.displayName) {
+            setLocation(result.displayName);
+            setFormSuccess("Current location added successfully.");
+          } else {
+            setFormSuccess("Coordinates captured for your listing.");
+          }
+        } catch (err) {
+          console.error("Reverse geocode failed:", err);
+          setFormSuccess("Coordinates captured for your listing.");
+        }
+
+        setGettingLocation(false);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+
+        let message = "Unable to get your location.";
+
+        if (error.code === 1) {
+          message =
+            "Location permission denied. Please allow location access in your browser.";
+        } else if (error.code === 2) {
+          message =
+            "Location unavailable. Try again or check your device location settings.";
+        } else if (error.code === 3) {
+          message =
+            "Location request timed out. Try again or move to a better signal area.";
+        }
+
+        setFormError(message);
+        setGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 20000,
+        maximumAge: 60000,
+      }
+    );
+  };
+
 
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     source: "camera" | "library" | "files" = "library"
-  ) => {
+    ) => {
+    setFormError("");
+    setFormSuccess("");
+
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     if (!cloudName || !uploadPreset) {
-      alert(
+      setFormError(
         "Cloudinary environment variables are missing. Please check NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET."
       );
       return;
@@ -322,26 +336,36 @@ export default function CreateListingPage() {
 
       if (source === "camera") {
         setCameraFlowActive(true);
+        setFormSuccess("Photo added successfully.");
       } else {
         setCameraFlowActive(false);
+        setFormSuccess(
+          `${uploadedUrls.length} image${uploadedUrls.length === 1 ? "" : "s"} uploaded successfully.`
+        );
       }
 
       setShowPhotoOptions(false);
     } catch (error) {
       console.error(error);
-      alert("Image upload failed.");
+      setFormError("Image upload failed.");
     } finally {
       setUploading(false);
       e.target.value = "";
     }
   };
 
+
   const removeImage = (indexToRemove: number) => {
+    setFormError("");
+    setFormSuccess("Image removed.");
     setImages((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const moveImage = (fromIndex: number, toIndex: number) => {
     if (toIndex < 0 || toIndex >= images.length) return;
+
+    setFormError("");
+    setFormSuccess("Photo order updated.");
 
     setImages((prev) => {
       const updated = [...prev];
@@ -375,8 +399,11 @@ export default function CreateListingPage() {
   };
 
   const handleCreateListing = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     if (!title || !price || !location || !category || !description) {
-      alert("Please complete all required fields.");
+      setFormError("Please complete all required fields.");
       return;
     }
 
@@ -387,7 +414,7 @@ export default function CreateListingPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("Please log in first.");
+      setFormError("Please log in first.");
       router.push("/login");
       setSubmitting(false);
       return;
@@ -419,7 +446,9 @@ export default function CreateListingPage() {
           user_id: user.id,
           latitude: finalLatitude,
           longitude: finalLongitude,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          expires_at: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           status: "available",
         },
       ])
@@ -427,31 +456,36 @@ export default function CreateListingPage() {
       .single();
 
     if (error) {
-  console.error(error);
-  alert("Failed to create listing.");
-  setSubmitting(false);
-  return;
-}
+      console.error(error);
+      setFormError("Failed to create listing.");
+      setSubmitting(false);
+      return;
+    }
 
-  const { data: breederProfile } = await supabase
-    .from("profiles")
-    .select("is_breeder, breeder_name, username")
-    .eq("id", user.id)
-    .single();
+    const { data: breederProfile } = await supabase
+      .from("profiles")
+      .select("is_breeder, breeder_name, username")
+      .eq("id", user.id)
+      .single();
 
-  if (breederProfile?.is_breeder && newListing?.id) {
-    const breederName =
-      breederProfile.breeder_name || breederProfile.username || "A breeder";
+    if (breederProfile?.is_breeder && newListing?.id) {
+      const breederName =
+        breederProfile.breeder_name || breederProfile.username || "A breeder";
 
-    await notifyBreederFollowersOfNewListing({
-      breederId: user.id,
-      breederName,
-      listingId: newListing.id,
-      listingTitle: newListing.title,
-    });
-  }
+      await notifyBreederFollowersOfNewListing({
+        breederId: user.id,
+        breederName,
+        listingId: newListing.id,
+        listingTitle: newListing.title,
+      });
+    }
 
-    router.push("/my-listings");
+    setSubmitting(false);
+    setFormSuccess("Listing created successfully.");
+
+    setTimeout(() => {
+      router.push("/my-listings");
+    }, 800);
   };
 
   return (
@@ -478,6 +512,14 @@ export default function CreateListingPage() {
           </div>
 
           <div className="px-6 sm:px-8 py-6 sm:py-8">
+            {(formError || formSuccess) && (
+              <div className="mb-6">
+                <FormMessage
+                  type={formError ? "error" : "success"}
+                  message={formError || formSuccess}
+                />
+              </div>
+            )}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-6">
                 <div>
