@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import FormMessage from "@/components/FormMessage";
 import {
   ArrowLeft,
   MapPin,
@@ -52,7 +53,8 @@ export default function MessagesThreadPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -106,7 +108,7 @@ export default function MessagesThreadPage() {
         conversationData.buyer_id !== user.id &&
         conversationData.seller_id !== user.id
       ) {
-        alert("You do not have access to this conversation.");
+        setFormError("You do not have access to this conversation.");
         router.push("/messages");
         return;
       }
@@ -176,12 +178,36 @@ export default function MessagesThreadPage() {
   };
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormError("");
+    setFormSuccess("");
+
     const file = e.target.files?.[0] || null;
+
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+
+    const maxSizeMb = 10;
+    const fileSizeMb = file.size / 1024 / 1024;
+
+    if (fileSizeMb > maxSizeMb) {
+      setSelectedFile(null);
+      setFormError(`File is too large. Please choose a file under ${maxSizeMb} MB.`);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
     setSelectedFile(file);
+    setFormSuccess("Attachment added.");
   };
 
   const clearSelectedFile = () => {
     setSelectedFile(null);
+    setFormError("");
+    setFormSuccess("Attachment removed");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -214,6 +240,9 @@ export default function MessagesThreadPage() {
   };
 
   const handleSend = async () => {
+    setFormError("");
+    setFormSuccess("");
+
     if ((!newMessage.trim() && !selectedFile) || !conversation || sending) return;
 
     const {
@@ -221,6 +250,7 @@ export default function MessagesThreadPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
+      setFormError("Please log in to send messages.");
       router.push("/login");
       return;
     }
@@ -265,14 +295,18 @@ export default function MessagesThreadPage() {
 
       if (messageError) {
         console.error(messageError);
-        alert("Failed to send message");
+        setFormError("Failed to send message.");
         setSending(false);
         setUploadingAttachment(false);
         return;
       }
 
       setNewMessage("");
-      clearSelectedFile();
+      setSelectedFile(null);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
 
       const recipientId =
         conversation.buyer_id === user.id
@@ -299,9 +333,13 @@ export default function MessagesThreadPage() {
       if (notificationError) {
         console.error("Notification insert error:", notificationError);
       }
+
+      setFormSuccess("Message sent.");
     } catch (error) {
       console.error(error);
-      alert("Failed to upload attachment. Check console for the exact Supabase error.");
+      setFormError(
+        "Failed to upload attachment or send message. Please try again."
+      );
     }
 
     setSending(false);
@@ -527,6 +565,15 @@ export default function MessagesThreadPage() {
 
             {/* COMPOSER */}
             <div className="border-t border-gray-100 bg-white p-4">
+              {(formError || formSuccess) && (
+                <div className="mb-3">
+                  <FormMessage
+                    type={formError ? "error" : "success"}
+                    message={formError || formSuccess}
+                  />
+                </div>
+              )}
+              
               {selectedFile && (
                 <div className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
@@ -595,9 +642,12 @@ export default function MessagesThreadPage() {
                     uploadingAttachment ||
                     (!newMessage.trim() && !selectedFile)
                   }
-                  className="rounded-2xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 transition shadow-sm shrink-0"
+                  className="rounded-2xl bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-3 transition shadow-sm shrink-0 inline-flex items-center gap-2"
                 >
                   <Send size={18} />
+                  <span className="hidden sm:inline">
+                    {uploadingAttachment ? "Uploading..." : sending ? "Sending..." : "Send"}
+                  </span>
                 </button>
               </div>
             </div>
