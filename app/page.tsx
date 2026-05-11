@@ -433,55 +433,79 @@ export default function Home() {
 
   return (
     <main className="bg-[#f7f7f5] min-h-screen pb-24">
-      {/* TOP SEARCH AREA */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 pt-3 pb-3 sm:pt-5 sm:pb-5">
-          <div className="max-w-5xl">
-            <div className="hidden md:inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] font-medium text-gray-600">
-              <Sparkles size={13} />
-              Australia-wide pet marketplace
+      {/* HERO SECTION */}
+        <section className="relative overflow-hidden border-b border-gray-100 bg-[#f7f7f5]">
+
+          {/* subtle background glow */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-[-120px] right-[-80px] h-[280px] w-[280px] rounded-full bg-green-100 blur-3xl opacity-40" />
+            <div className="absolute bottom-[-100px] left-[-80px] h-[220px] w-[220px] rounded-full bg-yellow-100 blur-3xl opacity-40" />
+          </div>
+
+          <div className="relative max-w-7xl mx-auto px-4 pt-8 sm:pt-14 pb-8 sm:pb-12">
+
+            {/* TOP BADGE */}
+            <div className="flex justify-center sm:justify-start">
+              <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/90 backdrop-blur px-4 py-2 text-xs font-semibold text-gray-700 shadow-sm">
+                <Sparkles size={14} className="text-green-600" />
+                Australia-wide pet marketplace
+              </div>
             </div>
 
-            {/* MOBILE SEARCH */}
-            <div className="block md:hidden">
-              <button
-                type="button"
-                onClick={openSearchSheet}
-                className="w-full rounded-[24px] border border-gray-200 bg-white shadow-sm px-4 py-3.5 flex items-center justify-between gap-3 hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
-                    <Search size={18} className="text-gray-500" />
-                  </div>
+            {/* HERO CONTENT */}
+            <div className="mt-6 max-w-3xl">
 
-                  <div className="min-w-0 text-left flex-1">
-                    <p className="text-[15px] font-semibold text-gray-900 truncate leading-5">
-                      {searchTerm.trim() ? searchTerm : "Search pets, breeds or keywords"}
-                    </p>
-                    <p className="text-[13px] text-gray-500 truncate mt-0.5">
-                      {locationFilter.trim()
-                        ? locationFilter
-                        : categoryFilter.trim()
-                        ? categoryFilter
-                        : "Anywhere in Australia"}
-                    </p>
-                  </div>
+              <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-gray-900 leading-[1.05]">
+                Find your perfect pet across Australia
+              </h1>
+
+              <p className="mt-5 text-base sm:text-lg text-gray-600 leading-8 max-w-2xl">
+                Browse trusted breeders, verified sellers, upcoming litters,
+                and pet supplies — all in one modern marketplace.
+              </p>
+
+              {/* SEARCH CARD */}
+              <div className="mt-8 rounded-[28px] border border-gray-200 bg-white/95 backdrop-blur shadow-xl p-3 sm:p-4">
+
+                {/* MOBILE SEARCH */}
+                <div className="block md:hidden">
+                  <button
+                    type="button"
+                    onClick={openSearchSheet}
+                    className="w-full rounded-2xl border border-gray-200 bg-[#f8f8f8] px-4 py-4 flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-2xl bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+                        <Search size={18} className="text-gray-500" />
+                      </div>
+
+                      <div className="text-left min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {searchTerm.trim()
+                            ? searchTerm
+                            : "Search pets, breeds or keywords"}
+                        </p>
+
+                        <p className="text-xs text-gray-500 truncate mt-1">
+                          {locationFilter || "Anywhere in Australia"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-green-600 text-white px-4 py-2 text-sm font-semibold shadow-sm">
+                      Search
+                    </div>
+                  </button>
                 </div>
 
-                <div className="rounded-2xl bg-[#111827] text-white px-4 py-2.5 text-sm font-semibold shrink-0 inline-flex items-center gap-2">
-                  <SlidersHorizontal size={15} />
-                  Search
-                </div>
-              </button>
-            </div>
+                {/* DESKTOP SEARCH */}
+                <div className="hidden md:grid grid-cols-[1.2fr_0.9fr_0.75fr_auto] gap-3 items-center">
 
-            {/* DESKTOP SEARCH */}
-            <div className="hidden md:block mt-4">
-              <div className="rounded-[24px] border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="grid grid-cols-[1.2fr_0.95fr_0.8fr_auto] gap-3 items-start">
+                  {/* SEARCH */}
                   <div className="relative">
-                    <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                    <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-[#f8f8f8] px-4 py-3.5">
                       <Search size={18} className="text-gray-400" />
+
                       <input
                         type="text"
                         placeholder="Search pets, breeds or keywords"
@@ -491,26 +515,12 @@ export default function Home() {
                           buildSuggestions(e.target.value);
                           setShowSuggestions(true);
                         }}
-                        onFocus={() => {
-                          buildSuggestions(searchTerm);
-                          if (searchTerm.trim()) setShowSuggestions(true);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            setShowSuggestions(false);
-                            runSearch();
-                          }
-                          if (e.key === "Escape") {
-                            setShowSuggestions(false);
-                          }
-                        }}
                         className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
                       />
                     </div>
 
                     {showSuggestions && suggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden z-30">
+                      <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-100 bg-white shadow-2xl overflow-hidden z-40">
                         {suggestions.map((suggestion) => (
                           <button
                             key={suggestion}
@@ -529,18 +539,21 @@ export default function Home() {
                     )}
                   </div>
 
+                  {/* LOCATION */}
                   <LocationAutocomplete
                     value={locationFilter}
                     onChange={setLocationFilter}
                     placeholder="Location"
                   />
 
+                  {/* CATEGORY */}
                   <select
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+                    className="w-full rounded-2xl border border-gray-200 bg-[#f8f8f8] px-4 py-3.5 text-sm text-gray-900 outline-none focus:border-green-500"
                   >
                     <option value="">All categories</option>
+
                     {PET_CATEGORIES.map((item) => (
                       <option key={item} value={item}>
                         {item}
@@ -548,19 +561,21 @@ export default function Home() {
                     ))}
                   </select>
 
+                  {/* BUTTON */}
                   <button
                     onClick={() => {
                       setShowSuggestions(false);
                       runSearch();
                     }}
-                    className="rounded-2xl bg-[#111827] hover:bg-[#1f2937] text-white px-5 py-3 text-sm font-semibold transition h-[50px]"
+                    className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-6 py-3.5 text-sm font-semibold transition shadow-md"
                   >
                     Search
                   </button>
                 </div>
 
+                {/* RECENT SEARCHES */}
                 {!searchTerm.trim() && recentSearches.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {recentSearches.map((item) => (
                       <button
                         key={item}
@@ -578,11 +593,9 @@ export default function Home() {
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* CATEGORY ROW */}
-            <div className="mt-3">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {/* CATEGORY PILLS */}
+              <div className="mt-6 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
                 {categoryItems.map((cat) => (
                   <button
                     key={cat.name}
@@ -592,17 +605,41 @@ export default function Home() {
                       params.set("sortBy", "newest");
                       router.push(`/search?${params.toString()}`);
                     }}
-                    className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-[13px] font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
+                    className="shrink-0 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
                   >
-                    <cat.icon size={14} />
+                    <cat.icon size={15} />
                     {cat.name}
                   </button>
                 ))}
               </div>
+
+              {/* STATS */}
+              <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+                {[
+                  { label: "Listings", value: "2,400+" },
+                  { label: "Verified Breeders", value: "180+" },
+                  { label: "Australia Wide", value: "24/7" },
+                  { label: "New Listings", value: "Daily" },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                  >
+                    <p className="text-xl font-bold text-gray-900">
+                      {item.value}
+                    </p>
+
+                    <p className="text-xs text-gray-500 mt-1">
+                      {item.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* FEATURE STRIP */}
       <section className="bg-[#f7f7f5] border-b border-gray-100">
