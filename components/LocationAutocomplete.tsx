@@ -67,7 +67,7 @@ export default function LocationAutocomplete({
         onBlur={() => {
           setTimeout(() => setShow(false), 150);
         }}
-        className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-500"
+        className="w-full rounded-2xl border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 outline-none"
       />
 
       {show && suggestions.length > 0 && (
