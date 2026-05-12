@@ -143,20 +143,129 @@ export default function TopNavbar() {
           <div className="flex sm:hidden items-center justify-between w-full">
 
             {/* LEFT */}
-            {!userEmail ? (
-              <Link href="/login">
-                <button className="rounded-2xl border border-gray-200 bg-white px-4 h-11 text-sm font-semibold text-gray-900 shadow-sm">
-                  Login
-                </button>
-              </Link>
-            ) : (
-              <button
-                onClick={() => setMenuOpen((prev) => !prev)}
-                className="w-11 h-11 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold shadow-sm"
-              >
-                {avatarLetter}
-              </button>
+{!userEmail ? (
+  <Link href="/login">
+    <button className="rounded-2xl border border-gray-200 bg-white px-4 h-11 text-sm font-semibold text-gray-900 shadow-sm">
+      Login
+    </button>
+  </Link>
+) : (
+  <div className="relative" ref={dropdownRef}>
+    <button
+      onClick={() => setMenuOpen((prev) => !prev)}
+      className="w-11 h-11 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold shadow-sm"
+    >
+      {avatarLetter}
+    </button>
+
+    {menuOpen && (
+      <div className="absolute left-0 mt-3 w-[290px] rounded-[28px] border border-gray-200 bg-white shadow-2xl overflow-hidden z-50">
+
+        <div className="px-4 py-4 border-b border-gray-100 bg-[#fbfbfa]">
+          <div className="flex items-center gap-3">
+            <div className="relative w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold shrink-0">
+              {avatarLetter}
+
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-white" />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-gray-900 truncate">
+                {displayName}
+              </p>
+
+              <p className="text-xs text-gray-500 truncate">
+                {userEmail}
+              </p>
+
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-medium text-green-700">
+                <Sparkles size={11} />
+                Account active
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-2.5">
+
+          <Link
+            href="/account"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+          >
+            <UserCircle2 size={16} />
+            My Account
+          </Link>
+
+          <Link
+            href="/my-listings"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+          >
+            <LayoutDashboard size={16} />
+            My Listings
+          </Link>
+
+          <Link
+            href="/saved-listings"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+          >
+            <Heart size={16} />
+            Saved Listings
+          </Link>
+
+          <Link
+            href="/messages"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+          >
+            <MessageCircle size={16} />
+            Messages
+          </Link>
+
+          <Link
+            href="/notifications"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+          >
+            <span className="flex items-center gap-3">
+              <Bell size={16} />
+              Notifications
+            </span>
+
+            {unreadCount > 0 && (
+              <span className="rounded-full bg-red-500 text-white text-[11px] font-semibold px-2 py-1">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
             )}
+          </Link>
+
+          <Link
+            href="/create"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+          >
+            <PlusSquare size={16} />
+            Post a Listing
+          </Link>
+
+          <div className="my-2 border-t border-gray-100" />
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-red-600 hover:bg-red-50 transition"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
             {/* CENTER */}
             <Link
