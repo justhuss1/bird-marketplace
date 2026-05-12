@@ -434,197 +434,231 @@ export default function Home() {
   return (
     <main className="bg-[#f7f7f5] min-h-screen pb-24">
       {/* HERO */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-[#f7f7f5] to-[#f1f5f1]">          <div className="max-w-5xl mx-auto px-4 pt-10 pb-10 sm:pt-16 sm:pb-14">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#f7f7f5] to-[#f1f5f1]">
+        <div className="max-w-7xl mx-auto px-4 pt-8 pb-12 sm:pt-14 sm:pb-16">
 
-            {/* TOP BADGE */}
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 shadow-sm">
-                <Sparkles size={13} className="text-green-600" />
-                Australia-wide pet marketplace
-              </div>
-            </div>
+          <div className="grid lg:grid-cols-[minmax(620px,1fr)_520px] gap-16 items-center mt-6">
 
-            <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center mt-10">
+            {/* LEFT SIDE */}
+            <div className="max-w-[720px]">
 
-              {/* LEFT SIDE */}
-              <div>
-
-                {/* HERO TEXT */}
-                <div className="max-w-2xl">
-                  <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-gray-900 leading-[1.02]">
-                    Find your perfect pet across Australia
-                  </h1>
-
-                  <p className="mt-6 text-lg text-gray-600 leading-8">
-                    Browse trusted breeders, verified sellers, upcoming litters,
-                    and pet supplies — all in one modern marketplace.
-                  </p>
-                </div>
-
-                {/* SEARCH */}
-                <div className="max-w-3xl mt-8">
-
-                  {/* DESKTOP SEARCH */}
-                  <div className="hidden md:block">
-                    <div className="bg-white border border-gray-200 rounded-[30px] shadow-xl p-3">
-                      <div className="grid grid-cols-[1.2fr_0.9fr_0.8fr_auto] gap-3">
-
-                        {/* SEARCH INPUT */}
-                        <div className="relative">
-                          <div className="flex items-center gap-3 rounded-2xl border border-gray-300 px-4 py-3">
-                            <Search size={18} className="text-gray-700" />
-
-                            <input
-                              type="text"
-                              placeholder="Search pets, breeds or keywords"
-                              value={searchTerm}
-                              onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                buildSuggestions(e.target.value);
-                                setShowSuggestions(true);
-                              }}
-                              className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-500"
-                            />
-                          </div>
-                        </div>
-
-                        {/* LOCATION */}
-                        <LocationAutocomplete
-                          value={locationFilter}
-                          onChange={setLocationFilter}
-                          placeholder="Location"
-                        />
-
-                        {/* CATEGORY */}
-                        <select
-                          value={categoryFilter}
-                          onChange={(e) => setCategoryFilter(e.target.value)}
-                          className="rounded-2xl border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none"
-                        >
-                          <option value="">All categories</option>
-
-                          {PET_CATEGORIES.map((item) => (
-                            <option key={item} value={item}>
-                              {item}
-                            </option>
-                          ))}
-                        </select>
-
-                        {/* BUTTON */}
-                        <button
-                          onClick={() => runSearch()}
-                          className="rounded-2xl bg-green-600 hover:bg-green-700 text-white px-7 py-3 text-sm font-semibold transition"
-                        >
-                          Search
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CATEGORY PILLS */}
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {categoryItems.map((cat) => (
-                      <button
-                        key={cat.name}
-                        onClick={() => {
-                          const params = new URLSearchParams();
-                          params.set("category", cat.name);
-                          params.set("sortBy", "newest");
-                          router.push(`/search?${params.toString()}`);
-                        }}
-                        className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 transition"
-                      >
-                        <cat.icon size={14} />
-                        {cat.name}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* TRUST STATS */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-7">
-                    {[
-                      { value: "2,400+", label: "Active listings" },
-                      { value: "180+", label: "Verified breeders" },
-                      { value: "24/7", label: "Australia wide" },
-                      { value: "Daily", label: "New listings" },
-                    ].map((item) => (
-                      <div
-                        key={item.label}
-                        className="rounded-2xl border border-gray-200 bg-white p-4 text-center shadow-sm hover:shadow-md transition"
-                      >
-                        <p className="text-2xl font-bold text-gray-900">
-                          {item.value}
-                        </p>
-
-                        <p className="text-xs text-gray-500 mt-1">
-                          {item.label}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
+              {/* TOP BADGE */}
+              <div className="flex">
+                <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 shadow-sm">
+                  <Sparkles size={13} className="text-green-600" />
+                  Australia-wide pet marketplace
                 </div>
               </div>
 
-              {/* RIGHT SIDE HERO COLLAGE */}
-              <div className="relative hidden lg:block">
+              {/* HERO TEXT */}
+              <div className="max-w-[620px] mt-6">
+                <h1 className="text-[52px] sm:text-6xl font-bold tracking-tight text-gray-900 leading-[0.95]">
+                  Find your perfect pet across Australia
+                </h1>
 
-                <div className="grid grid-cols-2 gap-4">
+                <p className="mt-6 text-lg text-gray-600 leading-8">
+                  Browse trusted breeders, verified sellers, upcoming litters,
+                  and pet supplies — all in one modern marketplace.
+                </p>
+              </div>
 
-                  <div className="space-y-4 pt-10">
-                    <img
-                      src="/hero-dog.jpg"
-                      alt="Dog"
-                      className="rounded-[32px] h-[260px] w-full object-cover shadow-xl"
-                    />
+              {/* DESKTOP SEARCH */}
+<div className="hidden md:block mt-8">
+  <div className="bg-white border border-gray-200 rounded-[30px] shadow-xl p-2.5">
+    
+    <div className="flex items-center gap-3">
 
-                    <img
-                      src="/hero-bird.jpg"
-                      alt="Bird"
-                      className="rounded-[32px] h-[180px] w-full object-cover shadow-xl"
-                    />
-                  </div>
+      {/* SEARCH */}
+      <div className="relative flex-[1.4]">
+        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-[#fafafa] px-5 h-[56px]">
+          <Search size={18} className="text-gray-400 shrink-0" />
 
-                  <div className="space-y-4">
-                    <img
-                      src="/hero-cat.jpg"
-                      alt="Cat"
-                      className="rounded-[32px] h-[180px] w-full object-cover shadow-xl"
-                    />
+          <input
+            type="text"
+            placeholder="Search pets, breeds or keywords"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              buildSuggestions(e.target.value);
+              setShowSuggestions(true);
+            }}
+            className="w-full bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-gray-400"
+          />
+        </div>
+      </div>
 
-                    <img
-                      src="/hero-rabbit.jpg"
-                      alt="Rabbit"
-                      className="rounded-[32px] h-[260px] w-full object-cover shadow-xl"
-                    />
-                  </div>
+      {/* LOCATION */}
+      <div className="flex-[0.9]">
+        <div className="h-[56px]">
+          <LocationAutocomplete
+            value={locationFilter}
+            onChange={setLocationFilter}
+            placeholder="Location"
+          />
+        </div>
+      </div>
 
-                </div>
+      {/* CATEGORY */}
+      <div className="flex-[1]">
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="w-full rounded-2xl border border-gray-200 bg-[#fafafa] px-5 h-[56px] text-[15px] text-gray-900 outline-none"
+        >
+          <option value="">All categories</option>
 
-                {/* FLOATING CARD */}
-                <div className="absolute -bottom-6 left-10 bg-white rounded-3xl shadow-2xl border border-gray-100 p-5 w-[240px]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
-                      <ShieldCheck className="text-green-600" size={22} />
+          {PET_CATEGORIES.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* BUTTON */}
+      <button
+        onClick={() => runSearch()}
+        className="h-[56px] px-8 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-semibold transition shrink-0"
+      >
+        Search
+      </button>
+    </div>
+  </div>
+</div>
+
+              {/* MOBILE SEARCH */}
+              <div className="lg:hidden mt-6">
+                <button
+                  onClick={openSearchSheet}
+                  className="w-full rounded-[28px] bg-white border border-gray-200 shadow-lg p-5 text-left"
+                >
+                  <div className="flex items-center gap-4">
+
+                    <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center shrink-0">
+                      <Search size={22} className="text-green-600" />
                     </div>
 
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        Trusted breeders
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold text-gray-900">
+                        Search pets across Australia
                       </p>
 
-                      <p className="text-xs text-gray-500">
-                        Verified across Australia
+                      <p className="text-sm text-gray-500 mt-1 truncate">
+                        Dogs, cats, birds, breeders and more
                       </p>
                     </div>
+
+                    <div className="rounded-full bg-gray-100 p-2">
+                      <SlidersHorizontal size={16} className="text-gray-600" />
+                    </div>
+
                   </div>
+                </button>
+              </div>
+
+              {/* CATEGORY PILLS */}
+              <div className="hidden lg:flex mt-5 flex-wrap gap-2">
+                {categoryItems.map((cat) => (
+                  <button
+                    key={cat.name}
+                    onClick={() => {
+                      const params = new URLSearchParams();
+                      params.set("category", cat.name);
+                      params.set("sortBy", "newest");
+                      router.push(`/search?${params.toString()}`);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 transition"
+                  >
+                    <cat.icon size={14} />
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* TRUST STATS */}
+              <div className="hidden md:grid grid-cols-2 sm:grid-cols-4 gap-3 mt-7">
+                {[
+                  { value: "2,400+", label: "Active listings" },
+                  { value: "180+", label: "Verified breeders" },
+                  { value: "24/7", label: "Australia wide" },
+                  { value: "Daily", label: "New listings" },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-gray-200 bg-white p-3 text-center shadow-sm"
+                  >
+                    <p className="text-xl font-bold text-gray-900">
+                      {item.value}
+                    </p>
+
+                    <p className="text-xs text-gray-500 mt-1">
+                      {item.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+
+            {/* RIGHT SIDE HERO COLLAGE */}
+            <div className="relative hidden lg:flex justify-end">
+
+              <div className="grid grid-cols-2 gap-5 w-[500px]">
+
+                <div className="space-y-5 pt-10">
+                  <img
+                    src="/hero-dog.jpg"
+                    alt="Dog"
+                    className="rounded-[32px] h-[260px] w-full object-cover shadow-xl"
+                  />
+
+                  <img
+                    src="/hero-bird.jpg"
+                    alt="Bird"
+                    className="rounded-[32px] h-[170px] w-full object-cover shadow-xl"
+                  />
+                </div>
+
+                <div className="space-y-5">
+                  <img
+                    src="/hero-cat.jpg"
+                    alt="Cat"
+                    className="rounded-[32px] h-[170px] w-full object-cover shadow-xl"
+                  />
+
+                  <img
+                    src="/hero-rabbit.jpg"
+                    alt="Rabbit"
+                    className="rounded-[32px] h-[260px] w-full object-cover shadow-xl"
+                  />
                 </div>
 
               </div>
+
+              {/* FLOATING CARD */}
+              <div className="absolute -bottom-8 left-[-30px] bg-white rounded-3xl shadow-2xl border border-gray-100 p-5 w-[240px]">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
+                    <ShieldCheck className="text-green-600" size={22} />
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Trusted breeders
+                    </p>
+
+                    <p className="text-xs text-gray-500">
+                      Verified across Australia
+                    </p>
+                  </div>
+                </div>
+              </div>
+
             </div>
-            
+
           </div>
-        </section>
+        </div>
+      </section>
 
       {/* FEATURED */}
       {featuredListings.length > 0 && (
