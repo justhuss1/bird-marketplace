@@ -435,7 +435,7 @@ export default function Home() {
     <main className="bg-[#f7f7f5] min-h-screen pb-24">
       {/* HERO */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#f7f7f5] to-[#f1f5f1]">
-        <div className="max-w-7xl mx-auto px-4 pt-8 pb-12 sm:pt-14 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 sm:pt-14 sm:pb-16">
 
           <div className="grid lg:grid-cols-[minmax(620px,1fr)_520px] gap-16 items-center mt-6">
 
@@ -451,7 +451,7 @@ export default function Home() {
               </div>
 
               {/* HERO TEXT */}
-              <div className="max-w-[620px] mt-6">
+              <div className="hidden lg:block max-w-[620px] mt-6">
                 <h1 className="text-[52px] sm:text-6xl font-bold tracking-tight text-gray-900 leading-[0.95]">
                   Find your perfect pet across Australia
                 </h1>
@@ -463,101 +463,101 @@ export default function Home() {
               </div>
 
               {/* DESKTOP SEARCH */}
-<div className="hidden md:block mt-8">
-  <div className="bg-white border border-gray-200 rounded-[30px] shadow-xl p-2.5">
-    
-    <div className="flex items-center gap-3">
+              <div className="hidden md:block mt-8">
+                <div className="bg-white border border-gray-200 rounded-[30px] shadow-xl p-2.5">
+                  
+                  <div className="flex items-center gap-3">
 
-      {/* SEARCH */}
-      <div className="relative flex-[1.4]">
-        <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-[#fafafa] px-5 h-[56px]">
-          <Search size={18} className="text-gray-400 shrink-0" />
+                    {/* SEARCH */}
+                    <div className="relative flex-[1.4]">
+                      <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-[#fafafa] px-5 h-[56px]">
+                        <Search size={18} className="text-gray-400 shrink-0" />
 
-          <input
-            type="text"
-            placeholder="Search pets, breeds or keywords"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              buildSuggestions(e.target.value);
-              setShowSuggestions(true);
-            }}
-            className="w-full bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-gray-400"
-          />
-        </div>
-      </div>
-
-      {/* LOCATION */}
-      <div className="flex-[0.9]">
-        <div className="h-[56px]">
-          <LocationAutocomplete
-            value={locationFilter}
-            onChange={setLocationFilter}
-            placeholder="Location"
-          />
-        </div>
-      </div>
-
-      {/* CATEGORY */}
-      <div className="flex-[1]">
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="w-full rounded-2xl border border-gray-200 bg-[#fafafa] px-5 h-[56px] text-[15px] text-gray-900 outline-none"
-        >
-          <option value="">All categories</option>
-
-          {PET_CATEGORIES.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* BUTTON */}
-      <button
-        onClick={() => runSearch()}
-        className="h-[56px] px-8 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-semibold transition shrink-0"
-      >
-        Search
-      </button>
-    </div>
-  </div>
-</div>
-
-              {/* MOBILE SEARCH */}
-              <div className="lg:hidden mt-6">
-                <button
-                  onClick={openSearchSheet}
-                  className="w-full rounded-[28px] bg-white border border-gray-200 shadow-lg p-5 text-left"
-                >
-                  <div className="flex items-center gap-4">
-
-                    <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center shrink-0">
-                      <Search size={22} className="text-green-600" />
+                        <input
+                          type="text"
+                          placeholder="Search pets, breeds or keywords"
+                          value={searchTerm}
+                          onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            buildSuggestions(e.target.value);
+                            setShowSuggestions(true);
+                          }}
+                          className="w-full bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-gray-400"
+                        />
+                      </div>
                     </div>
 
-                    <div className="min-w-0 flex-1">
-                      <p className="text-base font-semibold text-gray-900">
-                        Search pets across Australia
-                      </p>
-
-                      <p className="text-sm text-gray-500 mt-1 truncate">
-                        Dogs, cats, birds, breeders and more
-                      </p>
+                    {/* LOCATION */}
+                    <div className="flex-[0.9]">
+                      <div className="h-[56px]">
+                        <LocationAutocomplete
+                          value={locationFilter}
+                          onChange={setLocationFilter}
+                          placeholder="Location"
+                        />
+                      </div>
                     </div>
 
-                    <div className="rounded-full bg-gray-100 p-2">
-                      <SlidersHorizontal size={16} className="text-gray-600" />
+                    {/* CATEGORY */}
+                    <div className="flex-[1]">
+                      <select
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value)}
+                        className="w-full rounded-2xl border border-gray-200 bg-[#fafafa] px-5 h-[56px] text-[15px] text-gray-900 outline-none"
+                      >
+                        <option value="">All categories</option>
+
+                        {PET_CATEGORIES.map((item) => (
+                          <option key={item} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
+                    {/* BUTTON */}
+                    <button
+                      onClick={() => runSearch()}
+                      className="h-[56px] px-8 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-semibold transition shrink-0"
+                    >
+                      Search
+                    </button>
                   </div>
-                </button>
+                </div>
+              </div>
+
+              {/* MOBILE INLINE SEARCH */}
+              <div className="lg:hidden mt-5">
+                <div className="bg-white border border-gray-200 rounded-[28px] shadow-lg p-3">
+
+                  <div className="flex items-center gap-2">
+
+                    {/* SEARCH INPUT */}
+                    <div className="flex-1 flex items-center gap-3 rounded-2xl bg-[#f7f7f5] px-4 h-[56px]">
+                      <Search size={18} className="text-gray-400 shrink-0" />
+
+                      <input
+                        type="text"
+                        placeholder="Search pets..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400"
+                      />
+                    </div>
+
+                    {/* FILTER BUTTON */}
+                    <button
+                      onClick={() => router.push("/search")}
+                      className="w-[56px] h-[56px] rounded-2xl bg-green-600 flex items-center justify-center shadow-sm"
+                    >
+                      <SlidersHorizontal size={18} className="text-white" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* CATEGORY PILLS */}
-              <div className="hidden lg:flex mt-5 flex-wrap gap-2">
+              <div className="hidden md:flex mt-5 flex-wrap gap-2">
                 {categoryItems.map((cat) => (
                   <button
                     key={cat.name}
