@@ -103,6 +103,18 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const closeSuggestions = () => {
+      setShowSuggestions(false);
+    };
+
+    document.addEventListener("click", closeSuggestions);
+
+    return () => {
+      document.removeEventListener("click", closeSuggestions);
+    };
+  }, []);
+
   const fetchLatestBreederUpdates = async () => {
     const { data, error } = await supabase
       .from("breeder_announcements")
@@ -435,7 +447,7 @@ export default function Home() {
     <main className="bg-[#f7f7f5] min-h-screen pb-24">
       {/* HERO */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#f7f7f5] to-[#f1f5f1]">
-        <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 sm:pt-14 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 pt-1 pb-6 sm:pt-14 sm:pb-16">
 
           <div className="grid lg:grid-cols-[minmax(620px,1fr)_520px] gap-16 items-center mt-6">
 
@@ -443,7 +455,7 @@ export default function Home() {
             <div className="max-w-[720px]">
 
               {/* TOP BADGE */}
-              <div className="flex">
+              <div className="hidden lg:flex">
                 <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-600 shadow-sm">
                   <Sparkles size={13} className="text-green-600" />
                   Australia-wide pet marketplace
@@ -527,23 +539,48 @@ export default function Home() {
               </div>
 
               {/* MOBILE INLINE SEARCH */}
-              <div className="lg:hidden mt-5">
+              <div className="lg:hidden mt-2">
                 <div className="bg-white border border-gray-200 rounded-[28px] shadow-lg p-3">
 
                   <div className="flex items-center gap-2">
 
                     {/* SEARCH INPUT */}
-                    <div className="flex-1 flex items-center gap-3 rounded-2xl bg-[#f7f7f5] px-4 h-[56px]">
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 flex items-center gap-3 rounded-2xl bg-[#f7f7f5] px-4 h-[56px]"
+                    >
                       <Search size={18} className="text-gray-400 shrink-0" />
 
                       <input
                         type="text"
                         placeholder="Search pets..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        buildSuggestions(e.target.value);
+                        setShowSuggestions(true);
+                        }}
                         className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400"
                       />
                     </div>
+
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div className="mt-2 bg-white border border-gray-200 rounded-3xl shadow-xl overflow-hidden">
+                        {suggestions.slice(0, 5).map((item, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              setSearchTerm(item);
+                              setShowSuggestions(false);
+                              runSearch(item);
+                            }}
+                            className="w-full px-5 py-4 text-left text-sm text-gray-700 hover:bg-gray-50 transition border-b last:border-b-0 border-gray-100"
+                          >
+                            {item}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                     {/* FILTER BUTTON */}
                     <button
