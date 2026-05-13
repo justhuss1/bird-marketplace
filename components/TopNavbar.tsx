@@ -170,8 +170,10 @@ export default function TopNavbar() {
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute left-0 mt-3 w-[290px] rounded-[28px] border border-gray-200 bg-white shadow-2xl overflow-hidden z-50">
-
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute left-0 top-[58px] z-[999] pointer-events-auto w-[300px] rounded-[28px] border border-gray-200 bg-white shadow-2xl overflow-hidden"
+                  >
                     <div className="px-4 py-4 border-b border-gray-100 bg-[#fbfbfa]">
                       <div className="flex items-center gap-3">
                         <div className="relative w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold shrink-0">
