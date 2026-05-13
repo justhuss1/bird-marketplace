@@ -27,7 +27,8 @@ export default function TopNavbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userId, setUserId] = useState<string>("");
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const mobileDropdownRef = useRef<HTMLDivElement | null>(null);
+  const desktopDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     getCurrentUser();
@@ -70,8 +71,10 @@ export default function TopNavbar() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        mobileDropdownRef.current &&
+        !mobileDropdownRef.current.contains(event.target as Node) &&
+        desktopDropdownRef.current &&
+        !desktopDropdownRef.current.contains(event.target as Node)
       ) {
         setMenuOpen(false);
       }
@@ -150,7 +153,7 @@ export default function TopNavbar() {
                 </button>
               </Link>
             ) : (
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative" ref={mobileDropdownRef}>
                 <button
                   onClick={() => setMenuOpen((prev) => !prev)}
                   className="flex items-center gap-2 rounded-full border border-gray-200 bg-white pr-3 pl-1.5 h-11 shadow-sm active:scale-[0.98] transition"
@@ -377,7 +380,7 @@ export default function TopNavbar() {
                   </button>
                 </Link>
 
-                <div className="relative" ref={dropdownRef}>
+                <div className="relative" ref={desktopDropdownRef}>
                   <button
                     onClick={() => setMenuOpen((prev) => !prev)}
                     className="flex items-center gap-3 rounded-[22px] border border-gray-200 bg-white hover:bg-gray-50 pl-2.5 pr-3 py-2 transition shadow-sm"
