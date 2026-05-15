@@ -542,7 +542,11 @@ export default function Home() {
               {/* MOBILE SEARCH */}
               <div className="lg:hidden -mt-2 px-1">
                 <button
-                  onClick={openSearchSheet}
+                  onClick={() => {
+                    requestAnimationFrame(() => {
+                      openSearchSheet();
+                    });
+                  }}
                   className="w-full bg-white rounded-[28px] border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.06)] px-4 py-3 flex items-center gap-3 active:scale-[0.99] transition"
                 >
                   {/* ICON */}
@@ -994,7 +998,13 @@ export default function Home() {
 
       {/* STICKY SEARCH */}
       {showStickySearch && (
-        <div className="fixed top-16 inset-x-0 z-40 px-4 md:hidden">
+        <div
+          className={`fixed inset-x-0 z-40 px-4 md:hidden transition-all duration-300 ease-out ${
+            showStickySearch
+              ? "top-[88px] opacity-100 translate-y-0"
+              : "top-[70px] opacity-0 -translate-y-3 pointer-events-none"
+          }`}
+        >
           <div className="max-w-7xl mx-auto">
             <button
               onClick={openSearchSheet}
@@ -1007,7 +1017,10 @@ export default function Home() {
                 </span>
               </div>
 
-              <span className="text-xs text-gray-500">Filters</span>
+              <div className="flex items-center gap-1 text-gray-500">
+                <SlidersHorizontal size={14} />
+                <span className="text-xs">Filters</span>
+              </div>
             </button>
           </div>
         </div>
@@ -1017,11 +1030,23 @@ export default function Home() {
       {searchSheetOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-[90]"
+            className={`fixed inset-0 bg-black/40 z-[90] transition-opacity duration-300 ${
+              searchSheetOpen ? "opacity-100" : "opacity-0"
+            }`}
             onClick={() => setSearchSheetOpen(false)}
           />
 
-          <div className="fixed inset-x-0 bottom-0 z-[100] bg-white rounded-t-[32px] border-t border-gray-200 shadow-2xl p-5 sm:max-w-2xl sm:left-1/2 sm:-translate-x-1/2 sm:bottom-8 sm:rounded-[32px]">
+          <div
+            className={`fixed inset-x-0 bottom-0 z-[100]
+            bg-white rounded-t-[32px] border-t border-gray-200 shadow-2xl p-5
+            transition-all duration-300 ease-out
+            ${
+              searchSheetOpen
+                ? "translate-y-0 opacity-100"
+                : "translate-y-full opacity-0"
+            }
+            sm:max-w-2xl sm:left-1/2 sm:-translate-x-1/2 sm:bottom-8 sm:rounded-[32px]`}
+          >
             <div className="w-12 h-1.5 rounded-full bg-gray-200 mx-auto mb-5 sm:hidden" />
 
             <div className="flex items-center justify-between gap-3">
