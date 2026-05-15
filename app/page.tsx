@@ -447,7 +447,7 @@ export default function Home() {
   return (
     <main className="bg-[#f7f7f5] min-h-screen pb-24">
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#f7f7f5] to-[#f1f5f1]">
+      <section className="relative bg-gradient-to-b from-[#f7f7f5] to-[#f1f5f1]">
         <div className="max-w-7xl mx-auto px-4 pt-1 pb-6 sm:pt-14 sm:pb-16">
 
           <div className="grid lg:grid-cols-[minmax(620px,1fr)_520px] gap-16 items-center mt-6">
@@ -539,68 +539,33 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* MOBILE INLINE SEARCH */}
-              <div className="lg:hidden mt-2">
-                <div className="bg-white border border-gray-200 rounded-[28px] shadow-lg p-3">
-                  
-                  <div className="flex items-center gap-2">
-
-                    {/* SEARCH INPUT */}
-                    <div className="relative flex-1">
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-3 rounded-2xl bg-[#f7f7f5] px-4 h-[56px]"
-                      >
-                        <Search size={18} className="text-gray-400 shrink-0" />
-
-                        <input
-                          type="text"
-                          placeholder="Search pets..."
-                          value={searchTerm}
-                          onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            buildSuggestions(e.target.value);
-                            setShowSuggestions(true);
-                          }}
-                          onFocus={() => {
-                            if (searchTerm.trim()) {
-                              buildSuggestions(searchTerm);
-                              setShowSuggestions(true);
-                            }
-                          }}
-                          className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400"
-                        />
-                      </div>
-
-                      {/* SUGGESTIONS */}
-                      {showSuggestions && suggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden z-50">
-                          {suggestions.slice(0, 5).map((item, index) => (
-                            <button
-                              key={index}
-                              onClick={() => {
-                                setSearchTerm(item);
-                                setShowSuggestions(false);
-                                runSearch(item);
-                              }}
-                              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition border-b last:border-b-0 border-gray-100"
-                            >
-                              {item}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* FILTER BUTTON */}
-                    <button
-                      onClick={() => router.push("/search")}
-                      className="w-[56px] h-[56px] rounded-2xl bg-green-600 flex items-center justify-center shadow-sm shrink-0"
-                    >
-                      <SlidersHorizontal size={18} className="text-white" />
-                    </button>
+              {/* MOBILE SEARCH */}
+              <div className="lg:hidden -mt-2 px-1">
+                <button
+                  onClick={openSearchSheet}
+                  className="w-full bg-white rounded-[28px] border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.06)] px-4 py-3 flex items-center gap-3 active:scale-[0.99] transition"
+                >
+                  {/* ICON */}
+                  <div className="w-11 h-11 rounded-2xl bg-[#f6f6f4] flex items-center justify-center shrink-0">
+                    <Search size={20} className="text-gray-500" />
                   </div>
-                </div>
+
+                  {/* TEXT */}
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-[15px] font-semibold text-gray-900 truncate">
+                      Search pets
+                    </p>
+
+                    <p className="text-xs text-gray-500 truncate mt-0.5">
+                      Dogs, cats, birds, breeders & more
+                    </p>
+                  </div>
+
+                  {/* FILTER */}
+                  <div className="w-11 h-11 rounded-2xl bg-green-600 flex items-center justify-center shadow-sm shrink-0">
+                    <SlidersHorizontal size={18} className="text-white" />
+                  </div>
+                </button>
               </div>
 
               {/* CATEGORY PILLS */}
@@ -1129,6 +1094,25 @@ export default function Home() {
                       ))}
                     </div>
                   )}
+                  {/* QUICK CATEGORIES */}
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    {[
+                      "Dogs",
+                      "Cats",
+                      "Birds",
+                      "Rabbits",
+                      "Fish",
+                      "Supplies",
+                    ].map((item) => (
+                      <button
+                        key={item}
+                        onClick={() => setDraftCategoryFilter(item)}
+                        className="shrink-0 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition"
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
