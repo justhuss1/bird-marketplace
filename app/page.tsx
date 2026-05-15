@@ -82,6 +82,7 @@ export default function Home() {
   const [draftLocationFilter, setDraftLocationFilter] = useState("");
   const [draftCategoryFilter, setDraftCategoryFilter] = useState("");
   const [showDraftSuggestions, setShowDraftSuggestions] = useState(false);
+  
 
   useEffect(() => {
     fetchListings();
@@ -541,51 +542,60 @@ export default function Home() {
               {/* MOBILE INLINE SEARCH */}
               <div className="lg:hidden mt-2">
                 <div className="bg-white border border-gray-200 rounded-[28px] shadow-lg p-3">
-
+                  
                   <div className="flex items-center gap-2">
 
                     {/* SEARCH INPUT */}
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex-1 flex items-center gap-3 rounded-2xl bg-[#f7f7f5] px-4 h-[56px]"
-                    >
-                      <Search size={18} className="text-gray-400 shrink-0" />
+                    <div className="relative flex-1">
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-3 rounded-2xl bg-[#f7f7f5] px-4 h-[56px]"
+                      >
+                        <Search size={18} className="text-gray-400 shrink-0" />
 
-                      <input
-                        type="text"
-                        placeholder="Search pets..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        buildSuggestions(e.target.value);
-                        setShowSuggestions(true);
-                        }}
-                        className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400"
-                      />
-                    </div>
-
-                    {showSuggestions && suggestions.length > 0 && (
-                      <div className="mt-2 bg-white border border-gray-200 rounded-3xl shadow-xl overflow-hidden">
-                        {suggestions.slice(0, 5).map((item, index) => (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              setSearchTerm(item);
-                              setShowSuggestions(false);
-                              runSearch(item);
-                            }}
-                            className="w-full px-5 py-4 text-left text-sm text-gray-700 hover:bg-gray-50 transition border-b last:border-b-0 border-gray-100"
-                          >
-                            {item}
-                          </button>
-                        ))}
+                        <input
+                          type="text"
+                          placeholder="Search pets..."
+                          value={searchTerm}
+                          onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            buildSuggestions(e.target.value);
+                            setShowSuggestions(true);
+                          }}
+                          onFocus={() => {
+                            if (searchTerm.trim()) {
+                              buildSuggestions(searchTerm);
+                              setShowSuggestions(true);
+                            }
+                          }}
+                          className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400"
+                        />
                       </div>
-                    )}
+
+                      {/* SUGGESTIONS */}
+                      {showSuggestions && suggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden z-50">
+                          {suggestions.slice(0, 5).map((item, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                setSearchTerm(item);
+                                setShowSuggestions(false);
+                                runSearch(item);
+                              }}
+                              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition border-b last:border-b-0 border-gray-100"
+                            >
+                              {item}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
                     {/* FILTER BUTTON */}
                     <button
                       onClick={() => router.push("/search")}
-                      className="w-[56px] h-[56px] rounded-2xl bg-green-600 flex items-center justify-center shadow-sm"
+                      className="w-[56px] h-[56px] rounded-2xl bg-green-600 flex items-center justify-center shadow-sm shrink-0"
                     >
                       <SlidersHorizontal size={18} className="text-white" />
                     </button>
