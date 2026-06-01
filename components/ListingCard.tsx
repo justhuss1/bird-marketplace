@@ -33,7 +33,7 @@ export default function ListingCard({
   return (
     <Link href={`/listing/${item.id}`}>
       <article className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden">
-        <div className="relative overflow-hidden">
+        <div className="relative h-[220px] overflow-hidden">
           <img
             src={
               item.image && item.image !== ""
@@ -93,7 +93,7 @@ export default function ListingCard({
             )}
           </div>
 
-          <h3 className="font-semibold text-[16px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
+          <h3 className="font-semibold text-lg line-clamp-2 min-h-[56px] text-gray-900 line-clamp-2 leading-snug min-h-[42px]">
             {item.title}
           </h3>
 

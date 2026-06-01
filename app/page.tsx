@@ -82,12 +82,15 @@ export default function Home() {
   const [draftLocationFilter, setDraftLocationFilter] = useState("");
   const [draftCategoryFilter, setDraftCategoryFilter] = useState("");
   const [showDraftSuggestions, setShowDraftSuggestions] = useState(false);
+  const [topBreeders, setTopBreeders] = useState<any[]>([]);
   
 
   useEffect(() => {
     fetchListings();
     fetchLatestBreederUpdates();
     fetchBreederOfTheMonth();
+    fetchMarketplaceStats();
+    fetchTopBreeders();
 
     const storedRecentSearches = localStorage.getItem("recentSearches");
     if (storedRecentSearches) {
@@ -137,6 +140,40 @@ export default function Home() {
     }
 
     setLatestBreederUpdates(data || []);
+  };
+
+  const [marketplaceStats, setMarketplaceStats] = useState({
+    listings: 0,
+    breeders: 0,
+    litters: 0,
+  });
+
+  const fetchMarketplaceStats = async () => {
+    const [
+      { count: listings },
+      { count: breeders },
+      { count: litters },
+    ] = await Promise.all([
+      supabase
+        .from("listings")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "available"),
+
+      supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("is_breeder", true),
+
+      supabase
+        .from("breeder_announcements")
+        .select("*", { count: "exact", head: true }),
+    ]);
+
+    setMarketplaceStats({
+      listings: listings || 0,
+      breeders: breeders || 0,
+      litters: litters || 0,
+    });
   };
 
   const fetchBreederOfTheMonth = async () => {
@@ -200,6 +237,66 @@ export default function Home() {
 
     const sorted = evaluatedBreeders.sort((a, b) => b.score - a.score);
     setBreederOfTheMonth(sorted[0] || null);
+  };
+
+  const fetchTopBreeders = async () => {
+    const { data: breeders } = await supabase
+      .from("profiles")
+      .select(`
+        id,
+        username,
+        breeder_name,
+        breeder_bio,
+        breeder_verified,
+        is_breeder
+      `)
+      .eq("is_breeder", true);
+
+    if (!breeders) return;
+
+    const enriched = await Promise.all(
+      breeders.map(async (breeder) => {
+        const [
+          { count: listingsCount },
+          { count: followersCount },
+          { count: announcementsCount },
+        ] = await Promise.all([
+          supabase
+            .from("listings")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", breeder.id)
+            .eq("status", "available"),
+
+          supabase
+            .from("follows")
+            .select("*", { count: "exact", head: true })
+            .eq("breeder_id", breeder.id),
+
+          supabase
+            .from("breeder_announcements")
+            .select("*", { count: "exact", head: true })
+            .eq("breeder_id", breeder.id),
+        ]);
+
+        return {
+          ...breeder,
+          listingsCount: listingsCount || 0,
+          followersCount: followersCount || 0,
+          announcementsCount: announcementsCount || 0,
+        };
+      })
+    );
+
+    setTopBreeders(
+      enriched
+        .sort(
+          (a, b) =>
+            b.followersCount +
+            b.listingsCount -
+            (a.followersCount + a.listingsCount)
+        )
+        .slice(0, 3)
+    );
   };
 
   const fetchListings = async () => {
@@ -594,10 +691,22 @@ export default function Home() {
               {/* TRUST STATS */}
               <div className="hidden md:grid grid-cols-2 sm:grid-cols-4 gap-3 mt-7">
                 {[
-                  { value: "2,400+", label: "Active listings" },
-                  { value: "180+", label: "Verified breeders" },
-                  { value: "24/7", label: "Australia wide" },
-                  { value: "Daily", label: "New listings" },
+                  {
+                    value: marketplaceStats.listings,
+                    label: "Active listings",
+                  },
+                  {
+                    value: marketplaceStats.breeders,
+                    label: "Breeders",
+                  },
+                  {
+                    value: marketplaceStats.litters,
+                    label: "Upcoming litters",
+                  },
+                  {
+                    value: "Australia",
+                    label: "Nationwide",
+                  },
                 ].map((item) => (
                   <div
                     key={item.label}
@@ -673,6 +782,193 @@ export default function Home() {
             </div>
 
           </div>
+        </div>
+      </section>
+
+      {/* ANNOUNCEMENT BAR */}
+      <section className="max-w-7xl mx-auto px-4 mt-4">
+        <div className="rounded-2xl bg-gradient-to-r from-green-600 to-green-700 text-white px-5 py-3 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Sparkles size={16} />
+              Follow breeders and get notified when new litters are announced.
+            </div>
+
+            <Link href="/breeders">
+              <span className="text-sm font-semibold whitespace-nowrap">
+                Browse Breeders →
+              </span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURE HIGHLIGHTS */}
+      <section className="max-w-7xl mx-auto px-4 mt-5">
+        <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+
+          <Link href="/breeders">
+            <div className="snap-start min-w-[320px] rounded-3xl bg-gradient-to-br from-green-50 to-white border border-green-100 p-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-green-600">
+                Breeder Profiles
+              </p>
+
+              <h3 className="mt-2 text-2xl font-bold text-gray-900">
+                Find Trusted Breeders
+              </h3>
+
+              <p className="mt-3 text-sm text-gray-600">
+                Follow breeders, browse their listings and view upcoming litters.
+              </p>
+
+              <div className="mt-5">
+                <span className="text-green-600 font-semibold">
+                  Browse breeders →
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/upcoming-litters">
+            <div className="snap-start min-w-[320px] rounded-3xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 p-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+                Upcoming Litters
+              </p>
+
+              <h3 className="mt-2 text-2xl font-bold text-gray-900">
+                Reserve Earlier
+              </h3>
+
+              <p className="mt-3 text-sm text-gray-600">
+                Discover future litters before puppies and kittens become available.
+              </p>
+
+              <div className="mt-5">
+                <span className="text-blue-600 font-semibold">
+                  Explore litters →
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/search">
+            <div className="snap-start min-w-[320px] rounded-3xl bg-gradient-to-br from-yellow-50 to-white border border-yellow-100 p-6">
+              <p className="text-xs font-semibold uppercase tracking-wider text-yellow-600">
+                Verified Sellers
+              </p>
+
+              <h3 className="mt-2 text-2xl font-bold text-gray-900">
+                Shop Safely
+              </h3>
+
+              <p className="mt-3 text-sm text-gray-600">
+                Browse listings from trusted breeders and verified sellers.
+              </p>
+
+              <div className="mt-5">
+                <span className="text-yellow-700 font-semibold">
+                  View listings →
+                </span>
+              </div>
+            </div>
+          </Link>
+
+        </div>
+      </section>
+
+      {/* FEATURED BREEDERS */}
+      <section className="max-w-7xl mx-auto px-4 mt-10 mb-12">
+        <div className="flex items-end justify-between mb-5">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.18em] uppercase text-green-600">
+              Trusted Breeders
+            </p>
+
+            <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-gray-900">
+              Browse Breeder Profiles
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Follow breeders, discover upcoming litters and build trust before you buy.
+            </p>
+          </div>
+
+          <Link href="/breeders">
+            <button className="text-sm font-medium text-gray-600 hover:text-gray-900">
+              View all →
+            </button>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {topBreeders.map((breeder) => (
+            <Link
+              key={breeder.id}
+              href={`/breeders/${breeder.id}`}
+            >
+              <div className="bg-white rounded-3xl border border-gray-100 p-5 hover:shadow-lg transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-lg font-bold text-green-700">
+                    {(breeder.breeder_name || breeder.username || "B")
+                      .charAt(0)
+                      .toUpperCase()}
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {breeder.breeder_name || breeder.username}
+                    </h3>
+
+                    <div className="flex items-center gap-2 mt-1">
+                      {breeder.breeder_verified && (
+                        <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full">
+                          <BadgeCheck size={12} />
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-600 mt-4 line-clamp-3">
+                  {breeder.breeder_bio ||
+                    "Browse listings, upcoming litters and breeder updates."}
+                </p>
+
+                <div className="grid grid-cols-3 gap-2 mt-5">
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <p className="font-bold text-gray-900">
+                      {breeder.listingsCount}
+                    </p>
+
+                    <p className="text-xs text-gray-500">
+                      Listings
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <p className="font-bold text-gray-900">
+                      {breeder.followersCount}
+                    </p>
+
+                    <p className="text-xs text-gray-500">
+                      Followers
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-3 text-center">
+                    <p className="font-bold text-gray-900">
+                      {breeder.announcementsCount}
+                    </p>
+
+                    <p className="text-xs text-gray-500">
+                      Litters
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
